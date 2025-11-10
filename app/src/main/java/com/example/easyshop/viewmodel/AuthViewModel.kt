@@ -11,7 +11,7 @@ class AuthViewModel: ViewModel() {
     private val firestore = Firebase.firestore
 
     fun login(email: String, password: String, onResult: (Boolean,String?) -> Unit){
-        auth.signInWithEmailAndPassword(email, password)
+        auth.signInWithEmailAndPassword(email,password)
             .addOnCompleteListener {
                 if (it.isSuccessful){
                     onResult(true,null)
@@ -21,20 +21,20 @@ class AuthViewModel: ViewModel() {
             }
     }
 
-    fun signup(email: String, password: String, name: String, onResult: (Boolean,String?) -> Unit){
+    fun signup(email: String, name: String, password: String, onResult: (Boolean,String?) -> Unit){
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener {
                 if(it.isSuccessful){
-                    val userId = it.result?.user?.uid
+                    var userId = it.result?.user?.uid
 
-                    val userModel = UserModel(name, email, userId!!)
-                    firestore.collection("users ").document(userId)
+                    val userModel = UserModel(name,email,userId!!)
+                    firestore.collection("users").document(userId)
                         .set(userModel)
                         .addOnCompleteListener { dbTask ->
                             if(dbTask.isSuccessful){
                                 onResult(true,null)
                             }else{
-                                onResult(false, "Something went wrong")
+                                onResult(false,"Something went wrong")
                             }
                         }
                 }else{

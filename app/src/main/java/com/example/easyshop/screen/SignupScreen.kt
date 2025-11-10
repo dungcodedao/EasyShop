@@ -136,6 +136,7 @@ fun SignupScreen(modifier: Modifier = Modifier, navController: NavController, au
                         popUpTo("auth") {inclusive = true}
                     }
                 }else{
+                    isLoading = false
                     AppUtil.showToast(context, errorMessage?:"Something went wrong")
                 }
             }
@@ -145,7 +146,7 @@ fun SignupScreen(modifier: Modifier = Modifier, navController: NavController, au
             modifier = Modifier.fillMaxWidth()
                 .height(60.dp)
         ){
-            Text(text = if(isLoading) "Create acccount" else "Signup", fontSize = 22.sp)
+            Text(text = if(isLoading) "Create account" else "Signup", fontSize = 22.sp)
         }
     }
 }

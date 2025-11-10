@@ -38,6 +38,8 @@ android {
     buildFeatures {
         compose = true
     }
+
+
 }
 
 dependencies {
@@ -52,6 +54,13 @@ dependencies {
     implementation(libs.androidx.material3)
   //  implementation(libs.androidx.navigation.compose.jvmstubs)
     implementation("androidx.navigation:navigation-compose:2.8.0")
+
+
+    // Firebase BOM (quản lý version tập trung)
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     testImplementation(libs.junit)
@@ -61,4 +70,8 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("com.tbuonomo:dotsindicator:5.1.0")
+
 }
