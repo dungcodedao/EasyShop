@@ -53,7 +53,7 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavController){
             NavigationBar {
                 navItemList.forEachIndexed { index, navItem ->
                     NavigationBarItem(
-                        selected = selectedIndex == index,
+                        selected = index == selectedIndex,
                         onClick = {
                             selectedIndex = index
                         },

@@ -68,7 +68,7 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController, aut
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        Text(text = "Sign in to your account!",
+        Text(text = "Sign in to your account",
             modifier = Modifier.fillMaxWidth(),
             style = TextStyle(
                 fontSize = 22.sp,

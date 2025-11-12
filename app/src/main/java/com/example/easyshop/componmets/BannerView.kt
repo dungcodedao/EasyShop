@@ -33,7 +33,7 @@ fun BannerView(modifier: Modifier = Modifier){
         mutableStateOf<List<String>>(emptyList())
     }
 
-    LaunchedEffect(UInt) {
+    LaunchedEffect(Unit) {
         Firebase.firestore.collection("data")
             .document("banners")
             .get().addOnCompleteListener(){
