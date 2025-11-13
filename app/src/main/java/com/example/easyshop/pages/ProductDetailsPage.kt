@@ -30,12 +30,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.easyshop.AppUtil
 import com.example.easyshop.model.ProductModel
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
@@ -48,6 +50,8 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId:String){
     var product by remember {
         mutableStateOf(ProductModel())
     }
+
+    var context = LocalContext.current
 
     LaunchedEffect(key1 = Unit) {
         Firebase.firestore.collection("data").document("stock")
@@ -126,16 +130,19 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId:String){
           IconButton(onClick = { }) {
               Icon(
                   imageVector = Icons.Default.FavoriteBorder,
-                  contentDescription = "Add to Favorite"
+                  contentDescription = "Favorite",
               )
           }
       }
-      Spacer(modifier = Modifier.height(8.dp))
 
-      Button(onClick = {},
-          modifier = Modifier.fillMaxWidth().height(50.dp)
+      Button(onClick = {
+          AppUtil.addItemToCart(context, productId)
+      },
+          modifier = Modifier
+              .fillMaxWidth()
+              .height(40.dp)
           ) {
-          Text(text = "Add to cart", fontSize = 16.sp)
+          Text(text = "Add to cart")
       }
 
       Spacer(modifier = Modifier.height(16.dp))
@@ -148,7 +155,6 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId:String){
       Spacer(modifier = Modifier.height(8.dp))
       Text(text = product.description, fontSize = 16.sp)
       Spacer(modifier = Modifier.height(16.dp))
-
       if (product.otherDetails.isNotEmpty())
       Text(text = "Other Product details : ",
           fontWeight = FontWeight.SemiBold,

@@ -34,13 +34,16 @@ fun HeaderView(modifier: Modifier = Modifier){
     }
 
     LaunchedEffect(Unit) {
-        Firebase.firestore.collection("users")
-            .document(FirebaseAuth.getInstance().currentUser?.uid!!)
-            .get().addOnCompleteListener(){
-                name = it.result.get("name").toString().split(" ").get(0)
-            }
+        FirebaseAuth.getInstance().currentUser?.uid?.let { uid ->
+            Firebase.firestore.collection("users").document(uid)
+                .get()
+                .addOnSuccessListener { docs ->
+                    name = docs.getString("name")?.trim()?.split(" ")?.get(0) ?: "User"
+                }
+        } ?: run {
+            name = "Guest"
+        }
     }
-
     Row (
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -52,11 +55,9 @@ fun HeaderView(modifier: Modifier = Modifier){
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             ))
-
         }
         IconButton(onClick = { }) {
             Icon(imageVector = Icons.Default.Search, contentDescription = "Search")
         }
     }
-
 }
