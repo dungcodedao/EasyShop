@@ -9,7 +9,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,6 +39,7 @@ fun BannerView(modifier: Modifier = Modifier){
                 bannerList = it.result.get("urls") as List<String>
             }
     }
+
     Column (
         modifier = modifier
     ){
@@ -54,15 +54,13 @@ fun BannerView(modifier: Modifier = Modifier){
                 contentDescription = "Banner image",
                modifier = Modifier.fillMaxWidth()
                    .clip(RoundedCornerShape(16.dp))
-
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
 
         DotsIndicator(
             dotCount = bannerList.size,
-            type = ShiftIndicatorType(
-                DotGraphic(
+            type = ShiftIndicatorType(DotGraphic(
                     color = MaterialTheme.colorScheme.primary,
                     size = 6.dp
                 )

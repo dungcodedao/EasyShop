@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.easyshop.pages.CategoryProductsPage
+import com.example.easyshop.pages.ProductDetailsPage
 import com.example.easyshop.screen.AuthScreen
 import com.example.easyshop.screen.HomeScreen
 import com.example.easyshop.screen.LoginScreen
@@ -43,6 +44,11 @@ fun AppNavigation(modifier: Modifier = Modifier){
         composable("category-products/{categoryId}") {
             var categoryId = it.arguments?.getString("categoryId")
             CategoryProductsPage(modifier, categoryId?:"")
+        }
+
+        composable("product-details/{productId}") {
+            var productId = it.arguments?.getString("productId")
+            ProductDetailsPage(modifier, productId?:"")
         }
     }
 }
