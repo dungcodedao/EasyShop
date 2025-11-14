@@ -85,7 +85,8 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController, aut
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        OutlinedTextField(value = email,
+        OutlinedTextField(
+            value = email,
             onValueChange = {
                 email = it
             },
@@ -95,9 +96,10 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController, aut
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        OutlinedTextField(value = password,
+        OutlinedTextField(
+            value = password,
             onValueChange = {
                 password = it
             },
@@ -111,7 +113,7 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController, aut
         Spacer(modifier = Modifier.height(20.dp))
         Button(onClick = {
             isLoading = true
-            authViewModel.login(email,password){succuess, errorMessage ->
+            authViewModel.login(email,password){succuess,errorMessage ->
                 if(succuess){
                     isLoading = false
                     navController.navigate("home"){

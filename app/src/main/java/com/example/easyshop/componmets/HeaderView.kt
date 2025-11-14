@@ -1,6 +1,5 @@
 package com.example.easyshop.componmets
 
-import android.text.Layout
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +17,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -34,15 +32,11 @@ fun HeaderView(modifier: Modifier = Modifier){
     }
 
     LaunchedEffect(Unit) {
-        FirebaseAuth.getInstance().currentUser?.uid?.let { uid ->
-            Firebase.firestore.collection("users").document(uid)
-                .get()
-                .addOnSuccessListener { docs ->
-                    name = docs.getString("name")?.trim()?.split(" ")?.get(0) ?: "User"
-                }
-        } ?: run {
-            name = "Guest"
-        }
+        Firebase.firestore.collection("users")
+            .document(FirebaseAuth.getInstance().currentUser?.uid!!)
+            .get().addOnCompleteListener(){
+                name = it.result.getString("name") ?: ""
+            }
     }
     Row (
         modifier = Modifier.fillMaxWidth(),

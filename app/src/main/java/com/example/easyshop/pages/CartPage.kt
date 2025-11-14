@@ -53,7 +53,7 @@ fun CartPage(modifier: Modifier = Modifier) {
             fontWeight = FontWeight.Bold
         ))
         LazyColumn {
-           items(userModel.value.carrItems.toList()) {(productId, qty) ->
+           items(userModel.value.cartItems.toList()) {(productId, qty) ->
                 CartItemView(productId = productId, qty = qty)
 
             }

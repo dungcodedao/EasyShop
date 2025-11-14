@@ -20,7 +20,7 @@ fun AppNavigation(modifier: Modifier = Modifier){
     val navController = rememberNavController()
     GlobalNavigation.navController = navController
 
-    val isLoggedIn = Firebase.auth.currentUser!= null
+    val isLoggedIn = Firebase.auth.currentUser != null
     val firstPage = if (isLoggedIn) "home" else "auth"
 
     NavHost(navController = navController, startDestination = firstPage){
