@@ -3,6 +3,8 @@ package com.example.easyshop
 import android.app.Activity
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.runtime.traceEventEnd
+import androidx.core.content.edit
 import com.example.easyshop.model.OrderModel
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
@@ -11,6 +13,8 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
 import com.razorpay.Checkout
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Locale
 import java.util.UUID
 
 object AppUtil {
@@ -122,9 +126,45 @@ object AppUtil {
         options.put("currency", "USD")
 
         checkout.open(GlobalNavigation.navController.context as Activity,options)
+    }
+
+    fun formatData(timestamp: Timestamp) : String{
+        val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+        return sdf.format(timestamp.toDate())
+    }
+
+    private const val PREF_NAME = "favorite_pref"
+    private const val KEY_FAVORITES = "favorites_list"
+
+    fun addOrRemoveFromFavorite(context: Context, productId: String){
+        val list = getFavoriteList(context).toMutableSet()
+        if(list.contains(productId)){
+            list.remove(productId)
+        } else {
+            list.add(productId)
+            showToast(context, "Item removed from Favorite")
+        }
+
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        prefs.edit{
+            putStringSet(KEY_FAVORITES, list)
+        }
 
 
     }
 
+    fun checkFavorite(context: Context, productId: String) :Boolean{
+        if(getFavoriteList(context).contains(productId)){
+            return true
+        }
+        return false
+    }
+
+    fun getFavoriteList(context: Context) :Set<String>{
+
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        return prefs.getStringSet(KEY_FAVORITES, emptySet())?: emptySet()
+
+    }
 
 }

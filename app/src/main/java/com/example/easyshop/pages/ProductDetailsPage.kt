@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
@@ -30,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +54,10 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId:String){
     }
 
     var context = LocalContext.current
+
+    var isFay = remember {
+        mutableStateOf(AppUtil.checkFavorite(context, productId))
+    }
 
     LaunchedEffect(key1 = Unit) {
         Firebase.firestore.collection("data").document("stock")
@@ -127,9 +133,15 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId:String){
           )
           Spacer(modifier = Modifier.weight(1f))
 
-          IconButton(onClick = { }) {
+          IconButton(onClick = {
+              AppUtil.addOrRemoveFromFavorite(context, productId)
+              isFay.value = AppUtil.checkFavorite(context, productId)
+          }) {
               Icon(
-                  imageVector = Icons.Default.FavoriteBorder,
+                  imageVector = if(isFay.value)
+                      Icons.Default.Favorite else
+                      Icons.Default.FavoriteBorder,
+                  tint = if (isFay.value) Color.Red else Color.Gray,
                   contentDescription = "Favorite",
               )
           }
