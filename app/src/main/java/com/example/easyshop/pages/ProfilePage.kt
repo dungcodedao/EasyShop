@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -124,7 +125,7 @@ fun ProfilePage(modifier: Modifier = Modifier ){
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Text(text ="Email: ",
+        Text(text ="Email: " ,
             fontSize = 18.sp,
             fontWeight = FontWeight.Medium
         )
@@ -150,7 +151,7 @@ fun ProfilePage(modifier: Modifier = Modifier ){
                 }.padding(vertical = 16.dp)
         )
 
-        TextButton(
+        Button(
             onClick = {
                 FirebaseAuth.getInstance().signOut()
                 val navController = GlobalNavigation.navController
@@ -158,9 +159,10 @@ fun ProfilePage(modifier: Modifier = Modifier ){
                 navController.navigate("auth")
             },
             modifier = Modifier.fillMaxWidth()
-                .align(Alignment.CenterHorizontally)
+                .height(60.dp)
         ) {
-            Text(text = "Sign Out", fontSize = 18.sp)
+            Text(text = "Sign Out", fontSize = 18.sp,
+                fontWeight = FontWeight.Bold     )
 
         }
     }
