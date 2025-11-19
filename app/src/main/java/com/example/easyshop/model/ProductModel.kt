@@ -1,6 +1,6 @@
 package com.example.easyshop.model
 
-data class ProductModel(
+data class  ProductModel(
     val id : String = "",
     val title : String = "",
     val description : String = "",

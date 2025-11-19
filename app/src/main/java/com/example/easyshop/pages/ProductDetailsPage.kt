@@ -168,10 +168,12 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId:String){
       Text(text = product.description, fontSize = 16.sp)
       Spacer(modifier = Modifier.height(16.dp))
       if (product.otherDetails.isNotEmpty())
-      Text(text = "Other Product details : ",
-          fontWeight = FontWeight.SemiBold,
-          fontSize = 18.sp
+          Text(
+              text = "Other Product details : ",
+              fontWeight = FontWeight.SemiBold,
+              fontSize = 18.sp
           )
+
       Spacer(modifier = Modifier.height(8.dp))
       product.otherDetails.forEach{ (key, value) ->
           Row(
