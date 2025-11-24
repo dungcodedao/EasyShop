@@ -1,0 +1,122 @@
+package com.example.easyshop.componmets
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.easyshop.model.ProductModel
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
+
+@Composable
+fun SearchView(
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    var allProducts by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
+    var filteredProducts by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
+
+    // Lấy dữ liệu từ Firebase
+    LaunchedEffect(key1 = Unit) {
+        Firebase.firestore
+            .collection("data")
+            .document("stock")
+            .collection("products")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val list = snapshot.documents.mapNotNull {
+                    it.toObject(ProductModel::class.java)
+                }
+                allProducts = list
+                filteredProducts = list
+            }
+    }
+
+    // Tự động lọc khi searchQuery thay đổi
+    LaunchedEffect(searchQuery) {
+        filteredProducts = if (searchQuery.isBlank()) {
+            allProducts
+        } else {
+            allProducts.filter { product ->
+                val title = product.otherDetails["title"] ?: product.title
+                title.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    Column(modifier = modifier.fillMaxSize()) {
+        // Search Bar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBackClick) {
+                Icon(Icons.Default.ArrowBack, "Back")
+            }
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Search products...") },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
+            )
+        }
+
+        // Danh sách kết quả
+        LazyColumn {
+            if (filteredProducts.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(400.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No products found",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                items(filteredProducts) { product ->
+                    ProductItemView(product = product)
+                }
+            }
+        }
+    }
+}

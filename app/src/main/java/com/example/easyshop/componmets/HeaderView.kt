@@ -25,7 +25,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
 
 @Composable
-fun HeaderView(modifier: Modifier = Modifier){
+fun HeaderView(modifier: Modifier = Modifier,
+               onSearchClick: () -> Unit = {}){
 
     var name by remember {
         mutableStateOf("")
@@ -50,8 +51,10 @@ fun HeaderView(modifier: Modifier = Modifier){
                 fontWeight = FontWeight.Bold
             ))
         }
-        IconButton(onClick = { }) {
-            Icon(imageVector = Icons.Default.Search, contentDescription = "Search")
+//        IconButton(onClick = { }) {
+//            Icon(imageVector = Icons.Default.Search, contentDescription = "Search")
+        IconButton(onClick = onSearchClick) {  // ← dùng cái tham số mới ở đây
+            Icon(Icons.Default.Search, contentDescription = "Search")
         }
     }
 }
