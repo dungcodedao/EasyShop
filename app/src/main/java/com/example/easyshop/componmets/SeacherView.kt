@@ -37,18 +37,19 @@ fun SearchView(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var allProducts by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
-    var filteredProducts by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
+    var searchQuery by remember {
+        mutableStateOf("") }
+    var allProducts by remember {
+        mutableStateOf<List<ProductModel>>(emptyList()) }
+    var filteredProducts by remember {
+        mutableStateOf<List<ProductModel>>(emptyList()) }
 
     // Lấy dữ liệu từ Firebase
     LaunchedEffect(key1 = Unit) {
-        Firebase.firestore
-            .collection("data")
+        Firebase.firestore.collection("data")
             .document("stock")
             .collection("products")
-            .get()
-            .addOnSuccessListener { snapshot ->
+            .get().addOnSuccessListener { snapshot ->
                 val list = snapshot.documents.mapNotNull {
                     it.toObject(ProductModel::class.java)
                 }
