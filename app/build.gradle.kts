@@ -70,10 +70,20 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-
+    implementation("androidx.compose.material:material-icons-core:1.7.5")
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("com.tbuonomo:dotsindicator:5.1.0")
-    implementation("com.razorpay:checkout:1.6.33")
+    implementation("com.razorpay:checkout:1.6.33") //razorpay
+    ///implementation("com.github.momo-wallet:mobile-sdk:1.0.8") //momo
+
+
+
+    //maps
+    implementation ("com.google.android.gms:play-services-maps:18.2.0")
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
+
+
+
 
 
 }

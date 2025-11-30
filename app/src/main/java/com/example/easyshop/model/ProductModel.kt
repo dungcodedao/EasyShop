@@ -5,6 +5,7 @@ data class  ProductModel(
     val title : String = "",
     val description : String = "",
     val price : String = "",
+    val inStock: Boolean = false,
     val actualPrice : String = "",
     val category : String = "",
     val images : List<String> = emptyList(),

@@ -28,6 +28,7 @@ import com.google.firebase.firestore.firestore
 
 @Composable
 fun FavoritePage(modifier: Modifier = Modifier){
+
    val productsList = remember {
        mutableStateOf<List<ProductModel>>(emptyList())
 

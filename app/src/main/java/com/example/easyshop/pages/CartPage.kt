@@ -1,22 +1,13 @@
 package com.example.easyshop.pages
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,25 +20,17 @@ import com.google.firebase.firestore.firestore
 
 @Composable
 fun CartPage(modifier: Modifier = Modifier) {
+    val userModel = remember { mutableStateOf(UserModel()) }
 
-    val userModel = remember {
-        mutableStateOf(UserModel())
-    }
-
-    DisposableEffect (key1 = Unit) {
-        var listener = Firebase.firestore.collection("users")
+    DisposableEffect(Unit) {
+        val listener = Firebase.firestore.collection("users")
             .document(FirebaseAuth.getInstance().currentUser?.uid!!)
-            .addSnapshotListener{ it, _ ->
-                if (it!= null){
-                    val result = it.toObject(UserModel::class.java)
-                    if (result != null) {
-                        userModel.value = result
-                    }
+            .addSnapshotListener { it, _ ->
+                it?.toObject(UserModel::class.java)?.let { user ->
+                    userModel.value = user
                 }
             }
-        onDispose {
-            listener.remove()
-        }
+        onDispose { listener.remove() }
     }
 
     Column(
@@ -55,41 +38,105 @@ fun CartPage(modifier: Modifier = Modifier) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text(text = "Your cart", style = TextStyle(
-            fontSize = 22.sp,
+        Text(
+            text = "Your cart",
+            fontSize = 24.sp,
             fontWeight = FontWeight.Bold
-        ))
+        )
 
-        if (userModel.value.cartItems.isNotEmpty()){
-            LazyColumn (
-                modifier = Modifier.weight(1f)
-            ){
-                items(userModel.value.cartItems.toList(), key ={it.first}) {(productId, qty) ->
-                    CartItemView(productId = productId, qty = qty)
+        Spacer(modifier = Modifier.height(16.dp))
 
-                }
-            }
-
-            Button(
-                onClick = {
-                    GlobalNavigation.navController.navigate("checkout")
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-            ){
-                Text(text = "Check out")
-            }
-        }else{
-            Column (
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ){
-                Text(text = "No items here", fontSize = 32.sp)
-            }
+        if (userModel.value.cartItems.isEmpty()) {
+            EmptyCart()
+        } else {
+            CartContent(userModel = userModel.value)
         }
+    }
+}
 
+@Composable
+private fun EmptyCart() {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "🛒",
+            fontSize = 64.sp
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Your cart is empty",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
 
+@Composable
+private fun ColumnScope.CartContent(userModel: UserModel) {
+    // Cart Items
+    LazyColumn(
+        modifier = Modifier.weight(1f),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        items(
+            userModel.cartItems.toList(),
+            key = { it.first }
+        ) { (productId, qty) ->
+            CartItemView(productId = productId, qty = qty)
+        }
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // Total Section
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Total Items",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = "${userModel.cartItems.values.sum()}",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+
+    Spacer(modifier = Modifier.height(12.dp))
+
+    // Checkout Button
+    Button(
+        onClick = {
+            GlobalNavigation.navController.navigate("checkout")
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Text(
+            text = "Check out",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }

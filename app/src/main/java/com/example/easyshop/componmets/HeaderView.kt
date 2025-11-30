@@ -51,8 +51,7 @@ fun HeaderView(modifier: Modifier = Modifier,
                 fontWeight = FontWeight.Bold
             ))
         }
-//        IconButton(onClick = { }) {
-//            Icon(imageVector = Icons.Default.Search, contentDescription = "Search")
+
         IconButton(onClick = onSearchClick) {  // ← dùng cái tham số mới ở đây
             Icon(Icons.Default.Search, contentDescription = "Search")
         }

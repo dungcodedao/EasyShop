@@ -39,6 +39,8 @@ fun ProductItemView(modifier: Modifier = Modifier, product : ProductModel ){
     var context = LocalContext.current
     Card(
         modifier = modifier
+            .width(180.dp)
+            .height(280.dp)
             .padding(8.dp)
             .clickable {
                 GlobalNavigation.navController.navigate("product-details/"+product.id)

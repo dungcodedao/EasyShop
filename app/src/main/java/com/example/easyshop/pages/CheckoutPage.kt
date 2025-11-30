@@ -1,5 +1,6 @@
 package com.example.easyshop.pages
 
+import android.app.Activity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.easyshop.AppUtil
+import com.example.easyshop.GlobalNavigation
 import com.example.easyshop.model.ProductModel
 import com.example.easyshop.model.UserModel
 import com.google.firebase.Firebase
@@ -123,7 +125,9 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
-                AppUtil.startPayment(total.value)
+               AppUtil.startPayment(total.value)
+                // Thử MoMo trước (xóa dòng Razorpay tạm)
+
             },
             modifier = Modifier.fillMaxWidth()
                 .height(50.dp)

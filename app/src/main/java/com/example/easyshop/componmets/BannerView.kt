@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.google.firebase.Firebase
@@ -24,6 +25,7 @@ import com.google.firebase.firestore.firestore
 import com.tbuonomo.viewpagerdotsindicator.compose.DotsIndicator
 import com.tbuonomo.viewpagerdotsindicator.compose.model.DotGraphic
 import com.tbuonomo.viewpagerdotsindicator.compose.type.ShiftIndicatorType
+import kotlinx.coroutines.delay
 
 @Composable
 fun BannerView(modifier: Modifier = Modifier){
@@ -46,6 +48,14 @@ fun BannerView(modifier: Modifier = Modifier){
         val pagerState = rememberPagerState (0) {
             bannerList.size
         }
+//chuyen dong banner
+        LaunchedEffect(pagerState.currentPage) {
+            if (bannerList.isNotEmpty()) {
+                delay(2000) // 2 giây
+                val nextPage = (pagerState.currentPage + 1) % bannerList.size
+                pagerState.animateScrollToPage(nextPage)
+            }
+        }
         HorizontalPager(
             state = pagerState,
             pageSpacing =24.dp
@@ -53,7 +63,10 @@ fun BannerView(modifier: Modifier = Modifier){
             AsyncImage(model = bannerList.get(it),
                 contentDescription = "Banner image",
                modifier = Modifier.fillMaxWidth()
-                   .clip(RoundedCornerShape(16.dp))
+//                   .height(120.dp)
+                   .clip(RoundedCornerShape(16.dp)),
+//                contentScale = ContentScale.FillWidth
+
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
