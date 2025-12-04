@@ -1,6 +1,5 @@
 package com.example.easyshop.componmets
 
-import android.widget.Space
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,9 +14,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.google.firebase.Firebase
@@ -34,6 +34,7 @@ fun BannerView(modifier: Modifier = Modifier){
         mutableStateOf<List<String>>(emptyList())
     }
 
+    //lay du lieu dât banner từ firebase
     LaunchedEffect(Unit) {
         Firebase.firestore.collection("data")
             .document("banners")
@@ -43,7 +44,9 @@ fun BannerView(modifier: Modifier = Modifier){
     }
 
     Column (
-        modifier = modifier
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+
     ){
         val pagerState = rememberPagerState (0) {
             bannerList.size
@@ -51,7 +54,7 @@ fun BannerView(modifier: Modifier = Modifier){
 //chuyen dong banner
         LaunchedEffect(pagerState.currentPage) {
             if (bannerList.isNotEmpty()) {
-                delay(2000) // 2 giây
+                delay(3000) // 3 giây
                 val nextPage = (pagerState.currentPage + 1) % bannerList.size
                 pagerState.animateScrollToPage(nextPage)
             }
@@ -63,9 +66,9 @@ fun BannerView(modifier: Modifier = Modifier){
             AsyncImage(model = bannerList.get(it),
                 contentDescription = "Banner image",
                modifier = Modifier.fillMaxWidth()
-//                   .height(120.dp)
-                   .clip(RoundedCornerShape(16.dp)),
-//                contentScale = ContentScale.FillWidth
+                   .clip(RoundedCornerShape(16.dp))
+                .height(140.dp) ,
+                   contentScale = ContentScale.Crop
 
             )
         }
@@ -73,9 +76,10 @@ fun BannerView(modifier: Modifier = Modifier){
 
         DotsIndicator(
             dotCount = bannerList.size,
-            type = ShiftIndicatorType(DotGraphic(
+            type = ShiftIndicatorType(
+                DotGraphic(
                     color = MaterialTheme.colorScheme.primary,
-                    size = 6.dp
+                    size = 8.dp
                 )
             ),
             pagerState = pagerState

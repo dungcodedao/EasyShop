@@ -46,9 +46,7 @@ fun OrdersPage(modifier: Modifier = Modifier) {
             }
 
     }
-
-
-
+    
     Column(
         modifier = modifier
             .fillMaxSize()

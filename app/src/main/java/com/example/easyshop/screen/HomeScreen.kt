@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.easyshop.componmets.ProductItemView
 import com.example.easyshop.pages.*
 
 @Composable
@@ -82,6 +83,7 @@ fun ContentScreen(modifier: Modifier = Modifier, selectedIndex: Int) {
         1 -> FavoritePage(modifier)
         2 -> CartPage(modifier)
         3 -> ProfilePage(modifier)
+
     }
 }
 

@@ -63,6 +63,7 @@ dependencies {
 
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.androidx.appcompat)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -75,6 +76,7 @@ dependencies {
     implementation("com.tbuonomo:dotsindicator:5.1.0")
     implementation("com.razorpay:checkout:1.6.33") //razorpay
     ///implementation("com.github.momo-wallet:mobile-sdk:1.0.8") //momo
+    implementation ("androidx.navigation:navigation-compose:2.7.7")
 
 
 
