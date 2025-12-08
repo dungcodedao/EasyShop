@@ -41,7 +41,7 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavController) {
             NavigationBar(
                 containerColor = Color.White,
                 tonalElevation = 12.dp,
-                modifier = Modifier.height(82.dp)
+                modifier = Modifier.height(110.dp)
             ) {
                 navItemList.forEachIndexed { index, item ->
                     NavigationBarItem(

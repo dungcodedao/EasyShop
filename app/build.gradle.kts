@@ -77,6 +77,7 @@ dependencies {
     implementation("com.razorpay:checkout:1.6.33") //razorpay
     ///implementation("com.github.momo-wallet:mobile-sdk:1.0.8") //momo
     implementation ("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.compose.foundation:foundation")
 
 
 
