@@ -31,9 +31,7 @@ fun CategoryProductsPage(
     // Load dữ liệu từ Firebase
     LaunchedEffect(categoryId) {
         isLoading = true
-        Firebase.firestore
-            .collection("data")
-            .document("stock")
+        Firebase.firestore.collection("data").document("stock")
             .collection("products")
             .whereEqualTo("category", categoryId)
             .get()
