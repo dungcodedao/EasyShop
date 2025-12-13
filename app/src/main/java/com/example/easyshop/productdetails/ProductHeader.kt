@@ -77,6 +77,7 @@ fun ProductHeader(title: String, inStock: Boolean) {
                             )
                     )
                     Spacer(modifier = Modifier.width(6.dp))
+
                     Text(
                         text = if (inStock) "In Stock" else "Out of Stock",
                         fontSize = 12.sp,

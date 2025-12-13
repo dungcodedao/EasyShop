@@ -1,4 +1,4 @@
-package com.example.easyshop.componmets
+package com.example.easyshop.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

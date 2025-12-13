@@ -16,10 +16,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.easyshop.componmets.BannerView
-import com.example.easyshop.componmets.CategoriesView
-import com.example.easyshop.componmets.HeaderView
-import com.example.easyshop.componmets.SearchView
+import com.example.easyshop.components.BannerView
+import com.example.easyshop.components.CategoriesView
+import com.example.easyshop.components.HeaderView
+import com.example.easyshop.components.SearchView
 
 @Composable
 fun HomePage(modifier: Modifier = Modifier) {
