@@ -1,22 +1,15 @@
+// File: AuthScreen.kt (Redesigned)
 package com.example.easyshop.screen
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -25,59 +18,93 @@ import androidx.navigation.NavHostController
 import com.example.easyshop.R
 
 @Composable
-fun AuthScreen(modifier: Modifier = Modifier, navController: NavHostController){
+fun AuthScreen(
+    modifier: Modifier = Modifier,
+    navController: NavHostController
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
+        Spacer(Modifier.height(32.dp))
+
+        // Banner Image
         Image(
             painter = painterResource(id = R.drawable.banner),
-            contentDescription = "Banner",
-            modifier = Modifier.fillMaxWidth()
-                .height(300.dp)
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(280.dp)
         )
-        Spacer(modifier = Modifier.height(20.dp))
 
-        Text(text = "Start your shopping journey now",
-            style = TextStyle(
-                fontSize = 30.sp,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center
+        Spacer(Modifier.height(32.dp))
+
+        // Main Heading
+        Text(
+            text = "Start your shopping journey now",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            lineHeight = 36.sp
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        // Subheading
+        Text(
+            text = "Best ecom platform with best prices",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(Modifier.height(48.dp))
+
+        // Login Button
+        Button(
+            onClick = { navController.navigate("login") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Text(
+                text = "Login",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
             )
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Text(text = "Best ecom platform with best prices",
-            style = TextStyle(
-                textAlign = TextAlign.Center
-            )
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Button(onClick = {
-            navController.navigate("login")
-        },
-            modifier = Modifier.fillMaxWidth()
-                .height(60.dp)
-            ){
-            Text(text = "Login", fontSize = 22.sp)
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
-        
-        OutlinedButton(onClick =  {
-            navController.navigate("signup")
-        },
-            modifier = Modifier.fillMaxWidth()
-                .height(60.dp)
-        ){
-            Text(text = "Signup", fontSize = 22.sp)
+        Spacer(Modifier.height(16.dp))
+
+        // Signup Button
+        OutlinedButton(
+            onClick = { navController.navigate("signup") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Text(
+                text = "Sign Up",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
+            )
         }
+
+        Spacer(Modifier.height(16.dp))
+
+        // Guest Mode Link
+        TextButton(
+            onClick = { navController.navigate("home") }
+        ) {
+            Text("Continue as Guest")
+        }
+
+        Spacer(Modifier.height(32.dp))
     }
 }
-

@@ -30,7 +30,7 @@ fun OrdersPage(modifier: Modifier = Modifier) {
 
 
     LaunchedEffect(key1 = Unit) {
-        Firebase.firestore.collection("data")
+        Firebase.firestore.collection("orders")
             .whereEqualTo("userId", FirebaseAuth.getInstance().currentUser?.uid!!)
             .get().addOnCompleteListener() {
                 if (it.isSuccessful) {
@@ -42,7 +42,7 @@ fun OrdersPage(modifier: Modifier = Modifier) {
             }
 
     }
-    
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -55,12 +55,12 @@ fun OrdersPage(modifier: Modifier = Modifier) {
             )
         )
 
-       LazyColumn (
-           modifier = Modifier.fillMaxSize()
-       ) {
-           items(orderList.value){
+        LazyColumn (
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(orderList.value){
                 OrderView(it)
-           }
-       }
+            }
+        }
     }
 }

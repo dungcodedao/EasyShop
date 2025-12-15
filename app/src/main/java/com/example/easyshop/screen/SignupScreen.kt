@@ -1,31 +1,24 @@
+// File: SignupScreen.kt (Redesigned)
 package com.example.easyshop.screen
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -35,118 +28,206 @@ import com.example.easyshop.R
 import com.example.easyshop.viewmodel.AuthViewModel
 
 @Composable
-fun SignupScreen(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel = viewModel()){
+fun SignupScreen(
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    authViewModel: AuthViewModel = viewModel()
+) {
+    var email by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
-    var email by remember {
-        mutableStateOf("")
-    }
+    // Validation
+    val isPasswordMatch = password == confirmPassword
+    val isFormValid = email.isNotBlank() &&
+            name.isNotBlank() &&
+            password.length >= 6 &&
+            isPasswordMatch
 
-    var name by remember {
-        mutableStateOf("")
-    }
-
-    var password by remember {
-        mutableStateOf("")
-    }
-
-    var isLoading by remember {
-        mutableStateOf(false)
-    }
-
-    var context = LocalContext.current
-
-    Column (
+    Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(32.dp),
-        verticalArrangement = Arrangement.Center,
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
-    ){
+    ) {
+        Spacer(Modifier.height(32.dp))
+
+        // Header
         Text(
             text = "Hello There!",
-            modifier = Modifier.fillMaxWidth(),
-            style = TextStyle(
-                fontSize = 30.sp,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold
-            )
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold
         )
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
 
-        Text(text = "Create an account!",
-            modifier = Modifier.fillMaxWidth(),
-            style = TextStyle(
-                fontSize = 22.sp,
-            )
+        Text(
+            text = "Create an account",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(modifier = Modifier.height(20.dp))
 
+        Spacer(Modifier.height(32.dp))
+
+        // Banner Image
         Image(
             painter = painterResource(id = R.drawable.login_banner),
-            contentDescription = "Login Banner",
-            modifier = Modifier.fillMaxWidth()
-                .height(200.dp)
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxWidth(0.8f)
+                .height(180.dp)
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(Modifier.height(32.dp))
 
-        OutlinedTextField(value = email,
-            onValueChange = {
-            email = it
-        },
-            label = {
-                Text(text = "Email address")
-            },
-            modifier = Modifier.fillMaxWidth()
-            )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        OutlinedTextField(value = name,
-            onValueChange = {
-                name = it
-            },
-            label = {
-                Text(text = "Full Name")
-            },
+        // Form Fields
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email address") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(20.dp))
 
-        OutlinedTextField(value = password,
-            onValueChange = {
-                password = it
-            },
-            label = {
-                Text(text = "Password")
-            },
-            modifier = Modifier.fillMaxWidth(),
-            visualTransformation = PasswordVisualTransformation()
+        Spacer(Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Full Name") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
 
-        Button(onClick = {
-            isLoading = true
-            authViewModel.signup(email,name,password){succuess, errorMessage ->
-                if(succuess){
-                    isLoading = false
-                    navController.navigate("home"){
-                        popUpTo("auth") {inclusive = true}
-                    }
-                }else{
-                    isLoading = false
-                    AppUtil.showToast(context, errorMessage?:"Something went wrong")
+        // Password Field
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            visualTransformation = if (passwordVisible) {
+                VisualTransformation.None
+            } else {
+                PasswordVisualTransformation()
+            },
+            trailingIcon = {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        imageVector = if (passwordVisible) {
+                            Icons.Filled.Visibility
+                        } else {
+                            Icons.Filled.VisibilityOff
+                        },
+                        contentDescription = if (passwordVisible) {
+                            "Hide password"
+                        } else {
+                            "Show password"
+                        }
+                    )
                 }
-            }
-
-        },
-            enabled = !isLoading,
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            singleLine = true,
+            supportingText = {
+                Text("At least 6 characters")
+            },
             modifier = Modifier.fillMaxWidth()
-                .height(60.dp)
-        ){
-            Text(text = if(isLoading) "Create account" else "Signup", fontSize = 22.sp)
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        // Confirm Password Field
+        OutlinedTextField(
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text("Confirm Password") },
+            visualTransformation = if (passwordVisible) {
+                VisualTransformation.None
+            } else {
+                PasswordVisualTransformation()
+            },
+            trailingIcon = {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        imageVector = if (passwordVisible) {
+                            Icons.Filled.Visibility
+                        } else {
+                            Icons.Filled.VisibilityOff
+                        },
+                        contentDescription = null
+                    )
+                }
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            singleLine = true,
+            isError = confirmPassword.isNotEmpty() && !isPasswordMatch,
+            supportingText = {
+                if (confirmPassword.isNotEmpty() && !isPasswordMatch) {
+                    Text(
+                        text = "Passwords do not match",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(Modifier.height(24.dp))
+
+        // Signup Button
+        Button(
+            onClick = {
+                if (isFormValid) {
+                    isLoading = true
+                    authViewModel.signup(email, name, password) { success, errorMessage ->
+                        isLoading = false
+                        if (success) {
+                            navController.navigate("home") {
+                                popUpTo("auth") { inclusive = true }
+                            }
+                        } else {
+                            AppUtil.showToast(
+                                context,
+                                errorMessage ?: "Something went wrong"
+                            )
+                        }
+                    }
+                }
+            },
+            enabled = !isLoading && isFormValid,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text(
+                    text = "Create Account",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
+
+        Spacer(Modifier.height(16.dp))
+
+        // Login Link
+        TextButton(onClick = { navController.navigateUp() }) {
+            Text("Already have an account? Login")
+        }
+
+        Spacer(Modifier.height(32.dp))
     }
 }

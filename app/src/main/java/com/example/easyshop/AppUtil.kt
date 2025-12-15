@@ -1,6 +1,7 @@
 package com.example.easyshop
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.runtime.traceEventEnd
@@ -115,18 +116,48 @@ object AppUtil {
         return "rzp_test_5WgA34F9ljiXAX"
     }
 
-    fun startPayment(amount : Float){
-        val checkout = Checkout()
-        checkout.setKeyID(razorpayApiKey())
+    fun startPayment(context: Context, amount: Float, useMockPayment: Boolean = false) {
+        if (useMockPayment) {
+            startMockPayment(
+                context = context,
+                amount = amount,
+                onSuccess = {
+                    clearCartAndAddToOrder()
+                    showSuccessDialog(context)
+                },
+                onFailure = {
+                    showToast(context, "Payment Failed")
+                }
+            )
+        } else {
+            // Razorpay
+            val checkout = Checkout()
+            checkout.setKeyID(razorpayApiKey())
 
-        val options = JSONObject()
-        options.put("name", "EasyShop")
-        options.put("description", "")
-        options.put("amount", amount*100)
-        options.put("currency", "USD")
+            val options = JSONObject()
+            options.put("name", "EasyShop")
+            options.put("description", "")
+            options.put("amount", amount * 100)
+            options.put("currency", "USD")
 
-        checkout.open(GlobalNavigation.navController.context as Activity,options)
+            checkout.open(context as Activity, options)
+        }
     }
+
+
+    private fun showSuccessDialog(context: Context) {
+        val builder = AlertDialog.Builder(context)
+        builder.setTitle("✅ Payment Successful")
+            .setMessage("Your order has been placed successfully!")
+            .setPositiveButton("OK") { _, _ ->
+                GlobalNavigation.navController.navigate("home") {
+                    popUpTo("checkout") { inclusive = true }
+                }
+            }
+            .setCancelable(false)
+            .show()
+    }
+
 
     fun formatData(timestamp: Timestamp) : String{
         val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
@@ -165,6 +196,34 @@ object AppUtil {
         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         return prefs.getStringSet(KEY_FAVORITES, emptySet())?: emptySet()
 
+    }
+
+
+    fun startMockPayment(
+        context: Context,
+        amount: Float,
+        onSuccess: () -> Unit,
+        onFailure: () -> Unit
+    ) {
+        val builder = AlertDialog.Builder(context)
+        builder.setTitle("💳 Mock Payment")
+            .setMessage(
+                "Test Payment\n" +
+                        "Amount: $${"%.2f".format(amount)}\n\n" +
+                        "Choose result:"
+            )
+            .setPositiveButton("✅ Success") { _, _ ->
+                // Delay để giống thật
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    onSuccess()
+                }, 1500)
+            }
+            .setNegativeButton("❌ Failed") { _, _ ->
+                onFailure()
+            }
+            .setNeutralButton("Cancel", null)
+            .setCancelable(true)
+            .show()
     }
 
 }

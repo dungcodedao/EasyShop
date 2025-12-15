@@ -3,13 +3,16 @@ package com.example.easyshop
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.easyshop.pages.CategoryProductsPage
 import com.example.easyshop.pages.CheckoutPage
 import com.example.easyshop.pages.OrdersPage
 import com.example.easyshop.pages.ProductDetailsPage
+import com.example.easyshop.payment.PaymentScreSSen
 import com.example.easyshop.screen.AuthScreen
 import com.example.easyshop.screen.HomeScreen
 import com.example.easyshop.screen.LoginScreen
@@ -56,8 +59,28 @@ fun AppNavigation(modifier: Modifier = Modifier){
         composable("checkout"){
             CheckoutPage(modifier)
         }
+
         composable("orders") {
             OrdersPage(modifier)
+        }
+
+        // ✅ THÊM ROUTE PAYMENT
+        composable(
+            route = "payment/{totalAmount}",
+            arguments = listOf(
+                navArgument("totalAmount") {
+                    type = NavType.FloatType
+                    defaultValue = 0.0f
+                }
+            )
+        ) { backStackEntry ->
+            val totalAmount = backStackEntry.arguments?.getFloat("totalAmount") ?: 0.0f
+
+            PaymentScreSSen(
+                modifier = modifier,
+                navController = navController,
+                totalAmount = totalAmount.toDouble()
+            )
         }
     }
 }

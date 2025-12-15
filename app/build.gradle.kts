@@ -54,7 +54,7 @@ dependencies {
     implementation(libs.androidx.material3)
   //  implementation(libs.androidx.navigation.compose.jvmstubs)
     implementation("androidx.navigation:navigation-compose:2.8.0")
-
+    implementation("androidx.compose.material:material-icons-extended")
 
     // Firebase BOM (quản lý version tập trung)
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.material3.lint)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
