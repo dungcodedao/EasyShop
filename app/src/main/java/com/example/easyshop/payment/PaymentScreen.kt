@@ -19,7 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun PaymentScreSSen(
+fun PaymentScreen(
     modifier: Modifier = Modifier,
     navController: NavController,
     totalAmount: Double = 0.0
@@ -107,29 +107,6 @@ fun PaymentScreSSen(
                 fontWeight = FontWeight.SemiBold
             )
 
-            Spacer(Modifier.height(12.dp))
-
-            // Mock Card for Testing
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                )
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text(
-                        text = "Test Cards (Demo Mode)",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = "• 4111 1111 1111 1111 (Success)\n• 4000 0000 0000 0002 (Declined)",
-                        fontSize = 11.sp,
-                        lineHeight = 16.sp
-                    )
-                }
-            }
 
             Spacer(Modifier.height(16.dp))
 

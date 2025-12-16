@@ -2,7 +2,9 @@ package com.example.easyshop.pages
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
@@ -17,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.easyshop.AppUtil
 import com.example.easyshop.GlobalNavigation
+import com.example.easyshop.sale.PromoCodeInput
 import com.example.easyshop.model.ProductModel
 import com.example.easyshop.model.UserModel
 import com.google.firebase.Firebase
@@ -26,20 +29,20 @@ import com.google.firebase.firestore.firestore
 @Composable
 fun CheckoutPage(modifier: Modifier = Modifier) {
     val userModel = remember { mutableStateOf(UserModel()) }
-    val productList = remember { mutableStateListOf(ProductModel()) }
+    val productList = remember { mutableStateListOf<ProductModel>() }
     val subTotal = remember { mutableStateOf(0f) }
     val discount = remember { mutableStateOf(0f) }
     val tax = remember { mutableStateOf(0f) }
     val total = remember { mutableStateOf(0f) }
 
     fun calculateAndAssign() {
+        subTotal.value = 0f
         productList.forEach {
             if (it.actualPrice.isNotEmpty()) {
                 val qty = userModel.value.cartItems[it.id] ?: 0
                 subTotal.value += it.actualPrice.toFloat() * qty
             }
         }
-        discount.value = subTotal.value * (AppUtil.getDiscountPercentage()) / 100
         tax.value = subTotal.value * (AppUtil.getTaxPercentage() / 100)
         total.value = subTotal.value - discount.value + tax.value
     }
@@ -52,25 +55,34 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                     val result = it.result.toObject(UserModel::class.java)
                     if (result != null) {
                         userModel.value = result
-                        Firebase.firestore.collection("data")
-                            .document("stock").collection("products")
-                            .whereIn("id", userModel.value.cartItems.keys.toList())
-                            .get().addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    val resultProducts = task.result.toObjects(ProductModel::class.java)
-                                    productList.addAll(resultProducts)
-                                    calculateAndAssign()
+                        if (userModel.value.cartItems.isNotEmpty()) {
+                            Firebase.firestore.collection("data")
+                                .document("stock").collection("products")
+                                .whereIn("id", userModel.value.cartItems.keys.toList())
+                                .get().addOnCompleteListener { task ->
+                                    if (task.isSuccessful) {
+                                        val resultProducts = task.result.toObjects(ProductModel::class.java)
+                                        productList.clear()
+                                        productList.addAll(resultProducts)
+                                        calculateAndAssign()
+                                    }
                                 }
-                            }
+                        }
                     }
                 }
             }
+    }
+
+    // Recalculate when discount changes
+    LaunchedEffect(discount.value) {
+        total.value = subTotal.value - discount.value + tax.value
     }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
+            .verticalScroll(rememberScrollState())
             .padding(20.dp)
     ) {
         Text(
@@ -142,14 +154,30 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                     fontSize = 16.sp
                 )
                 Spacer(modifier = Modifier.height(12.dp))
+
                 PriceRow("Subtotal", subTotal.value)
-                Spacer(modifier = Modifier.height(8.dp))
-                PriceRow("Discount", discount.value, isDiscount = true)
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // ✅ PROMO CODE INPUT COMPONENT
+                PromoCodeInput(
+                    subtotal = subTotal.value,
+                    onDiscountApplied = { discountAmount ->
+                        discount.value = discountAmount
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (discount.value > 0) {
+                    PriceRow("Discount", discount.value, isDiscount = true)
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
                 PriceRow("Tax", tax.value)
                 Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
                 Spacer(modifier = Modifier.height(12.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -170,12 +198,11 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
             }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        // ✅ Pay Button - NAVIGATE TO PAYMENT SCREEN
+        // Pay Button
         Button(
             onClick = {
-                // Navigate sang màn hình Payment đẹp hơn
                 GlobalNavigation.navController.navigate("payment/${total.value}")
             },
             modifier = Modifier
