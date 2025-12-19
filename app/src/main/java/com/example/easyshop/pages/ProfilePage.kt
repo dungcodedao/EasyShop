@@ -1,11 +1,15 @@
 package com.example.easyshop.pages
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -24,6 +28,7 @@ import com.example.easyshop.utils.MapUtils
 import com.example.easyshop.GlobalNavigation
 import com.example.easyshop.R
 import com.example.easyshop.model.UserModel
+import com.example.easyshop.sale.AvatarPickerDialog
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
@@ -32,31 +37,46 @@ import com.google.firebase.firestore.firestore
 fun ProfilePage(modifier: Modifier = Modifier) {
     val userModel = remember { mutableStateOf(UserModel()) }
     var addressInput by remember { mutableStateOf("") }
+    var showAvatarDialog by remember { mutableStateOf(false) }
+    var selectedAvatar by remember { mutableStateOf(R.drawable.profile_nam) }
     val context = LocalContext.current
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(key1 = Unit) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser == null) {
+            // Redirect về login nếu chưa đăng nhập
+            GlobalNavigation.navController.navigate("auth")
+            return@LaunchedEffect
+        }
+
         Firebase.firestore.collection("users")
-            .document(FirebaseAuth.getInstance().currentUser?.uid!!)
-            .get().addOnCompleteListener {
-                it.result.toObject(UserModel::class.java)?.let { user ->
+            .document(currentUser.uid) // Dùng currentUser.uid thay vì !!
+            .get()
+            .addOnSuccessListener { document ->
+                document.toObject(UserModel::class.java)?.let { user ->
                     userModel.value = user
                     addressInput = user.address
                 }
             }
+            .addOnFailureListener { e ->
+                AppUtil.showToast(context, "Error: ${e.message}")
+            }
     }
+
 
     Column(
         modifier = modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Avatar & Name
+        // Avatar - Clickable
         Image(
-            painter = painterResource(R.drawable.profile_iconn),
-            contentDescription = null,
+            painter = painterResource(selectedAvatar),
+            contentDescription = "Avatar",
             modifier = Modifier
                 .size(100.dp)
                 .clip(CircleShape)
-                .border(3.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                .clickable { showAvatarDialog = true }
         )
 
         Text(
@@ -65,6 +85,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 12.dp)
         )
+
 
         // Info Card
         Card(
@@ -78,24 +99,29 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                     onValueChange = { addressInput = it },
                     label = { Text("Address") },
                     leadingIcon = {
-                        Icon(
-                            Icons.Default.LocationOn,
-                            null,
-                            modifier = Modifier.clickable {
-                                MapUtils.openMapToPickAddress(context, addressInput)
-                            },
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        IconButton(onClick = {
+                            val intent = Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("geo:0,0?q=${Uri.encode(addressInput)}")
+                            )
+                            context.startActivity(intent)
+                        }) {
+                            Icon(
+                                Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = {
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
                         if (addressInput.isNotEmpty()) {
                             Firebase.firestore.collection("users")
                                 .document(FirebaseAuth.getInstance().currentUser?.uid!!)
                                 .update("address", addressInput)
-                                .addOnCompleteListener {
-                                    if (it.isSuccessful) AppUtil.showToast(context, "Đã cập nhật!")
+                                .addOnSuccessListener {
+                                    AppUtil.showToast(context, "Address updated!")
                                 }
                         }
                     })
@@ -161,5 +187,17 @@ fun ProfilePage(modifier: Modifier = Modifier) {
             Spacer(Modifier.width(8.dp))
             Text("Sign Out", fontWeight = FontWeight.Bold)
         }
+    }
+
+    // Avatar Picker Dialog
+    if (showAvatarDialog) {
+        AvatarPickerDialog(
+            currentAvatar = selectedAvatar,
+            onDismiss = { showAvatarDialog = false },
+            onAvatarSelected = { avatarRes ->
+                selectedAvatar = avatarRes
+                showAvatarDialog = false
+            }
+        )
     }
 }

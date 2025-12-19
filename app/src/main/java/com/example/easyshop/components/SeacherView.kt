@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Icon
@@ -23,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,12 +40,14 @@ fun SearchView(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var searchQuery by remember {
-        mutableStateOf("") }
-    var allProducts by remember {
-        mutableStateOf<List<ProductModel>>(emptyList()) }
-    var filteredProducts by remember {
-        mutableStateOf<List<ProductModel>>(emptyList()) }
+    // Dùng rememberSaveable để lưu search query khi navigate
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+
+    var allProducts by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
+    var filteredProducts by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
+
+    // Remember scroll position
+    val gridState = rememberLazyGridState()
 
     // Lấy dữ liệu từ Firebase
     LaunchedEffect(key1 = Unit) {
@@ -55,12 +59,20 @@ fun SearchView(
                     it.toObject(ProductModel::class.java)
                 }
                 allProducts = list
-                filteredProducts = list
+                // Áp dụng filter ngay nếu có searchQuery
+                filteredProducts = if (searchQuery.isBlank()) {
+                    list
+                } else {
+                    list.filter { product ->
+                        val title = product.otherDetails["title"] ?: product.title
+                        title.contains(searchQuery, ignoreCase = true)
+                    }
+                }
             }
     }
 
     // Tự động lọc khi searchQuery thay đổi
-    LaunchedEffect(searchQuery) {
+    LaunchedEffect(searchQuery, allProducts) {
         filteredProducts = if (searchQuery.isBlank()) {
             allProducts
         } else {
@@ -97,10 +109,11 @@ fun SearchView(
             )
         }
 
-        // Danh sách kết quả
+        // Danh sách kết quả với scroll state
         LazyVerticalGrid(
-            columns = GridCells.Fixed(2), // 2 cột
-            modifier = Modifier.padding(horizontal = 8.dp)
+            columns = GridCells.Fixed(2),
+            modifier = Modifier.padding(horizontal = 8.dp),
+            state = gridState // Giữ scroll position
         ) {
             if (filteredProducts.isEmpty()) {
                 item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
@@ -117,7 +130,7 @@ fun SearchView(
                         )
                     }
                 }
-            }else {
+            } else {
                 items(filteredProducts) { product ->
                     ProductItemView(product = product)
                 }

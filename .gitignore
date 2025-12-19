@@ -9,5 +9,11 @@ captures/
 local.properties
 # Android Studio
 .idea/
-# macOS
-.DS_Store
+
+# Custom Release Folders
+**/release/
+*.apk
+*.bundle
+
+# Proguard / R8 mapping files
+app/build/outputs/mapping/
