@@ -44,6 +44,14 @@ fun SignupScreen(
     val context = LocalContext.current
 
     // Validation
+    fun isPasswordValid(pwd: String): Boolean {
+        val hasLetter = pwd.any {it.isLetter()}
+        val hasDight = pwd.any {it.isDigit()}
+        return pwd.length >= 6 && hasLetter && hasDight
+
+    }
+
+
     val isPasswordMatch = password == confirmPassword
     val isFormValid = email.isNotBlank() &&
             name.isNotBlank() &&
@@ -128,8 +136,16 @@ fun SignupScreen(
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true,
+            isError = password.isNotEmpty() && !isPasswordValid(password),
             supportingText = {
-                Text("At least 6 characters")
+                if (password.isNotEmpty() && !isPasswordValid(password)) {
+                    Text(
+                        text = "Password must be at least 6 characters with letters and numbers",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                } else {
+                    Text("At least 6 characters")
+                }
             },
             modifier = Modifier.fillMaxWidth()
         )
@@ -141,12 +157,15 @@ fun SignupScreen(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
             label = { Text("Confirm Password") },
-            visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            visualTransformation = if (confirmPasswordVisible) VisualTransformation.None
+            else PasswordVisualTransformation(),
             trailingIcon = {
                 IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                     Icon(
-                        imageVector = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                        contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password"
+                        imageVector = if (confirmPasswordVisible) Icons.Filled.Visibility
+                        else Icons.Filled.VisibilityOff,
+                        contentDescription = if (confirmPasswordVisible) "Hide password"
+                        else "Show password"
                     )
                 }
             },
@@ -211,6 +230,19 @@ fun SignupScreen(
         // Login Link
         TextButton(onClick = { navController.navigateUp() }) {
             Text("Already have an account? Login")
+        }
+
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Already have an account?",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            TextButton(onClick = { navController.navigate("login") }) {
+                Text("Login")
+            }
         }
 
         Spacer(Modifier.height(32.dp))

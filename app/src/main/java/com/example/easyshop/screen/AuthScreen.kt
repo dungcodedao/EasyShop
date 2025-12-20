@@ -1,4 +1,3 @@
-// File: AuthScreen.kt (Redesigned)
 package com.example.easyshop.screen
 
 import androidx.compose.foundation.Image
