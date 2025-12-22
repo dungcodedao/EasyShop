@@ -1,4 +1,4 @@
-package com.example.easyshop.payment
+package com.example.easyshop.screen
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState

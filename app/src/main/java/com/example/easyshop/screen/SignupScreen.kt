@@ -1,4 +1,3 @@
-// File: SignupScreen.kt (Redesigned)
 package com.example.easyshop.screen
 
 import androidx.compose.foundation.Image
@@ -38,24 +37,25 @@ fun SignupScreen(
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    // Validation
-    fun isPasswordValid(pwd: String): Boolean {
-        val hasLetter = pwd.any {it.isLetter()}
-        val hasDight = pwd.any {it.isDigit()}
-        return pwd.length >= 6 && hasLetter && hasDight
-
+    // Validation functions
+    fun isEmailValid(email: String): Boolean {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 
+    fun isPasswordValid(pwd: String): Boolean {
+        val hasLetter = pwd.any { it.isLetter() }
+        val hasDigit = pwd.any { it.isDigit() }
+        return pwd.length >= 6 && hasLetter && hasDigit
+    }
 
     val isPasswordMatch = password == confirmPassword
-    val isFormValid = email.isNotBlank() &&
-            name.isNotBlank() &&
-            password.length >= 6 &&
+    val isFormValid = isEmailValid(email) &&
+            name.trim().isNotBlank() &&
+            isPasswordValid(password) &&
             isPasswordMatch
 
     Column(
@@ -95,23 +95,42 @@ fun SignupScreen(
 
         Spacer(Modifier.height(32.dp))
 
-        // Form Fields
+        // Email Field
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it },
+            onValueChange = { email = it.trim() }, // Tự động trim email
             label = { Text("Email address") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             singleLine = true,
+            isError = email.isNotEmpty() && !isEmailValid(email),
+            supportingText = {
+                if (email.isNotEmpty() && !isEmailValid(email)) {
+                    Text(
+                        text = "Please enter a valid email address",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(Modifier.height(16.dp))
 
+        // Name Field - Gõ tự do
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
             label = { Text("Full Name") },
             singleLine = true,
+            isError = name.isNotEmpty() && name.trim().isBlank(),
+            supportingText = {
+                if (name.isNotEmpty() && name.trim().isBlank()) {
+                    Text(
+                        text = "Name cannot be empty",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -140,11 +159,11 @@ fun SignupScreen(
             supportingText = {
                 if (password.isNotEmpty() && !isPasswordValid(password)) {
                     Text(
-                        text = "Password must be at least 6 characters with letters and numbers",
+                        text = "Use 6+ characters with letters and numbers",
                         color = MaterialTheme.colorScheme.error
                     )
                 } else {
-                    Text("At least 6 characters")
+                    Text("Use 6+ characters with letters and numbers")
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -175,7 +194,7 @@ fun SignupScreen(
             supportingText = {
                 if (confirmPassword.isNotEmpty() && !isPasswordMatch) {
                     Text(
-                        text = "Passwords do not match",
+                        text = "Passwords don't match",
                         color = MaterialTheme.colorScheme.error
                     )
                 }
@@ -190,7 +209,11 @@ fun SignupScreen(
             onClick = {
                 if (isFormValid) {
                     isLoading = true
-                    authViewModel.signup(email, name, password) { success, errorMessage ->
+                    // Clean name trước khi submit
+                    val cleanedName = name.trim().replace(Regex("\\s+"), " ")
+                    val cleanedEmail = email.trim().lowercase()
+
+                    authViewModel.signup(cleanedEmail, cleanedName, password) { success, errorMessage ->
                         isLoading = false
                         if (success) {
                             navController.navigate("home") {
@@ -227,20 +250,17 @@ fun SignupScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // Login Link
-        TextButton(onClick = { navController.navigateUp() }) {
-            Text("Already have an account? Login")
-        }
-
+        // Login Link - Xóa duplicate
         Row(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Already have an account?",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            TextButton(onClick = { navController.navigate("login") }) {
+            TextButton(onClick = { navController.navigateUp() }) {
                 Text("Login")
             }
         }

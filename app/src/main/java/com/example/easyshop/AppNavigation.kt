@@ -12,7 +12,7 @@ import com.example.easyshop.pages.CategoryProductsPage
 import com.example.easyshop.pages.CheckoutPage
 import com.example.easyshop.pages.OrdersPage
 import com.example.easyshop.pages.ProductDetailsPage
-import com.example.easyshop.payment.PaymentScreen
+import com.example.easyshop.screen.PaymentScreen
 import com.example.easyshop.screen.AuthScreen
 import com.example.easyshop.screen.HomeScreen
 import com.example.easyshop.screen.LoginScreen
