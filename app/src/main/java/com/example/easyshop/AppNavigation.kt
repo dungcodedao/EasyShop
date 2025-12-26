@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.easyshop.pages.CartPage
 import com.example.easyshop.pages.CategoryProductsPage
 import com.example.easyshop.pages.CheckoutPage
 import com.example.easyshop.pages.OrdersPage
@@ -63,6 +64,11 @@ fun AppNavigation(modifier: Modifier = Modifier){
         composable("orders") {
             OrdersPage(modifier)
         }
+
+        composable("cart") {
+            CartPage(modifier)
+        }
+
 
         // ✅ THÊM ROUTE PAYMENT
         composable(

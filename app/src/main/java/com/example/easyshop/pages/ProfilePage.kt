@@ -1,7 +1,5 @@
 package com.example.easyshop.pages
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,7 +22,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.easyshop.AppUtil
-import com.example.easyshop.utils.MapUtils
 import com.example.easyshop.GlobalNavigation
 import com.example.easyshop.R
 import com.example.easyshop.model.UserModel
@@ -37,32 +34,67 @@ import com.google.firebase.firestore.firestore
 fun ProfilePage(modifier: Modifier = Modifier) {
     val userModel = remember { mutableStateOf(UserModel()) }
     var addressInput by remember { mutableStateOf("") }
+    var nameInput by remember { mutableStateOf("") }
     var showAvatarDialog by remember { mutableStateOf(false) }
+    var showEditNameDialog by remember { mutableStateOf(false) }
     var selectedAvatar by remember { mutableStateOf(R.drawable.profile_nam) }
     val context = LocalContext.current
 
-    LaunchedEffect(key1 = Unit) {
+    // Function save address
+    fun saveAddress() {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (addressInput.isNotEmpty() && currentUser != null) {
+            Firebase.firestore.collection("users")
+                .document(currentUser.uid)
+                .update("address", addressInput)
+                .addOnSuccessListener {
+                    AppUtil.showToast(context, "Address updated!")
+                }
+                .addOnFailureListener {
+                    AppUtil.showToast(context, "Failed to update")
+                }
+        }
+    }
+
+    // Function save name
+    fun saveName() {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val cleanedName = nameInput.trim().replace(Regex("\\s+"), " ")
+        if (cleanedName.isNotEmpty() && currentUser != null) {
+            Firebase.firestore.collection("users")
+                .document(currentUser.uid)
+                .update("name", cleanedName)
+                .addOnSuccessListener {
+                    userModel.value = userModel.value.copy(name = cleanedName)
+                    AppUtil.showToast(context, "Name updated!")
+                }
+                .addOnFailureListener {
+                    AppUtil.showToast(context, "Failed to update")
+                }
+        }
+    }
+
+    LaunchedEffect(Unit) {
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser == null) {
-            // Redirect về login nếu chưa đăng nhập
             GlobalNavigation.navController.navigate("auth")
             return@LaunchedEffect
         }
 
         Firebase.firestore.collection("users")
-            .document(currentUser.uid) // Dùng currentUser.uid thay vì !!
+            .document(currentUser.uid)
             .get()
             .addOnSuccessListener { document ->
                 document.toObject(UserModel::class.java)?.let { user ->
                     userModel.value = user
                     addressInput = user.address
+                    nameInput = user.name
                 }
             }
             .addOnFailureListener { e ->
                 AppUtil.showToast(context, "Error: ${e.message}")
             }
     }
-
 
     Column(
         modifier = modifier.fillMaxSize().padding(16.dp),
@@ -79,13 +111,28 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                 .clickable { showAvatarDialog = true }
         )
 
-        Text(
-            text = userModel.value.name,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
+        // Name với icon Edit
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(top = 12.dp)
-        )
-
+        ) {
+            Text(
+                text = userModel.value.name,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold
+            )
+            IconButton(
+                onClick = { showEditNameDialog = true },
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Edit name",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
 
         // Info Card
         Card(
@@ -99,32 +146,24 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                     onValueChange = { addressInput = it },
                     label = { Text("Address") },
                     leadingIcon = {
-                        IconButton(onClick = {
-                            val intent = Intent(
-                                Intent.ACTION_VIEW,
-                                Uri.parse("geo:0,0?q=${Uri.encode(addressInput)}")
-                            )
-                            context.startActivity(intent)
-                        }) {
+                        Icon(
+                            Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = { saveAddress() }) {
                             Icon(
-                                Icons.Default.LocationOn,
-                                contentDescription = null,
+                                Icons.Default.Check,
+                                contentDescription = "Save",
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = {
-                        if (addressInput.isNotEmpty()) {
-                            Firebase.firestore.collection("users")
-                                .document(FirebaseAuth.getInstance().currentUser?.uid!!)
-                                .update("address", addressInput)
-                                .addOnSuccessListener {
-                                    AppUtil.showToast(context, "Address updated!")
-                                }
-                        }
-                    })
+                    keyboardActions = KeyboardActions(onDone = { saveAddress() })
                 )
 
                 Spacer(Modifier.height(12.dp))
@@ -133,25 +172,48 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Email, null, modifier = Modifier.size(20.dp))
                     Column(modifier = Modifier.padding(start = 8.dp)) {
-                        Text("Email", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Email",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         Text(userModel.value.email, fontSize = 14.sp)
-                    }
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                // Cart
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(20.dp))
-                    Column(modifier = Modifier.padding(start = 8.dp)) {
-                        Text("Cart Items", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(userModel.value.cartItems.values.sum().toString(), fontSize = 14.sp)
                     }
                 }
             }
         }
 
-        // My Orders
+        // Cart Items Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)
+                .clickable { GlobalNavigation.navController.navigate("cart") },
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.ShoppingCart, null)
+                Column(modifier = Modifier.padding(start = 12.dp)) {
+                    Text(
+                        "Cart Items",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        userModel.value.cartItems.values.sum().toString(),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                Spacer(Modifier.weight(1f))
+                Icon(Icons.Default.KeyboardArrowRight, null)
+            }
+        }
+
+        // My Orders Card
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -181,7 +243,9 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                 }
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error
+            )
         ) {
             Icon(Icons.Default.ExitToApp, null)
             Spacer(Modifier.width(8.dp))
@@ -197,6 +261,38 @@ fun ProfilePage(modifier: Modifier = Modifier) {
             onAvatarSelected = { avatarRes ->
                 selectedAvatar = avatarRes
                 showAvatarDialog = false
+            }
+        )
+    }
+
+    // Edit Name Dialog
+    if (showEditNameDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditNameDialog = false },
+            title = { Text("Edit Name") },
+            text = {
+                OutlinedTextField(
+                    value = nameInput,
+                    onValueChange = { nameInput = it },
+                    label = { Text("Full Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        saveName()
+                        showEditNameDialog = false
+                    }
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditNameDialog = false }) {
+                    Text("Cancel")
+                }
             }
         )
     }
