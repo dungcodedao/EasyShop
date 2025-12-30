@@ -16,21 +16,20 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.easyshop.model.NavItemModel // Import model
 import com.example.easyshop.pages.*
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier, navController: NavController) {
-
     val navItemList = listOf(
-        NavItem("Home", Icons.Filled.Home, Icons.Filled.Home),               // selected = filled
-        NavItem("Favorite", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder),
-        NavItem("Cart", Icons.Filled.ShoppingCart, Icons.Outlined.ShoppingCart),
-        NavItem("Profile", Icons.Filled.Person, Icons.Outlined.Person),
+        NavItemModel("Home", Icons.Filled.Home, Icons.Filled.Home, "home"),
+        NavItemModel("Favorite", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder, "favorite"),
+        NavItemModel("Cart", Icons.Filled.ShoppingCart, Icons.Outlined.ShoppingCart, "cart"),
+        NavItemModel("Profile", Icons.Filled.Person, Icons.Outlined.Person, "profile"),
     )
 
     var selectedIndex by rememberSaveable { mutableStateOf(0) }
@@ -82,13 +81,5 @@ fun ContentScreen(modifier: Modifier = Modifier, selectedIndex: Int) {
         1 -> FavoritePage(modifier)
         2 -> CartPage(modifier)
         3 -> ProfilePage(modifier)
-
     }
 }
-
-
-data class NavItem(
-    val label: String,
-    val selectedIcon: ImageVector,
-    val unselectedIcon: ImageVector
-)
