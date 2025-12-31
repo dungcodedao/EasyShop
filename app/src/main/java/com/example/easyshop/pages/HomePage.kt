@@ -36,6 +36,8 @@ fun HomePage(modifier: Modifier = Modifier) {
             HeaderView(onSearchClick = { isSearching = true })
             Spacer(modifier = Modifier.height(10.dp))
             BannerView(modifier = Modifier.height(150.dp))
+
+            Spacer(modifier = Modifier.height(10.dp))
             Text(
                 "Categories",
                 style = TextStyle(
