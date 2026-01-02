@@ -28,7 +28,7 @@ fun HomePage(modifier: Modifier = Modifier) {
     Column(modifier = modifier.fillMaxSize()
         .padding(16.dp)) {
         if (isSearching) {
-            // Hiển thị màn hình tìm kiếm
+
             SearchView(
                 onBackClick = { isSearching = false }
             )
