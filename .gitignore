@@ -10,6 +10,8 @@ local.properties
 # Android Studio
 .idea/
 
+#iOS
+
 # Custom Release Folders
 **/release/
 *.apk
@@ -17,3 +19,4 @@ local.properties
 
 # Proguard / R8 mapping files
 app/build/outputs/mapping/
+
