@@ -66,7 +66,10 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId: String) {
                 // Title & Rating
                 ProductHeader(
                     title = product.title,
-                    inStock = product.inStock
+                    inStock = product.inStock,
+                    rating = 4.5f,
+                    reviewCount = 120
+
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
