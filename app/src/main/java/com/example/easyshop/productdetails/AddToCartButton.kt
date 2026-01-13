@@ -36,7 +36,7 @@ fun AddToCartButton(inStock: Boolean, onAddToCart: () -> Unit) {
             .scale(buttonScale),
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (inStock) Color(0xFF1976D2) else Color(0xFFBDBDBD)
+            containerColor = if (inStock) Color(0xFFC0183D) else Color(0xFFBDBDBD)
         ),
         enabled = inStock,
         elevation = ButtonDefaults.buttonElevation(

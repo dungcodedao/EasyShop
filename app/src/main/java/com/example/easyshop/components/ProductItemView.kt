@@ -83,7 +83,7 @@ fun ProductItemView(modifier: Modifier = Modifier, product: ProductModel) {
             Text(
                 text = product.title,
                 fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
