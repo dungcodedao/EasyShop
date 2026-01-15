@@ -87,11 +87,23 @@ dependencies {
     implementation ("androidx.navigation:navigation-compose:2.7.7")
     implementation("androidx.compose.foundation:foundation")
 
-
-
     //maps
     implementation ("com.google.android.gms:play-services-maps:18.2.0")
     implementation ("com.google.android.gms:play-services-location:21.0.1")
+
+    // Coil for image loading
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // Firebase Storage (nếu chưa có)
+    implementation("com.google.firebase:firebase-storage-ktx")
+
+    // Existing Firebase dependencies...
+
+    // Lifecycle
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+
+    // Coil (cho load ảnh)
+    implementation("io.coil-kt:coil-compose:2.5.0")
 
 
 
