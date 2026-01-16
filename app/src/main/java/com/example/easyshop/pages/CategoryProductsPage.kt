@@ -1,5 +1,5 @@
 // ============================================
-// File 1: CategoryProductsPage.kt (File chính)
+// File: CategoryProductsPage.kt (COMPLETE VERSION)
 // ============================================
 package com.example.easyshop.pages
 
@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.easyshop.components.ProductFilterDialog
 import com.example.easyshop.components.ProductItemView
 import com.example.easyshop.model.ProductModel
 import com.google.firebase.Firebase

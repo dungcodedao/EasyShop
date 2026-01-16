@@ -24,6 +24,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.easyshop.AppUtil
 import com.example.easyshop.R
+import com.example.easyshop.model.UserModel
 import com.example.easyshop.viewmodel.AuthViewModel
 
 @Composable

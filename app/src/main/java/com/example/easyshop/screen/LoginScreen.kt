@@ -139,17 +139,16 @@ fun LoginScreen(
             onClick = {
                 if (isFormValid) {
                     isLoading = true
-                    authViewModel.login(email, password) { success, errorMessage ->
+                    authViewModel.login(email, password) { success, errorMessage, role ->
                         isLoading = false
                         if (success) {
-                            navController.navigate("home") {
+                            // ✅ Navigate based on role
+                            val destination = if (role == "admin") "admin-home" else "home"
+                            navController.navigate(destination) {
                                 popUpTo("auth") { inclusive = true }
                             }
                         } else {
-                            AppUtil.showToast(
-                                context,
-                                errorMessage ?: "Something went wrong"
-                            )
+                            AppUtil.showToast(context, errorMessage ?: "Login failed")
                         }
                     }
                 }
