@@ -22,6 +22,7 @@ import com.example.easyshop.pages.EditProductPage
 import com.example.easyshop.pages.OrdersPage
 import com.example.easyshop.pages.ProductDetailsPage
 import com.example.easyshop.screen.AdminHomeScreen
+import com.example.easyshop.screen.AdminOrdersScreen
 import com.example.easyshop.screen.PaymentScreen
 import com.example.easyshop.screen.AuthScreen
 import com.example.easyshop.screen.HomeScreen
@@ -90,6 +91,10 @@ fun AppNavigation(modifier: Modifier = Modifier){
                 AdminHomeScreen(modifier, navController)
             }
 
+            // Trong NavHost của bạn (MainActivity hoặc Navigation file)
+            composable("admin-orders") {
+                AdminOrdersScreen(navController = navController)
+            }
             composable("add-product") {
                 AddProductPage(modifier, navController)
             }
