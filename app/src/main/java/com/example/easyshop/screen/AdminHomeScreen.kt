@@ -24,7 +24,7 @@ import kotlinx.coroutines.tasks.await
 @Composable
 fun AdminHomeScreen(
     modifier: Modifier = Modifier,
-    navController: NavController  // ✅ Chỉ giữ 2 parameters này
+    navController: NavController
 ) {
     var products by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -77,6 +77,12 @@ fun AdminHomeScreen(
             TopAppBar(
                 title = { Text("Admin - Manage Products") },
                 actions = {
+                    // ✅ NÚT XEM ORDERS
+                    IconButton(onClick = {
+                        navController.navigate("admin-orders")
+                    }) {
+                        Icon(Icons.Default.Receipt, "Orders")
+                    }
                     IconButton(onClick = { loadProducts() }) {
                         Icon(Icons.Default.Refresh, "Refresh")
                     }
@@ -138,11 +144,9 @@ fun AdminHomeScreen(
                                 product = product,
                                 navController = navController,
                                 onEdit = {
-                                    // ✅ Navigate đến EDIT PAGE khi click icon bút
                                     navController.navigate("edit_product/${product.id}")
                                 },
                                 onViewDetails = {
-                                    // ✅ Navigate đến DETAILS PAGE khi click vào Card
                                     navController.navigate("product-details/${product.id}")
                                 },
                                 onDelete = {
@@ -188,13 +192,13 @@ fun AdminHomeScreen(
 private fun AdminProductItem(
     product: ProductModel,
     navController: NavController,
-    onEdit: () -> Unit,           // ✅ Cho icon Edit
-    onViewDetails: () -> Unit,    // ✅ Thêm callback này cho Card
+    onEdit: () -> Unit,
+    onViewDetails: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        onClick = onViewDetails  // ✅ Click Card -> xem chi tiết
+        onClick = onViewDetails
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -280,17 +284,13 @@ private fun AdminProductItem(
             Column(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                // ✅ Icon Edit - Navigate đến EditProductPage
-                IconButton(
-                    onClick = onEdit  // ✅ Gọi onEdit khi click icon bút
-                ) {
+                IconButton(onClick = onEdit) {
                     Icon(
                         Icons.Default.Edit,
                         contentDescription = "Edit"
                     )
                 }
 
-                // ✅ Icon Delete
                 IconButton(onClick = onDelete) {
                     Icon(
                         Icons.Default.Delete,
