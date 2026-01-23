@@ -1,6 +1,4 @@
-// ============================================
-// File: CategoryProductsPage.kt (COMPLETE VERSION)
-// ============================================
+
 package com.example.easyshop.pages
 
 import androidx.compose.foundation.layout.*
