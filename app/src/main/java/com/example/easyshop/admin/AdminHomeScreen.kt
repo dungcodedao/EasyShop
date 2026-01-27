@@ -13,12 +13,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import androidx.compose.ui.graphics.Color
 import com.example.easyshop.model.ProductModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import com.example.easyshop.model.CategoryModel
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,6 +34,9 @@ fun AdminHomeScreen(
     var isLoading by remember { mutableStateOf(true) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var productToDelete by remember { mutableStateOf<ProductModel?>(null) }
+    
+    var categories by remember { mutableStateOf<List<CategoryModel>>(emptyList()) }
+    var selectedCategory by remember { mutableStateOf<String?> (null) } // null means "All"
 
     val scope = rememberCoroutineScope()
     val firestore = Firebase.firestore
@@ -51,8 +58,17 @@ fun AdminHomeScreen(
             }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(key1 = Unit) {
         loadProducts()
+        
+        // Load categories for filtering
+        firestore.collection("data").document("stock")
+            .collection("categories")
+            .get()
+            .addOnSuccessListener { result ->
+                categories = result.documents.mapNotNull { it.toObject(CategoryModel::class.java) }
+                    .sortedBy { it.name }
+            }
     }
 
     // Delete product
@@ -76,17 +92,14 @@ fun AdminHomeScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Manage Products") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, "Back")
+                    }
+                },
                 actions = {
                     IconButton(onClick = { loadProducts() }) {
                         Icon(Icons.Default.Refresh, "Refresh")
-                    }
-                    IconButton(onClick = {
-                        Firebase.auth.signOut()
-                        navController.navigate("auth") {
-                            popUpTo("admin-home") { inclusive = true }
-                        }
-                    }) {
-                        Icon(Icons.Default.ExitToApp, "Logout")
                     }
                 }
             )
@@ -121,25 +134,69 @@ fun AdminHomeScreen(
                     }
                 }
                 else -> {
-                    LazyColumn(
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(products) { product ->
-                            AdminProductItem(
-                                product = product,
-                                // ❌ XÓA: navController = navController,
-                                onEdit = {
-                                    navController.navigate("edit_product/${product.id}")
-                                },
-                                onViewDetails = {
-                                    navController.navigate("product-details/${product.id}")
-                                },
-                                onDelete = {
-                                    productToDelete = product
-                                    showDeleteDialog = true
+                    val filteredProducts = if (selectedCategory == null) {
+                        products
+                    } else {
+                        products.filter { it.category == selectedCategory }
+                    }
+
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        // Category Filters
+                        LazyRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(horizontal = 4.dp)
+                        ) {
+                            item {
+                                FilterChip(
+                                    selected = selectedCategory == null,
+                                    onClick = { selectedCategory = null },
+                                    label = { Text("All") },
+                                    leadingIcon = if (selectedCategory == null) {
+                                        { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
+                                    } else null
+                                )
+                            }
+                            
+                            items(categories) { cat ->
+                                FilterChip(
+                                    selected = selectedCategory == cat.id,
+                                    onClick = { selectedCategory = cat.id },
+                                    label = { Text(cat.name) },
+                                    leadingIcon = if (selectedCategory == cat.id) {
+                                        { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
+                                    } else null
+                                )
+                            }
+                        }
+
+                        if (filteredProducts.isEmpty()) {
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("No products in this category", color = Color.Gray)
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(filteredProducts) { product ->
+                                    AdminProductItem(
+                                        product = product,
+                                        onEdit = {
+                                            navController.navigate("edit_product/${product.id}")
+                                        },
+                                        onViewDetails = {
+                                            navController.navigate("product-details/${product.id}")
+                                        },
+                                        onDelete = {
+                                            productToDelete = product
+                                            showDeleteDialog = true
+                                        }
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
                 }

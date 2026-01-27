@@ -1,11 +1,6 @@
 package com.example.easyshop
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavType
@@ -13,27 +8,22 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.easyshop.admin.AdminDashboardScreen
+import com.example.easyshop.admin.AdminHomeScreen
+import com.example.easyshop.admin.AnalyticsScreen
+import com.example.easyshop.admin.ManageCategoriesScreen
+import com.example.easyshop.admin.ManageUsersScreen
+import com.example.easyshop.admin.OrdersManagementScreen
 import com.example.easyshop.model.UserModel
-import com.example.easyshop.pages.AddProductPage
-import com.example.easyshop.pages.CartPage
-import com.example.easyshop.pages.CategoryProductsPage
-import com.example.easyshop.pages.CheckoutPage
-import com.example.easyshop.pages.EditProductPage
-import com.example.easyshop.pages.OrdersPage
-import com.example.easyshop.pages.ProductDetailsPage
-import com.example.easyshop.screen.AdminHomeScreen
-import com.example.easyshop.screen.AdminOrdersScreen
-import com.example.easyshop.screen.PaymentScreen
-import com.example.easyshop.screen.AuthScreen
-import com.example.easyshop.screen.HomeScreen
-import com.example.easyshop.screen.LoginScreen
-import com.example.easyshop.screen.SignupScreen
+import com.example.easyshop.pages.*
+import com.example.easyshop.screen.*
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 
+
 @Composable
-fun AppNavigation(modifier: Modifier = Modifier){
+fun AppNavigation(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     GlobalNavigation.navController = navController
 
@@ -51,7 +41,7 @@ fun AppNavigation(modifier: Modifier = Modifier){
                 .addOnSuccessListener { document ->
                     val user = document.toObject(UserModel::class.java)
                     startDestination = if (user?.role == "admin") {
-                        "admin-home"
+                        "admin-dashboard"
                     } else {
                         "home"
                     }
@@ -70,6 +60,9 @@ fun AppNavigation(modifier: Modifier = Modifier){
     if (!isCheckingRole) {
         NavHost(navController = navController, startDestination = startDestination) {
 
+            // ════════════════════════════════
+            // 🔐 AUTH ROUTES
+            // ════════════════════════════════
             composable("auth") {
                 AuthScreen(modifier, navController)
             }
@@ -82,26 +75,12 @@ fun AppNavigation(modifier: Modifier = Modifier){
                 SignupScreen(modifier, navController)
             }
 
+            // ════════════════════════════════
+            // 🏠 USER ROUTES
+            // ════════════════════════════════
             composable("home") {
                 HomeScreen(modifier, navController)
             }
-
-            // ✅ ADMIN ROUTES
-            composable("admin-home") {
-                AdminHomeScreen(modifier, navController)
-            }
-
-            // Trong NavHost của bạn (MainActivity hoặc Navigation file)
-            composable("admin-orders") {
-                AdminOrdersScreen(navController = navController)
-            }
-            composable("add-product") {
-                AddProductPage(modifier, navController)
-            }
-            composable("add_product") {
-                AddProductPage(navController = navController)
-            }
-
 
             composable("category-products/{categoryId}") {
                 val categoryId = it.arguments?.getString("categoryId")
@@ -113,7 +92,11 @@ fun AppNavigation(modifier: Modifier = Modifier){
                 ProductDetailsPage(modifier, productId ?: "")
             }
 
-            composable("checkout"){
+            composable("cart") {
+                CartPage(modifier, navController)
+            }
+
+            composable("checkout") {
                 CheckoutPage(modifier)
             }
 
@@ -121,12 +104,43 @@ fun AppNavigation(modifier: Modifier = Modifier){
                 OrdersPage(modifier)
             }
 
-            composable("cart") {
-                CartPage(modifier)
+            composable(
+                route = "payment/{totalAmount}",
+                arguments = listOf(
+                    navArgument("totalAmount") {
+                        type = NavType.FloatType
+                        defaultValue = 0.0f
+                    }
+                )
+            ) { backStackEntry ->
+                val totalAmount = backStackEntry.arguments?.getFloat("totalAmount") ?: 0.0f
+                PaymentScreen(
+                    modifier = modifier,
+                    navController = navController,
+                    totalAmount = totalAmount.toDouble()
+                )
             }
 
+            // ════════════════════════════════
+            // 👑 ADMIN ROUTES
+            // ════════════════════════════════
 
-            // Route mới với productId
+            // Admin Dashboard - Main screen
+            composable("admin-dashboard") {
+                AdminDashboardScreen(navController = navController)
+            }
+
+            // Manage Products - List all products
+            composable("admin-products") {
+                AdminHomeScreen(modifier, navController)
+            }
+
+            // Add New Product
+            composable("add-product") {
+                AddProductPage(modifier, navController)
+            }
+
+            // Edit Product
             composable(
                 route = "edit_product/{productId}",
                 arguments = listOf(navArgument("productId") { type = NavType.StringType })
@@ -137,27 +151,32 @@ fun AppNavigation(modifier: Modifier = Modifier){
                     navController = navController
                 )
             }
-                composable(
-                    route = "payment/{totalAmount}",
-                    arguments = listOf(
-                        navArgument("totalAmount") {
-                            type = NavType.FloatType
-                            defaultValue = 0.0f
-                        }
-                    )
-                ) { backStackEntry ->
-                    val totalAmount = backStackEntry.arguments?.getFloat("totalAmount") ?: 0.0f
 
-                    PaymentScreen(
-                        modifier = modifier,
-                        navController = navController,
-                        totalAmount = totalAmount.toDouble()
-                    )
-                }
+            // Orders Management
+            composable("orders-management") {
+                OrdersManagementScreen(navController = navController)
             }
+
+            // Categories
+            composable("manage-categories") {
+                ManageCategoriesScreen(navController = navController)
+            }
+
+            // Analytics
+            composable("analytics") {
+                AnalyticsScreen(navController = navController)
+            }
+
+            // Manage Users
+            composable("manage-users") {
+                ManageUsersScreen(navController = navController)
+            }
+
         }
     }
+}
 
-    object GlobalNavigation{
-        lateinit var navController : NavController
-    }
+object GlobalNavigation {
+    lateinit var navController: NavController
+    var pendingOrderTotal: Double = 0.0
+}

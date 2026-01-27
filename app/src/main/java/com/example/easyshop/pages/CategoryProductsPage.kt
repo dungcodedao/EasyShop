@@ -4,11 +4,15 @@ package com.example.easyshop.pages
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.easyshop.GlobalNavigation.navController
 import com.example.easyshop.components.ProductFilterDialog
 import com.example.easyshop.components.ProductItemView
 import com.example.easyshop.model.ProductModel
@@ -69,27 +73,50 @@ fun CategoryProductsPage(
 
     Column(modifier = modifier.fillMaxSize()) {
         // Header với nút filter
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            tonalElevation = 1.dp
         ) {
-            Text(
-                text = "Found ${filteredProducts.size} products",
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            FilledTonalButton(
-                onClick = { showFilterDialog = true },
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),  // Padding nhỏ hơn
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Filter & Sort")
+                // Back Button
+                IconButton(
+                    onClick = { navController.navigateUp() },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        Icons.Default.ArrowBack,
+                        contentDescription = "Back",
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
+                // Product Count
+                Text(
+                    text = "${filteredProducts.size} products",
+                    style = MaterialTheme.typography.labelLarge
+                )
+
+                // Filter Button
+                IconButton(
+                    onClick = { showFilterDialog = true },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        Icons.Default.FilterList,
+                        contentDescription = "Filter",
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
             }
         }
 
-        // Danh sách sản phẩm
+// Danh sách sản phẩm
         ProductListContent(
             isLoading = isLoading,
             products = filteredProducts,
@@ -99,8 +126,6 @@ fun CategoryProductsPage(
             }
         )
     }
-
-    // Dialog filter
     if (showFilterDialog) {
         ProductFilterDialog(
             brandList = brandList,

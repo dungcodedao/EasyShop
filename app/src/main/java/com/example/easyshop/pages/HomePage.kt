@@ -26,7 +26,7 @@ fun HomePage(modifier: Modifier = Modifier) {
     var isSearching by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxSize()
-        .padding(16.dp)) {
+        .padding(8.dp)) {
         if (isSearching) {
 
             SearchView(

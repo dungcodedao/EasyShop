@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +19,7 @@ import com.example.easyshop.AppUtil
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaymentScreen(
     modifier: Modifier = Modifier,
@@ -35,18 +37,44 @@ fun PaymentScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
+    Column(modifier = modifier.fillMaxSize()) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            tonalElevation = 1.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = { navController.navigateUp() },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        Icons.Default.ArrowBack,
+                        contentDescription = "Back",
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
+                Text(
+                    text = "Payment",
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                Spacer(modifier = Modifier.size(40.dp))
+            }
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(8.dp)
+        ) {
         // Header
-        Text(
-            text = "Payment",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
 
         Spacer(Modifier.height(8.dp))
 
@@ -65,7 +93,7 @@ fun PaymentScreen(
                 containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
             )
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(8.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -173,7 +201,7 @@ fun PaymentScreen(
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer
                 )
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(8.dp)) {
                     Text(
                         text = "💳 Real Payment Gateway",
                         fontSize = 16.sp,
@@ -205,7 +233,7 @@ fun PaymentScreen(
                             isProcessing = false
 
                             if (isSuccess) {
-                                AppUtil.clearCartAndAddToOrder()
+                                AppUtil.clearCartAndAddToOrder(totalAmount, selectedPaymentMethod)
                                 showSuccessDialog = true
                             } else {
                                 AppUtil.showToast(context, "Payment declined. Use test card 4111 1111 1111 1111")
@@ -222,7 +250,7 @@ fun PaymentScreen(
                             isProcessing = true
                             delay(2000)
                             isProcessing = false
-                            AppUtil.clearCartAndAddToOrder()
+                            AppUtil.clearCartAndAddToOrder(totalAmount, selectedPaymentMethod)
                             showSuccessDialog = true
                         }
                     }
@@ -260,6 +288,7 @@ fun PaymentScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.fillMaxWidth()
         )
+        }
     }
 
     // Success Dialog
@@ -312,7 +341,7 @@ private fun PaymentMethodSelector(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {

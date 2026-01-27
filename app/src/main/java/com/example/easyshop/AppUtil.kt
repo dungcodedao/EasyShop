@@ -5,7 +5,9 @@ import android.app.AlertDialog
 import android.content.Context
 import android.widget.Toast
 import androidx.core.content.edit
+import com.example.easyshop.model.OrderItem
 import com.example.easyshop.model.OrderModel
+import com.example.easyshop.model.UserModel
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -72,34 +74,40 @@ object AppUtil {
         }
     }
 
-    fun clearCartAndAddToOrder(){
-        val userDoc = Firebase.firestore.collection("users")
-            .document(FirebaseAuth.getInstance().currentUser?.uid!!)
-        userDoc.get().addOnCompleteListener(){
-            if(it.isSuccessful) {
-                val currentCart = it.result.get("cartItems") as? Map<String, Long> ?: emptyMap()
+    fun clearCartAndAddToOrder(totalAmount: Double = 0.0, paymentMethod: String = "COD") {
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+        val userDoc = Firebase.firestore.collection("users").document(currentUser.uid)
+
+        userDoc.get().addOnSuccessListener { document ->
+            if (document.exists()) {
+                val user = document.toObject(UserModel::class.java)
+                val cartItems = user?.cartItems ?: emptyMap()
+
+                if (cartItems.isEmpty()) return@addOnSuccessListener
+
+                val orderId = "ORD" + UUID.randomUUID().toString().replace("-", "").take(10).uppercase()
 
                 val order = OrderModel(
-                    id = "ORD" + UUID.randomUUID().toString().replace("-","").take(10).uppercase(),
-
-                    userId = FirebaseAuth.getInstance().currentUser?.uid!!,
+                    id = orderId,
+                    userId = currentUser.uid,
+                    userName = user?.name ?: "Customer",
+                    userEmail = user?.email ?: "N/A",
                     date = Timestamp.now(),
-                    items = currentCart,
+                    items = cartItems,
+                    total = totalAmount,
                     status = "ORDERED",
-                    address = it.result.get("address") as String
+                    address = user?.address ?: "No Address",
+                    paymentMethod = paymentMethod
                 )
+
                 Firebase.firestore.collection("orders")
-                    .document(order.id).set(order)
-                    .addOnCompleteListener {
-                        if (it.isSuccessful ) {
-                            userDoc.update("cartItems", FieldValue.delete())
-
-                        }
+                    .document(orderId)
+                    .set(order)
+                    .addOnSuccessListener {
+                        userDoc.update("cartItems", FieldValue.delete())
                     }
-
             }
         }
-
     }
 
     fun getTaxPercentage() : Float{
@@ -117,7 +125,7 @@ object AppUtil {
                 context = context,
                 amount = amount,
                 onSuccess = {
-                    clearCartAndAddToOrder()
+                    clearCartAndAddToOrder(amount.toDouble(), "Mock Payment")
                     showSuccessDialog(context)
                 },
                 onFailure = {
@@ -126,6 +134,7 @@ object AppUtil {
             )
         } else {
             // Razorpay
+            GlobalNavigation.pendingOrderTotal = amount.toDouble()
             val checkout = Checkout()
             checkout.setKeyID(razorpayApiKey())
 

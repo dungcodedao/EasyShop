@@ -32,7 +32,7 @@ fun HeaderView(modifier: Modifier = Modifier,
         mutableStateOf("")
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(key1 = Unit) {
         Firebase.firestore.collection("users")
             .document(FirebaseAuth.getInstance().currentUser?.uid!!)
             .get().addOnCompleteListener(){

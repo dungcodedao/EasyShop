@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialogDefaults.shape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -137,19 +138,23 @@ fun LoginScreen(
         // Login Button
         Button(
             onClick = {
-                if (isFormValid) {
-                    isLoading = true
-                    authViewModel.login(email, password) { success, errorMessage, role ->
-                        isLoading = false
-                        if (success) {
-                            // ✅ Navigate based on role
-                            val destination = if (role == "admin") "admin-home" else "home"
-                            navController.navigate(destination) {
-                                popUpTo("auth") { inclusive = true }
+                isLoading = true
+                authViewModel.login(email, password) { success, errorMessage, role ->
+                    isLoading = false
+                    if (success) {
+                        val destination = if (role == "admin") "admin-dashboard" else "home"
+                        val welcomeMsg = if (role == "admin") "Welcome Admin, redirecting to Dashboard..." else "Login Successful!"
+                        
+                        AppUtil.showToast(context, welcomeMsg)
+                        
+                        navController.navigate(destination) {
+                            popUpTo(navController.graph.startDestinationId) { 
+                                inclusive = true 
                             }
-                        } else {
-                            AppUtil.showToast(context, errorMessage ?: "Login failed")
+                            launchSingleTop = true
                         }
+                    } else {
+                        AppUtil.showToast(context, errorMessage ?: "Login failed")
                     }
                 }
             },

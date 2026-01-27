@@ -1,6 +1,7 @@
 package com.example.easyshop.pages
 
 import androidx.compose.foundation.clickable
+import com.example.easyshop.model.CategoryModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -42,20 +43,18 @@ fun AddProductPage(
     var showSuccessDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var categoryExpanded by remember { mutableStateOf(false) }
-    var categories by remember { mutableStateOf<List<String>>(emptyList()) }
+    var categories by remember { mutableStateOf<List<CategoryModel>>(emptyList()) }
 
     val scope = rememberCoroutineScope()
     val firestore = Firebase.firestore
 
     // Load categories
-    LaunchedEffect(Unit) {
+    LaunchedEffect(key1 = Unit) {
         firestore.collection("data").document("stock")
             .collection("categories")
             .get()
             .addOnSuccessListener { result ->
-                categories = result.documents.mapNotNull {
-                    it.getString("id")
-                }
+                categories = result.documents.mapNotNull { it.toObject(CategoryModel::class.java) }
             }
     }
 
@@ -116,24 +115,42 @@ fun AddProductPage(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Add New Product") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, "Back")
-                    }
+    Column(modifier = modifier.fillMaxSize()) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            tonalElevation = 1.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = { navController.navigateUp() },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        Icons.Default.ArrowBack,
+                        contentDescription = "Back",
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
-            )
+
+                Text(
+                    text = "Add New Product",
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                Spacer(modifier = Modifier.size(40.dp))
+            }
         }
-    ) { padding ->
         Column(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Product Images Section
@@ -246,7 +263,7 @@ fun AddProductPage(
                 onExpandedChange = { categoryExpanded = it }
             ) {
                 OutlinedTextField(
-                    value = category,
+                    value = categories.find { it.id == category }?.name ?: category,
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Category *") },
@@ -264,9 +281,9 @@ fun AddProductPage(
                 ) {
                     categories.forEach { cat ->
                         DropdownMenuItem(
-                            text = { Text(cat) },
+                            text = { Text(cat.name) },
                             onClick = {
-                                category = cat
+                                category = cat.id
                                 categoryExpanded = false
                             }
                         )

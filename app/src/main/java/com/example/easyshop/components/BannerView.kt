@@ -1,9 +1,12 @@
 package com.example.easyshop.components
 
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,50 +31,69 @@ import com.tbuonomo.viewpagerdotsindicator.compose.type.ShiftIndicatorType
 import kotlinx.coroutines.delay
 
 @Composable
-fun BannerView(modifier: Modifier = Modifier){
+fun BannerView(modifier: Modifier = Modifier) {
 
     var bannerList by remember {
         mutableStateOf<List<String>>(emptyList())
     }
 
-    //lay du lieu dât banner từ firebase
-    LaunchedEffect(Unit) {
+    // Lấy dữ liệu banner từ Firebase
+    LaunchedEffect(key1 = Unit) {
         Firebase.firestore.collection("data")
             .document("banners")
-            .get().addOnCompleteListener(){
-                bannerList = it.result.get("urls") as List<String>
+            .get().addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val urls = task.result?.get("urls") as? List<String>
+                    if (urls != null) {
+                        bannerList = urls
+                    }
+                }
             }
     }
 
-    Column (
+    Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
-
-    ){
-        val pagerState = rememberPagerState (0) {
+    ) {
+        val pagerState = rememberPagerState(0) {
             bannerList.size
         }
-//chuyen dong banner
-        LaunchedEffect(pagerState.currentPage) {
+
+        // Tự động chuyển banner mượt mà hơn
+        LaunchedEffect(key1 = bannerList) {
             if (bannerList.isNotEmpty()) {
-                delay(3000) // 3 giây
-                val nextPage = (pagerState.currentPage + 1) % bannerList.size
-                pagerState.animateScrollToPage(nextPage)
+                while (true) {
+                    delay(3000) // Đợi 4 giây cho mỗi banner
+                    if (!pagerState.isScrollInProgress) {
+                        val nextPage = (pagerState.currentPage + 1) % bannerList.size
+                        pagerState.animateScrollToPage(
+                            nextPage,
+                            animationSpec = tween(durationMillis = 1000) // Animation kéo dài 1s
+                        )
+                    }
+                }
             }
         }
+
         HorizontalPager(
             state = pagerState,
-            pageSpacing =24.dp
-        ) {
-            AsyncImage(model = bannerList.get(it),
+            contentPadding = PaddingValues(horizontal = 0.dp), // Bỏ hiệu ứng peek
+            pageSpacing = 0.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp) // Padding ngoài để banner không dính sát mép máy
+        ) { pageIndex ->
+            AsyncImage(
+                model = bannerList.get(pageIndex),
                 contentDescription = "Banner image",
-               modifier = Modifier.fillMaxWidth()
-                   .clip(RoundedCornerShape(16.dp))
-                .height(140.dp) ,
-                   contentScale = ContentScale.Crop
-
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .height(150.dp),
+                contentScale = ContentScale.Crop
             )
         }
+
         Spacer(modifier = Modifier.height(10.dp))
 
         DotsIndicator(
@@ -86,5 +108,3 @@ fun BannerView(modifier: Modifier = Modifier){
         )
     }
 }
-
-

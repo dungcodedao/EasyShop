@@ -7,8 +7,12 @@ build/
 captures/
 # Local config
 local.properties
+secrets.properties
 # Android Studio
 .idea/
+
+# Firebase configuration (Sensitive)
+app/google-services.json
 
 #iOS
 

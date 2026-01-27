@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity(), PaymentResultListener {
     }
 
     override fun onPaymentSuccess(p0:String?){
-        AppUtil.clearCartAndAddToOrder()
+        AppUtil.clearCartAndAddToOrder(GlobalNavigation.pendingOrderTotal, "Razorpay")
 
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Payment Successful")

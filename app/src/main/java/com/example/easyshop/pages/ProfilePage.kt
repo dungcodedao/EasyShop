@@ -96,10 +96,31 @@ fun ProfilePage(modifier: Modifier = Modifier) {
             }
     }
 
-    Column(
-        modifier = modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    Column(modifier = modifier.fillMaxSize()) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            tonalElevation = 1.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Profile",
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
         // Avatar - Clickable
         Image(
             painter = painterResource(selectedAvatar),
@@ -139,7 +160,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(8.dp)) {
                 // Address
                 OutlinedTextField(
                     value = addressInput,
@@ -192,7 +213,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
             shape = RoundedCornerShape(12.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Default.ShoppingCart, null)
@@ -221,7 +242,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
             shape = RoundedCornerShape(12.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Default.List, null)
@@ -250,6 +271,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
             Icon(Icons.Default.ExitToApp, null)
             Spacer(Modifier.width(8.dp))
             Text("Sign Out", fontWeight = FontWeight.Bold)
+        }
         }
     }
 

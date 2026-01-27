@@ -17,9 +17,16 @@ import com.example.easyshop.model.UserModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
+import androidx.navigation.NavController
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CartPage(modifier: Modifier = Modifier) {
+fun CartPage(
+    modifier: Modifier = Modifier,
+    navController: NavController? = null
+) {
     val userModel = remember { mutableStateOf(UserModel()) }
 
     DisposableEffect(Unit) {
@@ -33,23 +40,72 @@ fun CartPage(modifier: Modifier = Modifier) {
         onDispose { listener.remove() }
     }
 
+    Column(modifier = modifier.fillMaxSize()) {
+        if (navController != null) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                tonalElevation = 1.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    Text(
+                        text = "Your cart",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+
+                    Spacer(modifier = Modifier.size(40.dp))
+                }
+            }
+        }
+
+        CartPageContent(
+            modifier = Modifier.weight(1f),
+            model = userModel.value,
+            showTitle = navController == null
+        )
+    }
+}
+
+@Composable
+private fun CartPageContent(
+    modifier: Modifier,
+    model: UserModel,
+    showTitle: Boolean
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(8.dp)
     ) {
-        Text(
-            text = "Your cart",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
+        if (showTitle) {
+            Text(
+                text = "Your cart",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (userModel.value.cartItems.isEmpty()) {
+        if (model.cartItems.isEmpty()) {
             EmptyCart()
         } else {
-            CartContent(userModel = userModel.value)
+            CartContent(userModel = model)
         }
     }
 }
@@ -103,7 +159,7 @@ private fun ColumnScope.CartContent(userModel: UserModel) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -113,7 +169,7 @@ private fun ColumnScope.CartContent(userModel: UserModel) {
                 fontWeight = FontWeight.Medium
             )
             Text(
-                text = "${userModel.cartItems.values.sum()}",
+                text = "${userModel.cartItems.values.sumOf { it }}",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary

@@ -76,5 +76,25 @@ EasyShop là một ứng dụng Thương mại điện tử (E-Commerce) hiệu 
 
 ---
 
+## 🔐 Bảo mật & Bảo trì (Dành cho Đồ án)
+
+Phần này giúp bạn ghi nhớ các thiết lập bảo mật quan trọng để giải trình với hội đồng:
+
+### 1. Quản lý mã nguồn (Git)
+*   **File `.gitignore`**: Đã được cấu hình để ẩn các file nhạy cảm như `google-services.json` và `local.properties`.
+*   **Lưu ý**: Nếu bạn nộp bài qua GitHub, hãy nén và gửi riêng các file này cho thầy cô vì chúng không có trên mạng.
+
+### 2. Bảo mật phía Server (Firebase)
+*   **Firestore Rules**: Hãy đảm bảo bạn đã chuyển từ "Test Mode" sang "Locked Mode" hoặc cấu hình chỉ cho phép người dùng đã Log-in mới được sửa dữ liệu.
+*   **Xác thực**: Sử dụng Firebase Auth để quản trị quyền Admin.
+
+### 3. Bí kíp trả lời Hội đồng (Q&A)
+*   **Hỏi**: *"Làm sao em bảo vệ API Key của mình?"* 
+    *   **Trả lời**: *"Em lưu chúng trong file `local.properties` và dùng `secrets-gradle-plugin` để truy xuất, tránh việc hardcode trực tiếp vào mã nguồn."*
+*   **Hỏi**: *"App này có chống lại việc bị người khác xem trộm code không?"*
+    *   **Trả lời**: *"Dạ có, em đã cấu hình R8/ProGuard để mã hóa (obfuscate) code khi xuất file APK, giúp gây khó khăn cho việc dịch ngược ứng dụng."*
+
+---
+
 ## 📝 Giấy phép
-Dự án này được thực hiện vì mục đích giáo dục và demo. Bạn có thể tự do khám phá và phát triển thêm!
+Dự án này được thực hiện vì mục đích giáo dục và đồ án tốt nghiệp. Bạn có thể tự do khám phá và phát triển thêm!
