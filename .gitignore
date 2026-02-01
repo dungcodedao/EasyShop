@@ -31,3 +31,7 @@ google-services.json
 # Proguard / R8 mapping files
 app/build/outputs/mapping/
 
+# Agent specific files
+.agent/
+.kotlin/
+
