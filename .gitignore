@@ -1,0 +1,33 @@
+# Android / Gradle
+*.iml
+.gradle/
+build/
+.externalNativeBuild/
+.cxx/
+captures/
+
+# Local config
+local.properties
+secrets.properties
+*.jks
+*.keystore
+
+# Android Studio
+.idea/
+
+# Firebase configuration (Sensitive)
+app/google-services.json
+google-services.json
+
+# iOS (if any)
+.DS_Store
+
+# Custom Release Folders
+**/release/
+*.apk
+*.bundle
+*.aab
+
+# Proguard / R8 mapping files
+app/build/outputs/mapping/
+
