@@ -16,12 +16,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.easyshop.model.UserModel
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
+import com.example.easyshop.model.OrderModel
+import java.text.NumberFormat
+import java.util.Locale
+
+data class UserStats(val orderCount: Int, val totalSpent: Double)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,13 +46,38 @@ fun ManageUsersScreen(
 
     val firestore = Firebase.firestore
 
+    var userStats by remember { mutableStateOf<Map<String, UserStats>>(emptyMap()) }
+
+
     fun loadUsers() {
         isLoading = true
         firestore.collection("users")
             .get()
-            .addOnSuccessListener { result ->
-                users = result.documents.mapNotNull { it.toObject(UserModel::class.java) }
-                isLoading = false
+            .addOnSuccessListener { userResult ->
+                val usersList = userResult.documents.mapNotNull { it.toObject(UserModel::class.java) }
+                
+                // Fetch all orders to calculate stats per user
+                firestore.collection("orders").get().addOnSuccessListener { orderResult ->
+                    val ordersList = orderResult.documents.mapNotNull { it.toObject(OrderModel::class.java) }
+                    
+                    val statsMap = mutableMapOf<String, UserStats>()
+                    ordersList.forEach { order ->
+                        val current = statsMap[order.userId] ?: UserStats(0, 0.0)
+                        if (order.status != "CANCELLED") {
+                            statsMap[order.userId] = UserStats(
+                                orderCount = current.orderCount + 1,
+                                totalSpent = current.totalSpent + order.total
+                            )
+                        } else {
+                            // Still count canceled orders but clarify in logic if needed
+                            // For now, let's only count non-canceled for Spent
+                        }
+                    }
+                    
+                    userStats = statsMap
+                    users = usersList
+                    isLoading = false
+                }
             }
             .addOnFailureListener {
                 isLoading = false
@@ -112,8 +143,9 @@ fun ManageUsersScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    items(filteredUsers) { user ->
-                        UserListItem(user, onClick = {
+                    items(items = filteredUsers) { user: UserModel ->
+                        val stats = userStats[user.uid] ?: UserStats(0, 0.0)
+                        UserListItem(user, stats, onClick = {
                             selectedUser = user
                             showBottomSheet = true
                         })
@@ -137,6 +169,7 @@ fun ManageUsersScreen(
             ) {
                 UserDetailContent(
                     user = selectedUser!!,
+                    stats = userStats[selectedUser!!.uid] ?: UserStats(0, 0.0),
                     onRoleChange = { newRole ->
                         firestore.collection("users").document(selectedUser!!.uid)
                             .update("role", newRole)
@@ -154,8 +187,10 @@ fun ManageUsersScreen(
 @Composable
 fun UserDetailContent(
     user: UserModel,
+    stats: UserStats,
     onRoleChange: (String) -> Unit
 ) {
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -198,7 +233,8 @@ fun UserDetailContent(
         // Info Grid
         DetailInfoRow("User ID", user.uid)
         DetailInfoRow("Address", user.address.ifEmpty { "No address set" })
-        DetailInfoRow("Cart Items", "${user.cartItems.size} items")
+        DetailInfoRow("Total Orders", "${stats.orderCount} orders")
+        DetailInfoRow("Total Spent", currencyFormat.format(stats.totalSpent))
         DetailInfoRow("Current Role", user.role.uppercase())
 
         Spacer(Modifier.height(32.dp))
@@ -267,7 +303,8 @@ fun DetailInfoRow(label: String, value: String) {
 }
 
 @Composable
-fun UserListItem(user: UserModel, onClick: () -> Unit) {
+fun UserListItem(user: UserModel, stats: UserStats, onClick: () -> Unit) {
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -310,7 +347,23 @@ fun UserListItem(user: UserModel, onClick: () -> Unit) {
                     text = user.address,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.secondary,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "${stats.orderCount} orders",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = currencyFormat.format(stats.totalSpent),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF2E7D32) // Green
                 )
             }
         }

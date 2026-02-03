@@ -12,6 +12,7 @@ import com.example.easyshop.admin.AdminDashboardScreen
 import com.example.easyshop.admin.AdminHomeScreen
 import com.example.easyshop.admin.AnalyticsScreen
 import com.example.easyshop.admin.ManageCategoriesScreen
+import com.example.easyshop.admin.ManagePromoCodesScreen
 import com.example.easyshop.admin.ManageUsersScreen
 import com.example.easyshop.admin.OrdersManagementScreen
 import com.example.easyshop.model.UserModel
@@ -160,8 +161,11 @@ fun AppNavigation(modifier: Modifier = Modifier) {
 
             // Categories
             composable("manage-categories") {
-                ManageCategoriesScreen(navController = navController)
-            }
+            ManageCategoriesScreen(navController, modifier)
+        }
+        composable("manage-promo-codes") {
+            ManagePromoCodesScreen(navController, modifier)
+        }
 
             // Analytics
             composable("analytics") {
@@ -171,6 +175,19 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             // Manage Users
             composable("manage-users") {
                 ManageUsersScreen(navController = navController)
+            }
+
+            // Receipt
+            composable(
+                route = "receipt/{amount}/{orderId}",
+                arguments = listOf(
+                    navArgument("amount") { type = NavType.FloatType },
+                    navArgument("orderId") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val amount = backStackEntry.arguments?.getFloat("amount") ?: 0.0f
+                val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
+                ReceiptScreen(navController, amount.toDouble(), orderId)
             }
 
         }

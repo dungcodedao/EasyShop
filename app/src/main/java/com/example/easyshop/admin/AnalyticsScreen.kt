@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.easyshop.model.OrderModel
@@ -22,7 +23,10 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.tasks.await
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
 import java.util.*
+
+data class ProductStat(val id: String, val count: Int, val revenue: Double)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,7 +41,9 @@ fun AnalyticsScreen(
     var totalRevenue by remember { mutableDoubleStateOf(0.0) }
     var delivedOrdersCount by remember { mutableIntStateOf(0) }
     var cancelledOrdersCount by remember { mutableIntStateOf(0) }
-    var topProducts by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
+    var topProducts by remember { mutableStateOf<List<ProductStat>>(emptyList()) }
+    var dailyRevenue by remember { mutableStateOf<List<Pair<String, Double>>>(emptyList()) }
+
 
     val firestore = Firebase.firestore
 
@@ -51,14 +57,40 @@ fun AnalyticsScreen(
             delivedOrdersCount = orders.count { it.status == "DELIVERED" }
             cancelledOrdersCount = orders.count { it.status == "CANCELLED" }
 
-            // Calculate Top Products
-            val productCounts = mutableMapOf<String, Int>()
-            orders.forEach { order ->
+            // Top Products with Revenue
+            val productStats = mutableMapOf<String, ProductStat>()
+            val productCache = mutableMapOf<String, com.example.easyshop.model.ProductModel?>()
+            
+            orders.filter { it.status == "DELIVERED" }.forEach { order ->
                 order.items.forEach { (id, qty) ->
-                    productCounts[id] = (productCounts[id] ?: 0) + qty.toInt()
+                    val product = if (productCache.containsKey(id)) {
+                        productCache[id]
+                    } else {
+                        val p = firestore.collection("data").document("stock").collection("products")
+                            .document(id).get().await().toObject(com.example.easyshop.model.ProductModel::class.java)
+                        productCache[id] = p
+                        p
+                    }
+                    
+                    val price = product?.actualPrice?.toDoubleOrNull() ?: 0.0
+                    val current = productStats[id] ?: ProductStat(id, 0, 0.0)
+                    productStats[id] = ProductStat(
+                        id = id,
+                        count = current.count + qty.toInt(),
+                        revenue = current.revenue + (price * qty)
+                    )
                 }
             }
-            topProducts = productCounts.toList().sortedByDescending { it.second }.take(5)
+            topProducts = productStats.values.sortedByDescending { it.revenue }.take(5)
+
+            // Daily Revenue (Last 7 days)
+            val sdf = SimpleDateFormat("dd/MM", Locale.getDefault())
+            val dailyMap = mutableMapOf<String, Double>()
+            orders.filter { it.status == "DELIVERED" }.forEach { order ->
+                val dateStr = sdf.format(order.date.toDate())
+                dailyMap[dateStr] = (dailyMap[dateStr] ?: 0.0) + order.total
+            }
+            dailyRevenue = dailyMap.toList().sortedByDescending { it.first }.reversed().takeLast(7)
 
             isLoading = false
         } catch (e: Exception) {
@@ -96,10 +128,21 @@ fun AnalyticsScreen(
                     RevenueCard(totalRevenue, orders.size)
                 }
 
+                // Revenue Trend
+                item {
+                    Text(
+                        "Revenue Trend (Last 7 Days)",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    RevenueBarChart(dailyRevenue)
+                }
+
                 // Order Distribution
                 item {
                     Text(
-                        "Order Status",
+                        "Order Distribution",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -125,8 +168,8 @@ fun AnalyticsScreen(
                         Text("No sales data available", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 } else {
-                    items(topProducts) { (productId, count) ->
-                        TopProductItem(productId, count)
+                    items(items = topProducts) { stat: ProductStat ->
+                        TopProductItem(stat)
                     }
                 }
             }
@@ -196,6 +239,44 @@ fun StatSubItem(label: String, value: String, icon: androidx.compose.ui.graphics
 }
 
 @Composable
+fun RevenueBarChart(data: List<Pair<String, Double>>) {
+    val maxRevenue = data.maxOfOrNull { it.second } ?: 1.0
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+                .height(120.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            data.forEach { (date, value) ->
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight((value / maxRevenue).toFloat().coerceIn(0.05f, 1f))
+                            .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                            .background(MaterialTheme.colorScheme.primary)
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(date, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun OrderDistributionChart(delivered: Int, cancelled: Int, other: Int) {
     val total = (delivered + cancelled + other).toFloat().coerceAtLeast(1f)
     val deliveredWeight = delivered / total
@@ -240,12 +321,13 @@ fun LegendItem(label: String, color: Color) {
 }
 
 @Composable
-fun TopProductItem(productId: String, count: Int) {
+fun TopProductItem(stat: ProductStat) {
     var productName by remember { mutableStateOf("Loading...") }
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
 
-    LaunchedEffect(productId) {
+    LaunchedEffect(stat.id) {
         Firebase.firestore.collection("data").document("stock").collection("products")
-            .document(productId).get().addOnSuccessListener {
+            .document(stat.id).get().addOnSuccessListener {
                 productName = it.getString("title") ?: "Unknown Product"
             }
     }
@@ -258,8 +340,8 @@ fun TopProductItem(productId: String, count: Int) {
     ) {
         Box(
             modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .size(48.dp)
+                .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.secondaryContainer),
             contentAlignment = Alignment.Center
         ) {
@@ -269,20 +351,16 @@ fun TopProductItem(productId: String, count: Int) {
         Spacer(Modifier.width(16.dp))
 
         Column(Modifier.weight(1f)) {
-            Text(productName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-            Text("ID: ${productId.take(8)}...", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(productName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("${stat.count} items sold", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
-        Surface(
-            color = MaterialTheme.colorScheme.tertiaryContainer,
-            shape = RoundedCornerShape(8.dp)
-        ) {
+        Column(horizontalAlignment = Alignment.End) {
             Text(
-                "$count sold",
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onTertiaryContainer
+                currencyFormat.format(stat.revenue),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }

@@ -132,6 +132,12 @@ fun AdminDashboardScreen(
             "manage-users",
             Color(0xFFE91E63),
             totalUsers
+        ),
+        AdminMenuItem(
+            "Promo Codes",
+            Icons.Default.ConfirmationNumber,
+            "manage-promo-codes",
+            Color(0xFF673AB7)
         )
     )
 
@@ -214,7 +220,7 @@ fun AdminDashboardScreen(
                     columns = GridCells.Fixed(2),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(600.dp)
+                        .height(850.dp) // Tăng chiều cao để hiện đủ 4 hàng (7-8 mục)
                         .padding(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),

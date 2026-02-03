@@ -24,6 +24,7 @@ import com.example.easyshop.model.OrderModel
 import com.example.easyshop.model.ProductModel
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -193,9 +194,61 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
                     }
                 }
                 
+                // Cancel Order Section (Only for ORDERED status)
+                if (order!!.status == "ORDERED") {
+                    item {
+                        var showCancelDialog by remember { mutableStateOf(false) }
+                        val scope = rememberCoroutineScope()
+
+                        Button(
+                            onClick = { showCancelDialog = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFFFEBEE),
+                                contentColor = Color(0xFFD32F2F)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Cancel Order", fontWeight = FontWeight.Bold)
+                        }
+
+                        if (showCancelDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showCancelDialog = false },
+                                title = { Text("Cancel Order?") },
+                                text = { Text("Are you sure you want to cancel this order? This action cannot be undone.") },
+                                confirmButton = {
+                                    TextButton(
+                                        onClick = {
+                                            scope.launch {
+                                                Firebase.firestore.collection("orders")
+                                                    .document(orderId)
+                                                    .update("status", "CANCELLED")
+                                                    .addOnSuccessListener {
+                                                        order = order?.copy(status = "CANCELLED")
+                                                        showCancelDialog = false
+                                                    }
+                                            }
+                                        }
+                                    ) {
+                                        Text("Yes, Cancel", color = Color.Red)
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showCancelDialog = false }) {
+                                        Text("No, Keep Order")
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+
                 // Bottom spacing for better scrolling experience
                 item {
-                    Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(32.dp))
                 }
             }
         }

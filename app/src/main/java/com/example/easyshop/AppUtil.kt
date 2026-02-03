@@ -74,7 +74,7 @@ object AppUtil {
         }
     }
 
-    fun clearCartAndAddToOrder(totalAmount: Double = 0.0, paymentMethod: String = "COD") {
+    fun clearCartAndAddToOrder(totalAmount: Double = 0.0, paymentMethod: String = "COD", customOrderId: String? = null) {
         val currentUser = FirebaseAuth.getInstance().currentUser ?: return
         val userDoc = Firebase.firestore.collection("users").document(currentUser.uid)
 
@@ -85,7 +85,7 @@ object AppUtil {
 
                 if (cartItems.isEmpty()) return@addOnSuccessListener
 
-                val orderId = "ORD" + UUID.randomUUID().toString().replace("-", "").take(10).uppercase()
+                val orderId = customOrderId ?: ("ORD" + UUID.randomUUID().toString().replace("-", "").take(10).uppercase())
 
                 val order = OrderModel(
                     id = orderId,

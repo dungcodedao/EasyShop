@@ -2,6 +2,7 @@ package com.example.easyshop.screen
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CreditCard
@@ -10,12 +11,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.easyshop.AppUtil
+import com.example.easyshop.components.VirtualCreditCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -86,27 +89,60 @@ fun PaymentScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // Order Summary
+            // Order Summary Card
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                )
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Column(modifier = Modifier.padding(8.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Total Amount", fontWeight = FontWeight.Medium)
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Payable Amount",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         Text(
                             "$${"%.2f".format(totalAmount)}",
-                            fontSize = 20.sp,
+                            style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "SECURE",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Virtual Card Section
+            if (selectedPaymentMethod == "Credit Card (Mock)") {
+                VirtualCreditCard(
+                    number = cardNumber,
+                    name = cardName,
+                    expiry = expiryDate,
+                    cvv = cvv,
+                    isVisa = cardNumber.startsWith("4") || cardNumber.isEmpty()
+                )
+                Spacer(Modifier.height(24.dp))
             }
 
             Spacer(Modifier.height(24.dp))
@@ -233,8 +269,11 @@ fun PaymentScreen(
                                 isProcessing = false
 
                                 if (isSuccess) {
-                                    AppUtil.clearCartAndAddToOrder(totalAmount, selectedPaymentMethod)
-                                    showSuccessDialog = true
+                                    val orderId = "ORD" + java.util.UUID.randomUUID().toString().replace("-", "").take(8).uppercase()
+                                    AppUtil.clearCartAndAddToOrder(totalAmount, selectedPaymentMethod, orderId)
+                                    navController.navigate("receipt/${totalAmount.toFloat()}/$orderId") {
+                                        popUpTo("payment") { inclusive = true }
+                                    }
                                 } else {
                                     AppUtil.showToast(context, "Payment declined. Use test card 4111 1111 1111 1111")
                                 }
@@ -250,8 +289,11 @@ fun PaymentScreen(
                                 isProcessing = true
                                 delay(2000)
                                 isProcessing = false
-                                AppUtil.clearCartAndAddToOrder(totalAmount, selectedPaymentMethod)
-                                showSuccessDialog = true
+                                val orderId = "ORD" + java.util.UUID.randomUUID().toString().replace("-", "").take(8).uppercase()
+                                AppUtil.clearCartAndAddToOrder(totalAmount, selectedPaymentMethod, orderId)
+                                navController.navigate("receipt/${totalAmount.toFloat()}/$orderId") {
+                                    popUpTo("payment") { inclusive = true }
+                                }
                             }
                         }
                     }
@@ -291,18 +333,6 @@ fun PaymentScreen(
         }
     }
 
-    // Success Dialog
-    if (showSuccessDialog) {
-        PaymentSuccessDialog(
-            amount = totalAmount,
-            onDismiss = {
-                showSuccessDialog = false
-                navController.navigate("home") {
-                    popUpTo("payment") { inclusive = true }
-                }
-            }
-        )
-    }
 }
 
 @Composable
@@ -311,102 +341,49 @@ private fun PaymentMethodSelector(
     onMethodSelected: (String) -> Unit
 ) {
     val methods = listOf(
-        "Credit Card (Mock)",
-        "Razorpay (Real)",
-        "PayPal",
-        "Cash on Delivery"
+        "Credit Card (Mock)" to "💳",
+        "Razorpay (Real)" to "🚀",
+        "PayPal" to "🅿️",
+        "Cash on Delivery" to "💵"
     )
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        methods.forEach { method ->
-            Card(
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        methods.forEach { (method, icon) ->
+            val isSelected = selectedMethod == method
+            Surface(
                 onClick = { onMethodSelected(method) },
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (selectedMethod == method) {
-                        MaterialTheme.colorScheme.primaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.surface
-                    }
-                ),
-                border = if (selectedMethod == method) {
-                    CardDefaults.outlinedCardBorder().copy(
-                        width = 2.dp,
-                        brush = androidx.compose.ui.graphics.SolidColor(
-                            MaterialTheme.colorScheme.primary
-                        )
-                    )
-                } else null
+                shape = RoundedCornerShape(12.dp),
+                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f) 
+                        else MaterialTheme.colorScheme.surface,
+                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) 
+                         else androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                        .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Text(text = icon, fontSize = 20.sp)
+                    Spacer(Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = method,
-                            fontWeight = if (selectedMethod == method) {
-                                FontWeight.SemiBold
-                            } else {
-                                FontWeight.Normal
-                            }
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                         )
-                        if (method == "Credit Card (Mock)") {
-                            Text(
-                                text = "For testing only",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        } else if (method == "Razorpay (Real)") {
-                            Text(
-                                text = "Real payment gateway",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
-                    RadioButton(
-                        selected = selectedMethod == method,
-                        onClick = { onMethodSelected(method) }
-                    )
+                    if (isSelected) {
+                        RadioButton(
+                            selected = true,
+                            onClick = { onMethodSelected(method) }
+                        )
+                    }
                 }
             }
         }
     }
-}
-
-@Composable
-private fun PaymentSuccessDialog(
-    amount: Double,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = {
-            Text("✅", fontSize = 48.sp)
-        },
-        title = {
-            Text("Payment Successful!")
-        },
-        text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Your payment of $${"%.2f".format(amount)} has been processed.")
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "Order ID: #${System.currentTimeMillis().toString().takeLast(6)}",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-        },
-        confirmButton = {
-            Button(onClick = onDismiss) {
-                Text("Continue Shopping")
-            }
-        }
-    )
 }
 
 // Helper functions
