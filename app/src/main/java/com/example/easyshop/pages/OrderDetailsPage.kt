@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,7 +16,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.easyshop.R
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.easyshop.AppUtil
@@ -64,10 +67,10 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Order Details", fontWeight = FontWeight.Bold, fontSize = 20.sp) },
+                title = { Text(stringResource(id = R.string.order_details), fontWeight = FontWeight.Bold, fontSize = 20.sp) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -83,11 +86,11 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
             }
         } else if (order == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Order not found")
+                Text(stringResource(id = R.string.order_not_found))
             }
         } else {
             LazyColumn(
-                modifier = modifier
+                modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
                 contentPadding = PaddingValues(16.dp), // Padding đồng nhất cho toàn bộ nội dung
@@ -97,17 +100,17 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                        Column(modifier = Modifier.padding(20.dp)) {
+                        Column(modifier = Modifier.padding(12.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Order Status", fontSize = 14.sp, color = Color.Gray)
+                                Text(stringResource(id = R.string.order_status), fontSize = 14.sp, color = Color.Gray)
                                 Surface(
                                     color = when(order!!.status) {
                                         "DELIVERED" -> Color(0xFFE8F5E9)
@@ -129,7 +132,8 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
                                     )
                                 }
                             }
-                            Spacer(Modifier.height(12.dp))
+                            Spacer(Modifier.height(16.dp))
+
                             Divider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
                             Spacer(Modifier.height(12.dp))
                             Text("ID: #${order!!.id}", fontWeight = FontWeight.Bold, fontSize = 15.sp)
@@ -141,7 +145,7 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
                 // Items list Section
                 item {
                     Text(
-                        text = "Ordered Items", 
+                        text = stringResource(id = R.string.ordered_items), 
                         fontWeight = FontWeight.Bold, 
                         fontSize = 17.sp,
                         modifier = Modifier.padding(top = 8.dp)
@@ -164,25 +168,25 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
-                            Text("Summary", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(stringResource(id = R.string.summary), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             Spacer(Modifier.height(12.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Total Amount", fontSize = 15.sp)
+                                Text(stringResource(id = R.string.total_amount), fontSize = 15.sp)
                                 Text("$${"%.2f".format(order!!.total)}", 
                                     fontWeight = FontWeight.ExtraBold, 
                                     fontSize = 18.sp,
                                     color = Color(0xFF1976D2)
                                 )
                             }
-                            
+
                             Spacer(Modifier.height(16.dp))
                             Divider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
                             Spacer(Modifier.height(16.dp))
                             
-                            Text("Shipping Address", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(stringResource(id = R.string.shipping_address), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 text = order!!.address, 
@@ -209,16 +213,16 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
                                 containerColor = Color(0xFFFFEBEE),
                                 contentColor = Color(0xFFD32F2F)
                             ),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(16.dp)
                         ) {
-                            Text("Cancel Order", fontWeight = FontWeight.Bold)
+                            Text(stringResource(id = R.string.cancel_order), fontWeight = FontWeight.Bold)
                         }
 
                         if (showCancelDialog) {
                             AlertDialog(
                                 onDismissRequest = { showCancelDialog = false },
-                                title = { Text("Cancel Order?") },
-                                text = { Text("Are you sure you want to cancel this order? This action cannot be undone.") },
+                                title = { Text(stringResource(id = R.string.cancel_order_confirm_title)) },
+                                text = { Text(stringResource(id = R.string.cancel_order_confirm_msg)) },
                                 confirmButton = {
                                     TextButton(
                                         onClick = {
@@ -233,12 +237,12 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
                                             }
                                         }
                                     ) {
-                                        Text("Yes, Cancel", color = Color.Red)
+                                        Text(stringResource(id = R.string.yes_cancel), color = Color.Red)
                                     }
                                 },
                                 dismissButton = {
                                     TextButton(onClick = { showCancelDialog = false }) {
-                                        Text("No, Keep Order")
+                                        Text(stringResource(id = R.string.no_keep_order))
                                     }
                                 }
                             )
@@ -276,14 +280,14 @@ fun OrderItemRow(product: ProductModel?, quantity: Long) {
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(product.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
-                Text("Quantity: $quantity", fontSize = 12.sp, color = Color.Gray)
+                Text("${stringResource(id = R.string.quantity)}: $quantity", fontSize = 12.sp, color = Color.Gray)
             }
             Text("$${"%.2f".format(product.actualPrice.toDoubleOrNull() ?: 0.0)}", fontWeight = FontWeight.Bold)
         } else {
             // Placeholder for missing product info
             Box(Modifier.size(60.dp).background(Color.LightGray))
             Spacer(Modifier.width(16.dp))
-            Text("Product info not available", modifier = Modifier.weight(1f))
+            Text(stringResource(id = R.string.product_info_not_available), modifier = Modifier.weight(1f))
             Text("x$quantity")
         }
     }
