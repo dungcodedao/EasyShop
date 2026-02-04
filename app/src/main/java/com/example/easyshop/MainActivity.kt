@@ -13,11 +13,15 @@ import com.example.easyshop.ui.theme.EasyShopTheme
 import com.razorpay.PaymentResultListener
 
 class MainActivity : ComponentActivity(), PaymentResultListener {
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(LocaleHelper.onAttach(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            EasyShopTheme {
+            EasyShopTheme(darkTheme = false, dynamicColor = false) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     AppNavigation(Modifier.padding(innerPadding))
                 }
