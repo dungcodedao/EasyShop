@@ -20,7 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.easyshop.R
 import androidx.compose.ui.unit.sp
 
 @Composable
@@ -67,7 +69,7 @@ fun ProductHeader(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "($reviewCount reviews)",  // ← Dùng parameter
+                    text = stringResource(id = R.string.reviews_count, reviewCount),  // ← Dùng parameter
                     fontSize = 14.sp,
                     color = Color.Gray
                 )
@@ -95,7 +97,7 @@ fun ProductHeader(
                     Spacer(modifier = Modifier.width(6.dp))
 
                     Text(
-                        text = if (inStock) "In Stock" else "Out of Stock",
+                        text = if (inStock) stringResource(id = R.string.in_stock) else stringResource(id = R.string.out_of_stock),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (inStock) Color(0xFF2E7D32) else Color(0xFFC62828)

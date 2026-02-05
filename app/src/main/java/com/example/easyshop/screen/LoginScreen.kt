@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -54,7 +55,7 @@ fun LoginScreen(
 
         // Header
         Text(
-            text = "Welcome back!",
+            text = stringResource(id = R.string.welcome_back),
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold
         )
@@ -62,7 +63,7 @@ fun LoginScreen(
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text = "Sign in to your account",
+            text = stringResource(id = R.string.sign_in_subtitle),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -84,7 +85,7 @@ fun LoginScreen(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email address") },
+            label = { Text(stringResource(id = R.string.email_address)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -96,7 +97,7 @@ fun LoginScreen(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password") },
+            label = { Text(stringResource(id = R.string.password)) },
             visualTransformation = if (passwordVisible) {
                 VisualTransformation.None
             } else {
@@ -111,9 +112,9 @@ fun LoginScreen(
                             Icons.Filled.VisibilityOff
                         },
                         contentDescription = if (passwordVisible) {
-                            "Hide password"
+                            stringResource(id = R.string.hide_password)
                         } else {
-                            "Show password"
+                            stringResource(id = R.string.show_password)
                         }
                     )
                 }
@@ -143,7 +144,7 @@ fun LoginScreen(
                     isLoading = false
                     if (success) {
                         val destination = if (role == "admin") "admin-dashboard" else "home"
-                        val welcomeMsg = if (role == "admin") "Welcome Admin, redirecting to Dashboard..." else "Login Successful!"
+                        val welcomeMsg = if (role == "admin") context.getString(R.string.welcome_admin_msg) else context.getString(R.string.login_success_msg)
 
                         AppUtil.showToast(context, welcomeMsg)
 
@@ -154,7 +155,7 @@ fun LoginScreen(
                             launchSingleTop = true
                         }
                     } else {
-                        AppUtil.showToast(context, errorMessage ?: "Login failed")
+                        AppUtil.showToast(context, errorMessage ?: context.getString(R.string.login_failed))
                     }
                 }
             },
@@ -171,7 +172,7 @@ fun LoginScreen(
                 )
             } else {
                 Text(
-                    text = "Login",
+                    text = stringResource(id = R.string.login_btn),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -186,11 +187,11 @@ fun LoginScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Don't have an account?",
+                text = stringResource(id = R.string.no_account),
                 style = MaterialTheme.typography.bodyMedium
             )
             TextButton(onClick = { navController.navigate("signup") }) {
-                Text("Sign up")
+                Text(stringResource(id = R.string.signup_link))
             }
         }
 

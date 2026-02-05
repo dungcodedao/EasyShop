@@ -16,7 +16,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.easyshop.R
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.easyshop.AppUtil
@@ -68,7 +70,7 @@ fun ProductItemView(modifier: Modifier = Modifier, product: ProductModel) {
                         Color(0xFFE53935)   // Đỏ nếu hết hàng
                 ) {
                     Text(
-                        text = if (product.inStock) "In Stock" else "Out",
+                        text = if (product.inStock) stringResource(id = R.string.in_stock) else stringResource(id = R.string.out_of_stock),
                         color = Color.White,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
@@ -125,7 +127,7 @@ fun ProductItemView(modifier: Modifier = Modifier, product: ProductModel) {
                         if (product.inStock) {
                             AppUtil.addItemToCart(context, product.id)
                         } else {
-                            AppUtil.showToast(context, "This product is out of stock")
+                            AppUtil.showToast(context, context.getString(R.string.product_out_of_stock_msg))
                         }
                     },
                     enabled = product.inStock

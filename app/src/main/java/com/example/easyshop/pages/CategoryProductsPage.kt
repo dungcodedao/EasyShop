@@ -5,13 +5,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.easyshop.R
 import com.example.easyshop.GlobalNavigation.navController
 import com.example.easyshop.components.ProductFilterDialog
 import com.example.easyshop.components.ProductItemView
@@ -24,10 +27,15 @@ fun CategoryProductsPage(
     modifier: Modifier = Modifier,
     categoryId: String
 ) {
+    val allBrandsLabel = stringResource(id = R.string.all_brands)
+    val defaultSortLabel = stringResource(id = R.string.sort_default)
+    val priceLowHighLabel = stringResource(id = R.string.sort_price_low_high)
+    val priceHighLowLabel = stringResource(id = R.string.sort_price_high_low)
+
     var allProducts by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
     var brandList by remember { mutableStateOf<List<String>>(emptyList()) }
-    var selectedBrand by remember { mutableStateOf("All Brands") }
-    var selectedPriceSort by remember { mutableStateOf("Default") }
+    var selectedBrand by remember { mutableStateOf(allBrandsLabel) }
+    var selectedPriceSort by remember { mutableStateOf(defaultSortLabel) }
     var isLoading by remember { mutableStateOf(true) }
     var showFilterDialog by remember { mutableStateOf(false) }
 
@@ -45,7 +53,7 @@ fun CategoryProductsPage(
                     }
 
                     // Extract brands
-                    brandList = listOf("All Brands") + allProducts
+                    brandList = listOf(allBrandsLabel) + allProducts
                         .mapNotNull { it.otherDetails["Brand"]?.trim() }
                         .filter { it.isNotBlank() }
                         .distinct()
@@ -59,13 +67,13 @@ fun CategoryProductsPage(
     val filteredProducts = remember(allProducts, selectedBrand, selectedPriceSort) {
         allProducts
             .filter { product ->
-                selectedBrand == "All Brands" ||
+                selectedBrand == allBrandsLabel ||
                         product.otherDetails["Brand"]?.trim().equals(selectedBrand, ignoreCase = true)
             }
             .let { products ->
                 when (selectedPriceSort) {
-                    "Price: Low to High" -> products.sortedBy { it.actualPrice.parsePrice() }
-                    "Price: High to Low" -> products.sortedByDescending { it.actualPrice.parsePrice() }
+                    priceLowHighLabel -> products.sortedBy { it.actualPrice.parsePrice() }
+                    priceHighLowLabel -> products.sortedByDescending { it.actualPrice.parsePrice() }
                     else -> products
                 }
             }
@@ -90,7 +98,7 @@ fun CategoryProductsPage(
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        Icons.Default.ArrowBack,
+                        Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
                         modifier = Modifier.size(22.dp)
                     )
@@ -98,7 +106,7 @@ fun CategoryProductsPage(
 
                 // Product Count
                 Text(
-                    text = "${filteredProducts.size} products",
+                    text = stringResource(id = R.string.products_count, filteredProducts.size),
                     style = MaterialTheme.typography.labelLarge
                 )
 
@@ -121,8 +129,8 @@ fun CategoryProductsPage(
             isLoading = isLoading,
             products = filteredProducts,
             onResetFilters = {
-                selectedBrand = "All Brands"
-                selectedPriceSort = "Default"
+                selectedBrand = allBrandsLabel
+                selectedPriceSort = defaultSortLabel
             }
         )
     }
@@ -135,8 +143,8 @@ fun CategoryProductsPage(
             onPriceSortSelected = { selectedPriceSort = it },
             onDismiss = { showFilterDialog = false },
             onReset = {
-                selectedBrand = "All Brands"
-                selectedPriceSort = "Default"
+                selectedBrand = allBrandsLabel
+                selectedPriceSort = defaultSortLabel
             }
         )
     }
@@ -157,10 +165,10 @@ private fun ProductListContent(
         products.isEmpty() -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("No products found")
+                    Text(stringResource(id = R.string.no_products_found))
                     Spacer(Modifier.height(8.dp))
                     TextButton(onClick = onResetFilters) {
-                        Text("Reset filters")
+                        Text(stringResource(id = R.string.reset_filters))
                     }
                 }
             }
@@ -170,7 +178,10 @@ private fun ProductListContent(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(products.chunked(2)) { rowItems ->
+                items(
+                    items = products.chunked(2),
+                    key = { row -> row.joinToString("-") { it.id } }
+                ) { rowItems ->
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         rowItems.forEach { product ->
                             ProductItemView(

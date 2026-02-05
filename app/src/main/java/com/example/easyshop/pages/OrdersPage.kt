@@ -12,7 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.easyshop.R
 import androidx.compose.ui.unit.sp
 import com.example.easyshop.GlobalNavigation.navController
 import com.example.easyshop.components.OrderView
@@ -29,7 +31,7 @@ fun OrdersPage(modifier: Modifier = Modifier) {
     }
 
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Processing", "History")
+    val tabs = listOf(stringResource(id = R.string.processing), stringResource(id = R.string.history))
 
     val filteredList = remember(selectedTab, orderList.value) {
         when (selectedTab) {
@@ -77,7 +79,7 @@ fun OrdersPage(modifier: Modifier = Modifier) {
                 }
 
                 Text(
-                    text = "Your orders",
+                    text = stringResource(id = R.string.your_orders),
                     style = MaterialTheme.typography.titleMedium
                 )
 
@@ -121,7 +123,7 @@ fun OrdersPage(modifier: Modifier = Modifier) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (selectedTab == 0) "No active orders" else "No order history",
+                    text = if (selectedTab == 0) stringResource(id = R.string.no_active_orders) else stringResource(id = R.string.no_order_history),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -133,7 +135,10 @@ fun OrdersPage(modifier: Modifier = Modifier) {
                     .padding(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(filteredList) {
+                items(
+                    items = filteredList,
+                    key = { it.id }
+                ) {
                     OrderView(it)
                 }
             }

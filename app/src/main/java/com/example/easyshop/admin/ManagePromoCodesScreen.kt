@@ -19,7 +19,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
+import com.example.easyshop.R
 import com.example.easyshop.model.PromoCodeModel
 import com.example.easyshop.model.isExpired
 import com.google.firebase.Firebase
@@ -28,7 +30,6 @@ import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManagePromoCodesScreen(
     navController: NavController,
@@ -61,15 +62,15 @@ fun ManagePromoCodesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Manage Promo Codes") },
+                title = { Text(stringResource(id = R.string.manage_promo_codes_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, "Back")
+                        Icon(Icons.Default.ArrowBack, stringResource(id = R.string.back_to_home))
                     }
                 },
                 actions = {
                     IconButton(onClick = { loadPromoCodes() }) {
-                        Icon(Icons.Default.Refresh, "Refresh")
+                        Icon(Icons.Default.Refresh, stringResource(id = R.string.reset))
                     }
                 }
             )
@@ -79,7 +80,7 @@ fun ManagePromoCodesScreen(
                 onClick = { showAddDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Default.Add, "Add Promo Code")
+                Icon(Icons.Default.Add, stringResource(id = R.string.add_promo_code_action))
             }
         }
     ) { padding ->
@@ -103,7 +104,7 @@ fun ManagePromoCodesScreen(
                         tint = Color.Gray
                     )
                     Spacer(Modifier.height(16.dp))
-                    Text("No promo codes found", color = Color.Gray)
+                    Text(stringResource(id = R.string.no_promo_codes_found), color = Color.Gray)
                 }
             } else {
                 LazyColumn(
@@ -111,7 +112,10 @@ fun ManagePromoCodesScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(promoCodes) { promo ->
+                    items(
+                        items = promoCodes,
+                        key = { it.code }
+                    ) { promo ->
                         PromoCodeItem(
                             promo = promo,
                             onToggleActive = {
@@ -126,7 +130,7 @@ fun ManagePromoCodesScreen(
                                     .delete()
                                     .addOnSuccessListener { 
                                         loadPromoCodes()
-                                        Toast.makeText(context, "Deleted ${promo.code}", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, context.getString(R.string.deleted_promo_msg, promo.code), Toast.LENGTH_SHORT).show()
                                     }
                             }
                         )
@@ -146,10 +150,10 @@ fun ManagePromoCodesScreen(
                     .addOnSuccessListener {
                         showAddDialog = false
                         loadPromoCodes()
-                        Toast.makeText(context, "Added ${newPromo.code}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.added_promo_msg, newPromo.code), Toast.LENGTH_SHORT).show()
                     }
                     .addOnFailureListener {
-                        Toast.makeText(context, "Error adding promo code", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.error_adding_promo), Toast.LENGTH_SHORT).show()
                     }
             }
         )
@@ -208,7 +212,7 @@ fun PromoCodeItem(
                     Icon(Icons.Default.Event, null, modifier = Modifier.size(14.dp), tint = Color.Gray)
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = if (promo.expiryDate > 0) "Exp: ${dateFormat.format(Date(promo.expiryDate))}" else "No Expiry",
+                        text = if (promo.expiryDate > 0) stringResource(id = R.string.exp_label, dateFormat.format(Date(promo.expiryDate))) else stringResource(id = R.string.no_expiry),
                         fontSize = 12.sp,
                         color = if (isExpired) Color.Red else Color.Gray
                     )
@@ -230,7 +234,7 @@ fun PromoCodeItem(
                     colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF4CAF50))
                 )
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, "Delete", tint = Color.Red.copy(alpha = 0.7f))
+                    Icon(Icons.Default.Delete, stringResource(id = R.string.cancel_order), tint = Color.Red.copy(alpha = 0.7f))
                 }
             }
         }
@@ -256,7 +260,7 @@ fun AddPromoCodeDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("New Promo Code") },
+        title = { Text(stringResource(id = R.string.new_promo_code_title)) },
         text = {
             Column(
                 modifier = Modifier
@@ -267,29 +271,29 @@ fun AddPromoCodeDialog(
                 OutlinedTextField(
                     value = code,
                     onValueChange = { code = it.uppercase() },
-                    label = { Text("Code (e.g. SUMMER50)") },
+                    label = { Text(stringResource(id = R.string.code_hint)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description") },
+                    label = { Text(stringResource(id = R.string.product_description)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 
-                Text("Discount Type", style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(id = R.string.discount_type_label), style = MaterialTheme.typography.labelMedium)
                 Row(modifier = Modifier.fillMaxWidth()) {
                     FilterChip(
                         selected = type == "percentage",
                         onClick = { type = "percentage" },
-                        label = { Text("Percentage") },
+                        label = { Text(stringResource(id = R.string.percentage_type)) },
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(Modifier.width(8.dp))
                     FilterChip(
                         selected = type == "fixed",
                         onClick = { type = "fixed" },
-                        label = { Text("Fixed Amount") },
+                        label = { Text(stringResource(id = R.string.fixed_amount_type)) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -298,14 +302,14 @@ fun AddPromoCodeDialog(
                     OutlinedTextField(
                         value = value,
                         onValueChange = { value = it },
-                        label = { Text(if (type == "percentage") "Value (%)" else "Value ($)") },
+                        label = { Text(if (type == "percentage") stringResource(id = R.string.value_percentage_label) else stringResource(id = R.string.value_fixed_label)) },
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(Modifier.width(8.dp))
                     OutlinedTextField(
                         value = minOrder,
                         onValueChange = { minOrder = it },
-                        label = { Text("Min Order") },
+                        label = { Text(stringResource(id = R.string.min_order_label)) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -314,14 +318,14 @@ fun AddPromoCodeDialog(
                     OutlinedTextField(
                         value = maxDiscount,
                         onValueChange = { maxDiscount = it },
-                        label = { Text("Max Discount") },
+                        label = { Text(stringResource(id = R.string.max_discount_label)) },
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(Modifier.width(8.dp))
                     OutlinedTextField(
                         value = usageLimit,
                         onValueChange = { usageLimit = it },
-                        label = { Text("Usage Limit") },
+                        label = { Text(stringResource(id = R.string.usage_limit_label)) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -329,7 +333,7 @@ fun AddPromoCodeDialog(
                 OutlinedTextField(
                     value = expiryDays,
                     onValueChange = { expiryDays = it },
-                    label = { Text("Expires in (days)") },
+                    label = { Text(stringResource(id = R.string.expires_in_days_label)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -357,12 +361,12 @@ fun AddPromoCodeDialog(
                     onConfirm(newPromo)
                 }
             ) {
-                Text("Create")
+                Text(stringResource(id = R.string.create_btn))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(id = R.string.cancel))
             }
         }
     )

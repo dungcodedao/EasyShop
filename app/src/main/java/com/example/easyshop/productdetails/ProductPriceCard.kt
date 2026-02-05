@@ -7,7 +7,9 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.Composable
+import com.example.easyshop.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -68,7 +70,7 @@ fun ProductPriceCard(price: String, actualPrice: String) {
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "OFF",
+                            text = stringResource(id = R.string.off_label),
                             color = Color.White,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold

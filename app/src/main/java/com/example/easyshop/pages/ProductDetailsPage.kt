@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -12,9 +13,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.easyshop.GlobalNavigation.navController
 import com.example.easyshop.AppUtil
+import com.example.easyshop.R
 import com.example.easyshop.model.ProductModel
 import com.example.easyshop.productdetails.AddToCartButton
 import com.example.easyshop.productdetails.ProductHeader
@@ -62,14 +65,14 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId: String) {
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        Icons.Default.ArrowBack,
+                        Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
                         modifier = Modifier.size(22.dp)
                     )
                 }
 
                 Text(
-                    text = "Product Details",
+                    text = stringResource(R.string.product_details),
                     style = MaterialTheme.typography.titleMedium
                 )
 

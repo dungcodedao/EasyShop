@@ -29,8 +29,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.easyshop.R
 import com.example.easyshop.model.ProductModel
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
@@ -97,7 +99,7 @@ fun SearchView(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Search products...") },
+                placeholder = { Text(stringResource(id = R.string.search_hint)) },
                 modifier = Modifier.weight(1f),
                 singleLine = true,
                 colors = TextFieldDefaults.colors(
@@ -124,7 +126,7 @@ fun SearchView(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No products found",
+                            text = stringResource(id = R.string.no_products_found),
                             fontSize = 18.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

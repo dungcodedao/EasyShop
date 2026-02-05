@@ -10,20 +10,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.easyshop.R
 import androidx.navigation.NavController
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProductPage(
     productId: String,
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
@@ -82,7 +86,7 @@ fun EditProductPage(
             specifications = specs.toList()
 
         } catch (e: Exception) {
-            errorMessage = "Failed to load product: ${e.message}"
+            errorMessage = "${context.getString(R.string.failed_load_product)}: ${e.message}"
         } finally {
             isLoadingData = false
         }
@@ -91,7 +95,7 @@ fun EditProductPage(
     // Update product
     fun updateProduct() {
         if (title.isBlank() || category.isBlank() || price.isBlank()) {
-            errorMessage = "Please fill in all required fields"
+            errorMessage = context.getString(R.string.please_fill_all_fields)
             return
         }
 
@@ -157,7 +161,7 @@ fun EditProductPage(
                 }
 
                 Text(
-                    text = "Edit Product",
+                    text = stringResource(id = R.string.edit_product),
                     style = MaterialTheme.typography.titleMedium
                 )
 
@@ -174,7 +178,7 @@ fun EditProductPage(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator()
                     Spacer(Modifier.height(16.dp))
-                    Text("Loading product...")
+                    Text(stringResource(id = R.string.loading_product))
                 }
             }
         } else {
@@ -203,7 +207,7 @@ fun EditProductPage(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "Product Images",
+                                stringResource(id = R.string.product_images),
                                 style = MaterialTheme.typography.titleMedium
                             )
                             Text(
@@ -214,7 +218,7 @@ fun EditProductPage(
                         }
 
                         Text(
-                            "Paste image URLs (e.g. from Amazon, Cloudinary...)",
+                            stringResource(id = R.string.paste_image_urls),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -231,8 +235,8 @@ fun EditProductPage(
                                             this[index] = newUrl
                                         }
                                     },
-                                    label = { Text("Image URL ${index + 1}") },
-                                    placeholder = { Text("https://example.com/image.jpg") },
+                                     label = { Text("${stringResource(id = R.string.image_url_label)} ${index + 1}") },
+                                     placeholder = { Text("https://example.com/image.jpg") },
                                     modifier = Modifier.weight(1f),
                                     leadingIcon = {
                                         Icon(Icons.Default.Link, null,
@@ -263,7 +267,7 @@ fun EditProductPage(
                             ) {
                                 Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Add More URL")
+                                 Text(stringResource(id = R.string.add_more_url))
                             }
                         }
                     }
@@ -273,7 +277,7 @@ fun EditProductPage(
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Product Title *") },
+                    label = { Text("${stringResource(id = R.string.product_title)} *") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -282,7 +286,7 @@ fun EditProductPage(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description") },
+                    label = { Text(stringResource(id = R.string.product_description)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3
                 )
@@ -296,7 +300,7 @@ fun EditProductPage(
                         value = categories.find { it.id == category }?.name ?: category,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Category *") },
+                        label = { Text("${stringResource(id = R.string.category)} *") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -336,11 +340,11 @@ fun EditProductPage(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "Specifications",
+                                stringResource(id = R.string.specifications),
                                 style = MaterialTheme.typography.titleMedium
                             )
                             Text(
-                                "${specifications.size} items",
+                                stringResource(id = R.string.items_count, specifications.size),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -391,7 +395,7 @@ fun EditProductPage(
                         ) {
                             Icon(Icons.Default.Add, null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Add Specification")
+                            Text(stringResource(id = R.string.add_specification))
                         }
                     }
                 }
@@ -404,7 +408,7 @@ fun EditProductPage(
                     OutlinedTextField(
                         value = price,
                         onValueChange = { price = it },
-                        label = { Text("Original Price *") },
+                        label = { Text("${stringResource(id = R.string.original_price)} *") },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
                         prefix = { Text("$") }
@@ -413,7 +417,7 @@ fun EditProductPage(
                     OutlinedTextField(
                         value = actualPrice,
                         onValueChange = { actualPrice = it },
-                        label = { Text("Sale Price") },
+                        label = { Text(stringResource(id = R.string.sale_price)) },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
                         prefix = { Text("$") }
@@ -428,7 +432,7 @@ fun EditProductPage(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("In Stock", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(id = R.string.in_stock), style = MaterialTheme.typography.bodyLarge)
                     Switch(
                         checked = inStock,
                         onCheckedChange = { inStock = it }
@@ -472,11 +476,11 @@ fun EditProductPage(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text("Updating...")
+                        Text(stringResource(id = R.string.updating))
                     } else {
                         Icon(Icons.Default.Check, null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Update Product")
+                        Text(stringResource(id = R.string.update_product))
                     }
                 }
             }
@@ -490,13 +494,13 @@ fun EditProductPage(
 
         AlertDialog(
             onDismissRequest = { showAddSpecDialog = false },
-            title = { Text("Add Specification") },
+            title = { Text(stringResource(id = R.string.add_specification)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
                         value = specKey,
                         onValueChange = { specKey = it },
-                        label = { Text("Specification Name") },
+                        label = { Text(stringResource(id = R.string.specification_name)) },
                         placeholder = { Text("e.g. Screen Size, RAM, CPU") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
@@ -504,7 +508,7 @@ fun EditProductPage(
                     OutlinedTextField(
                         value = specValue,
                         onValueChange = { specValue = it },
-                        label = { Text("Value") },
+                        label = { Text(stringResource(id = R.string.value)) },
                         placeholder = { Text("e.g. 6.67 Inches, 8 GB") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
@@ -520,12 +524,12 @@ fun EditProductPage(
                         }
                     }
                 ) {
-                    Text("Add")
+                    Text(stringResource(id = R.string.add))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showAddSpecDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(id = R.string.cancel))
                 }
             }
         )
@@ -536,14 +540,14 @@ fun EditProductPage(
         AlertDialog(
             onDismissRequest = { showSuccessDialog = false },
             icon = { Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary) },
-            title = { Text("Success!") },
-            text = { Text("Product has been updated successfully.") },
+            title = { Text(stringResource(id = R.string.success)) },
+            text = { Text(stringResource(id = R.string.product_updated_msg)) },
             confirmButton = {
                 TextButton(onClick = {
                     showSuccessDialog = false
                     navController.navigateUp()
                 }) {
-                    Text("OK")
+                    Text(stringResource(id = R.string.ok))
                 }
             }
         )

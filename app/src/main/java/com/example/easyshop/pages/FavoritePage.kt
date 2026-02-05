@@ -15,6 +15,8 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.example.easyshop.R
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,7 +70,7 @@ fun FavoritePage(modifier: Modifier = Modifier){
             .padding(16.dp),
     )
     {
-        Text(text = "Your favorites", style = TextStyle(
+        Text(text = stringResource(id = R.string.your_favorites), style = TextStyle(
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold
         )
@@ -79,7 +81,10 @@ fun FavoritePage(modifier: Modifier = Modifier){
             LazyColumn (
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(productsList.value.chunked(2)){rowItems ->
+                items(
+                    items = productsList.value.chunked(2),
+                    key = { row -> row.joinToString("-") { it.id } }
+                ) { rowItems ->
                     Row {
                         rowItems.forEach {
                             ProductItemView(product = it,
@@ -107,7 +112,7 @@ fun FavoritePage(modifier: Modifier = Modifier){
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "No favorite items yet",
+                    text = stringResource(id = R.string.no_favorites_yet),
                     fontSize = 18.sp,
                     color = Color.Gray
                 )

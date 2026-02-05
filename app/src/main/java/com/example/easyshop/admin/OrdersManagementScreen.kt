@@ -16,7 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.easyshop.R
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.easyshop.model.OrderModel
@@ -28,12 +31,12 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrdersManagementScreen(
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var orders by remember { mutableStateOf<List<OrderModel>>(emptyList()) }
     var filteredOrders by remember { mutableStateOf<List<OrderModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -106,7 +109,7 @@ fun OrdersManagementScreen(
                 }
 
                 Text(
-                    text = "Orders Management",
+                    text = stringResource(id = R.string.orders_management_title),
                     style = MaterialTheme.typography.titleMedium
                 )
 
@@ -116,7 +119,7 @@ fun OrdersManagementScreen(
                 ) {
                     Icon(
                         Icons.Default.Refresh,
-                        contentDescription = "Refresh",
+                        contentDescription = stringResource(id = R.string.reset),
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -136,8 +139,17 @@ fun OrdersManagementScreen(
                         label = {
                             Text(
                                 text = when (filter) {
-                                    "ALL" -> "All (${orders.size})"
-                                    else -> "$filter (${orders.count { it.status == filter }})"
+                                    "ALL" -> "${stringResource(id = R.string.all_filter)} (${orders.size})"
+                                    else -> {
+                                        val statusLabel = when(filter) {
+                                            "ORDERED" -> stringResource(id = R.string.ordered_status)
+                                            "SHIPPING" -> stringResource(id = R.string.shipping_status)
+                                            "DELIVERED" -> stringResource(id = R.string.delivered_status)
+                                            "CANCELLED" -> stringResource(id = R.string.cancelled_status)
+                                            else -> filter
+                                        }
+                                        "$statusLabel (${orders.count { it.status == filter }})"
+                                    }
                                 }
                             )
                         },
@@ -168,7 +180,17 @@ fun OrdersManagementScreen(
                                 tint = MaterialTheme.colorScheme.outline
                             )
                             Text(
-                                if (selectedFilter == "ALL") "No orders yet" else "No $selectedFilter orders",
+                                if (selectedFilter == "ALL") stringResource(id = R.string.no_orders_yet) 
+                                else {
+                                    val statusLabel = when(selectedFilter) {
+                                        "ORDERED" -> stringResource(id = R.string.ordered_status)
+                                        "SHIPPING" -> stringResource(id = R.string.shipping_status)
+                                        "DELIVERED" -> stringResource(id = R.string.delivered_status)
+                                        "CANCELLED" -> stringResource(id = R.string.cancelled_status)
+                                        else -> selectedFilter
+                                    }
+                                    stringResource(id = R.string.no_filtered_orders, statusLabel)
+                                },
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -180,7 +202,10 @@ fun OrdersManagementScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(filteredOrders) { order ->
+                    items(
+                        items = filteredOrders,
+                        key = { it.id }
+                    ) { order ->
                             OrderCard(
                                 order = order,
                                 onUpdateStatus = { newStatus -> updateOrderStatus(order, newStatus) },
@@ -212,6 +237,7 @@ fun OrderCard(
     onUpdateStatus: (String) -> Unit,
     onViewDetails: () -> Unit
 ) {
+    val context = LocalContext.current
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
 
@@ -230,12 +256,12 @@ fun OrderCard(
             ) {
                 Column {
                     Text(
-                        text = "Order #${order.id.take(8)}",
+                        text = "${stringResource(id = R.string.order_number_prefix)}${order.id.take(8)}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = order.date?.toDate()?.let { dateFormat.format(it) } ?: "N/A",
+                        text = order.date?.toDate()?.let { dateFormat.format(it) } ?: stringResource(id = R.string.no_active_orders),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -262,7 +288,7 @@ fun OrderCard(
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = order.userEmail.ifBlank { "N/A" },
+                        text = order.userEmail.ifBlank { stringResource(id = R.string.no_active_orders) },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -274,7 +300,7 @@ fun OrderCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "${order.items.size} items",
+                    text = "${order.items.size} ${stringResource(id = R.string.cart_items)}",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
@@ -295,7 +321,7 @@ fun OrderCard(
                             ) {
                                 Icon(Icons.Default.LocalShipping, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("Ship")
+                                Text(stringResource(id = R.string.ship_btn))
                             }
                             OutlinedButton(
                                 onClick = { onUpdateStatus("CANCELLED") },
@@ -304,7 +330,7 @@ fun OrderCard(
                             ) {
                                 Icon(Icons.Default.Close, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("Cancel")
+                                Text(context.getString(R.string.cancel_btn))
                             }
                         }
                         "SHIPPING" -> {
@@ -314,7 +340,7 @@ fun OrderCard(
                             ) {
                                 Icon(Icons.Default.CheckCircle, null)
                                 Spacer(Modifier.width(8.dp))
-                                Text("Mark as Delivered")
+                                Text(stringResource(id = R.string.mark_as_delivered))
                             }
                         }
                     }
@@ -327,11 +353,11 @@ fun OrderCard(
 @Composable
 fun OrderStatusBadge(status: String) {
     val (color, text, icon) = when (status) {
-        "ORDERED" -> Triple(MaterialTheme.colorScheme.primaryContainer, "Ordered", Icons.Default.ShoppingBag)
-        "SHIPPING" -> Triple(MaterialTheme.colorScheme.tertiaryContainer, "Shipping", Icons.Default.LocalShipping)
-        "DELIVERED" -> Triple(MaterialTheme.colorScheme.secondaryContainer, "Delivered", Icons.Default.CheckCircle)
-        "CANCELLED" -> Triple(MaterialTheme.colorScheme.errorContainer, "Cancelled", Icons.Default.Cancel)
-        else -> Triple(MaterialTheme.colorScheme.surfaceVariant, "Unknown", Icons.Default.HelpOutline)
+        "ORDERED" -> Triple(MaterialTheme.colorScheme.primaryContainer, stringResource(id = R.string.ordered_status), Icons.Default.ShoppingBag)
+        "SHIPPING" -> Triple(MaterialTheme.colorScheme.tertiaryContainer, stringResource(id = R.string.shipping_status), Icons.Default.LocalShipping)
+        "DELIVERED" -> Triple(MaterialTheme.colorScheme.secondaryContainer, stringResource(id = R.string.delivered_status), Icons.Default.CheckCircle)
+        "CANCELLED" -> Triple(MaterialTheme.colorScheme.errorContainer, stringResource(id = R.string.cancelled_status), Icons.Default.Cancel)
+        else -> Triple(MaterialTheme.colorScheme.surfaceVariant, stringResource(id = R.string.no_active_orders), Icons.Default.HelpOutline)
     }
 
     Surface(
@@ -356,6 +382,7 @@ fun OrderDetailsDialog(
     onDismiss: () -> Unit,
     onUpdateStatus: (String) -> Unit
 ) {
+    val context = LocalContext.current
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
     val productNames = remember { mutableStateMapOf<String, String>() }
@@ -367,7 +394,7 @@ fun OrderDetailsDialog(
                 .document("stock").collection("products")
                 .document(productId).get()
                 .addOnSuccessListener { doc ->
-                    productNames[productId] = doc.getString("title") ?: "Unknown Product"
+                    productNames[productId] = doc.getString("title") ?: context.getString(R.string.unknown_product)
                 }
         }
     }
@@ -384,37 +411,37 @@ fun OrderDetailsDialog(
                     .verticalScroll(rememberScrollState())
             ) {
                 Text(
-                    text = "Order Details",
+                    text = stringResource(id = R.string.order_details),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.height(16.dp))
 
-                DetailRow("Order ID", "#${order.id.take(8)}")
-                DetailRow("Date", order.date?.toDate()?.let { dateFormat.format(it) } ?: "N/A")
+                DetailRow(stringResource(id = R.string.order_id_label), "#${order.id.take(8)}")
+                DetailRow(stringResource(id = R.string.date), order.date?.toDate()?.let { dateFormat.format(it) } ?: stringResource(id = R.string.no_active_orders))
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "Status: ", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                    Text(text = "${stringResource(id = R.string.order_status)}: ", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                     OrderStatusBadge(order.status)
                 }
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
                 Text(
-                    text = "Customer Information",
+                    text = stringResource(id = R.string.customer_info_title),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.height(8.dp))
-                DetailRow("Name", order.userName.ifBlank { "N/A" })
-                DetailRow("Email", order.userEmail.ifBlank { "N/A" })
-                DetailRow("Address", order.address.ifBlank { "N/A" })
-                DetailRow("Payment", order.paymentMethod.ifBlank { "COD" })
+                DetailRow(stringResource(id = R.string.full_name), order.userName.ifBlank { stringResource(id = R.string.no_active_orders) })
+                DetailRow(stringResource(id = R.string.email), order.userEmail.ifBlank { stringResource(id = R.string.no_active_orders) })
+                DetailRow(stringResource(id = R.string.address), order.address.ifBlank { stringResource(id = R.string.no_active_orders) })
+                DetailRow(stringResource(id = R.string.payment_method_label), order.paymentMethod.ifBlank { "COD" })
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
                 Text(
-                    text = "Items (${order.items.size})",
+                    text = "${stringResource(id = R.string.ordered_items)} (${order.items.size})",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -427,7 +454,7 @@ fun OrderDetailsDialog(
                             .padding(vertical = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        val name = productNames[productId] ?: "Loading..."
+                        val name = productNames[productId] ?: stringResource(id = R.string.loading_label)
                         Text(
                             text = name,
                             style = MaterialTheme.typography.bodyMedium,
@@ -450,7 +477,7 @@ fun OrderDetailsDialog(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Total Amount",
+                        text = stringResource(id = R.string.total_amount),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -467,7 +494,7 @@ fun OrderDetailsDialog(
                 // Action Buttons for Admin
                 if (order.status != "DELIVERED" && order.status != "CANCELLED") {
                     Text(
-                        text = "Update Status",
+                        text = stringResource(id = R.string.update_status_label),
                         style = MaterialTheme.typography.labelMedium,
                         color = Color.Gray
                     )
@@ -484,7 +511,7 @@ fun OrderDetailsDialog(
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3)),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
-                                Text("Ship", fontSize = 12.sp)
+                                Text(stringResource(id = R.string.ship_btn), fontSize = 12.sp)
                             }
                         }
                         if (order.status == "SHIPPING" || order.status == "ORDERED") {
@@ -494,7 +521,7 @@ fun OrderDetailsDialog(
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
-                                Text("Deliver", fontSize = 12.sp)
+                                Text(stringResource(id = R.string.deliver_btn), fontSize = 12.sp)
                             }
                         }
                         OutlinedButton(
@@ -503,7 +530,7 @@ fun OrderDetailsDialog(
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text("Cancel", fontSize = 12.sp)
+                            Text(stringResource(id = R.string.cancel_btn), fontSize = 12.sp)
                         }
                     }
                     Spacer(Modifier.height(16.dp))
@@ -514,7 +541,7 @@ fun OrderDetailsDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("Close")
+                    Text(stringResource(id = R.string.close_btn))
                 }
             }
         }

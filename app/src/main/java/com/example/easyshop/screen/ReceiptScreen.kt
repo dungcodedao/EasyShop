@@ -11,11 +11,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.easyshop.R
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -48,7 +50,7 @@ fun ReceiptScreen(
             ) {
                 Text("✅", fontSize = 64.sp)
                 Text(
-                    "Payment Successful",
+                    stringResource(id = R.string.payment_successful),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF4CAF50)
@@ -66,9 +68,9 @@ fun ReceiptScreen(
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
                 Spacer(Modifier.height(24.dp))
 
-                ReceiptRow("Order ID", "#$orderId")
-                ReceiptRow("Date", date)
-                ReceiptRow("Payment Method", "Mastercard (...4111)")
+                ReceiptRow(stringResource(id = R.string.order_id), "#$orderId")
+                ReceiptRow(stringResource(id = R.string.date), date)
+                ReceiptRow(stringResource(id = R.string.payment_method), "Mastercard (...4111)")
                 
                 Spacer(Modifier.height(16.dp))
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
@@ -78,7 +80,7 @@ fun ReceiptScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Total Amount", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(stringResource(id = R.string.total_amount), fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     Text(
                         "$${"%.2f".format(amount)}",
                         fontWeight = FontWeight.Bold,
@@ -117,7 +119,7 @@ fun ReceiptScreen(
         ) {
             Icon(Icons.Default.Home, null)
             Spacer(Modifier.width(8.dp))
-            Text("Back to Home", fontWeight = FontWeight.Bold)
+            Text(stringResource(id = R.string.back_to_home), fontWeight = FontWeight.Bold)
         }
     }
 }

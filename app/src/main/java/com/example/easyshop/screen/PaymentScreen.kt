@@ -13,16 +13,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.easyshop.AppUtil
+import com.example.easyshop.R
 import com.example.easyshop.components.VirtualCreditCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaymentScreen(
     modifier: Modifier = Modifier,
@@ -64,7 +65,7 @@ fun PaymentScreen(
                 }
 
                 Text(
-                    text = "Payment",
+                    text = stringResource(R.string.payment),
                     style = MaterialTheme.typography.titleMedium
                 )
 
@@ -82,7 +83,7 @@ fun PaymentScreen(
             Spacer(Modifier.height(8.dp))
 
             Text(
-                text = "Complete your purchase securely",
+                text = stringResource(R.string.payment_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -105,7 +106,7 @@ fun PaymentScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "Payable Amount",
+                            stringResource(R.string.payable_amount),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -121,7 +122,7 @@ fun PaymentScreen(
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
-                            text = "SECURE",
+                            text = stringResource(R.string.secure),
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
@@ -149,7 +150,7 @@ fun PaymentScreen(
 
             // Payment Methods
             Text(
-                text = "Payment Method",
+                text = stringResource(R.string.payment_method),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -166,7 +167,7 @@ fun PaymentScreen(
             // Card Details (if Credit Card selected)
             if (selectedPaymentMethod == "Credit Card (Mock)") {
                 Text(
-                    text = "Card Details",
+                    text = stringResource(R.string.card_details),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -179,7 +180,7 @@ fun PaymentScreen(
                     onValueChange = {
                         if (it.length <= 19) cardNumber = formatCardNumber(it)
                     },
-                    label = { Text("Card Number") },
+                    label = { Text(stringResource(R.string.card_number)) },
                     placeholder = { Text("1234 5678 9012 3456") },
                     leadingIcon = {
                         Icon(Icons.Default.CreditCard, contentDescription = null)
@@ -193,7 +194,7 @@ fun PaymentScreen(
                 OutlinedTextField(
                     value = cardName,
                     onValueChange = { cardName = it },
-                    label = { Text("Cardholder Name") },
+                    label = { Text(stringResource(R.string.card_holder_name)) },
                     placeholder = { Text("JOHN DOE") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -210,7 +211,7 @@ fun PaymentScreen(
                         onValueChange = {
                             if (it.length <= 5) expiryDate = formatExpiryDate(it)
                         },
-                        label = { Text("Expiry") },
+                        label = { Text(stringResource(R.string.expiry)) },
                         placeholder = { Text("MM/YY") },
                         singleLine = true,
                         modifier = Modifier.weight(1f)
@@ -221,7 +222,7 @@ fun PaymentScreen(
                         onValueChange = {
                             if (it.length <= 3 && it.all { c -> c.isDigit() }) cvv = it
                         },
-                        label = { Text("CVV") },
+                        label = { Text(stringResource(R.string.cvv)) },
                         placeholder = { Text("123") },
                         singleLine = true,
                         modifier = Modifier.weight(1f)
@@ -245,7 +246,7 @@ fun PaymentScreen(
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = "You will be redirected to Razorpay's secure payment page to complete your transaction.",
+                            text = stringResource(R.string.redirect_notice),
                             fontSize = 14.sp,
                             lineHeight = 20.sp
                         )
@@ -275,7 +276,7 @@ fun PaymentScreen(
                                         popUpTo("payment") { inclusive = true }
                                     }
                                 } else {
-                                    AppUtil.showToast(context, "Payment declined. Use test card 4111 1111 1111 1111")
+                                    AppUtil.showToast(context, context.getString(R.string.test_card_hint))
                                 }
                             }
                         }
@@ -311,7 +312,7 @@ fun PaymentScreen(
                     )
                 } else {
                     Text(
-                        text = "Pay $${"%.2f".format(totalAmount)}",
+                        text = stringResource(R.string.pay_with_amount, "$${"%.2f".format(totalAmount)}"),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -323,9 +324,9 @@ fun PaymentScreen(
             // Security Notice
             Text(
                 text = if (selectedPaymentMethod == "Razorpay (Real)")
-                    "🔒 Secure payment powered by Razorpay"
+                    stringResource(R.string.secure_notice_real)
                 else
-                    "🔒 This is a demo payment system. No real transactions are processed.",
+                    stringResource(R.string.secure_notice_mock),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth()

@@ -11,7 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.easyshop.R
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -51,7 +53,7 @@ fun AddToCartButton(inStock: Boolean, onAddToCart: () -> Unit) {
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = if (inStock) "Add to Cart" else "Out of Stock",
+            text = if (inStock) stringResource(id = R.string.add_to_cart_btn) else stringResource(id = R.string.out_of_stock_btn),
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold
         )

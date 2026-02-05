@@ -19,7 +19,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
+import com.example.easyshop.R
 import com.example.easyshop.model.UserModel
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
@@ -29,7 +31,6 @@ import java.util.Locale
 
 data class UserStats(val orderCount: Int, val totalSpent: Double)
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManageUsersScreen(
     navController: NavController,
@@ -102,10 +103,10 @@ fun ManageUsersScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Manage Users", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(id = R.string.manage_users_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(id = R.string.back_to_home))
                     }
                 }
             )
@@ -124,7 +125,7 @@ fun ManageUsersScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                placeholder = { Text("Search by name or email") },
+                placeholder = { Text(stringResource(id = R.string.search_users_hint)) },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true
@@ -136,14 +137,17 @@ fun ManageUsersScreen(
                 }
             } else if (filteredUsers.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No users found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(id = R.string.no_users_found), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    items(items = filteredUsers) { user: UserModel ->
+                    items(
+                        items = filteredUsers,
+                        key = { it.uid }
+                    ) { user: UserModel ->
                         val stats = userStats[user.uid] ?: UserStats(0, 0.0)
                         UserListItem(user, stats, onClick = {
                             selectedUser = user
@@ -217,7 +221,7 @@ fun UserDetailContent(
         Spacer(Modifier.height(16.dp))
 
         Text(
-            text = user.name.ifEmpty { "No Name" },
+            text = user.name.ifEmpty { stringResource(id = R.string.no_name) },
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
@@ -231,17 +235,17 @@ fun UserDetailContent(
         Spacer(Modifier.height(24.dp))
 
         // Info Grid
-        DetailInfoRow("User ID", user.uid)
-        DetailInfoRow("Address", user.address.ifEmpty { "No address set" })
-        DetailInfoRow("Total Orders", "${stats.orderCount} orders")
-        DetailInfoRow("Total Spent", currencyFormat.format(stats.totalSpent))
-        DetailInfoRow("Current Role", user.role.uppercase())
+        DetailInfoRow(stringResource(id = R.string.user_id_label), user.uid)
+        DetailInfoRow(stringResource(id = R.string.address), user.address.ifEmpty { stringResource(id = R.string.no_address_set) })
+        DetailInfoRow(stringResource(id = R.string.total_items), stringResource(id = R.string.orders_count_label, stats.orderCount))
+        DetailInfoRow(stringResource(id = R.string.total_spent_label), currencyFormat.format(stats.totalSpent))
+        DetailInfoRow(stringResource(id = R.string.current_role_label), user.role.uppercase())
 
         Spacer(Modifier.height(32.dp))
 
         // Action Buttons
         Text(
-            text = "Change Role",
+            text = stringResource(id = R.string.change_role_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.align(Alignment.Start)
@@ -262,7 +266,7 @@ fun UserDetailContent(
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             ) {
-                Text("Make User")
+                Text(stringResource(id = R.string.make_user_btn))
             }
 
             Button(
@@ -274,7 +278,7 @@ fun UserDetailContent(
                     contentColor = Color(0xFF1976D2)
                 )
             ) {
-                Text("Make Admin")
+                Text(stringResource(id = R.string.make_admin_btn))
             }
         }
     }
@@ -332,7 +336,7 @@ fun UserListItem(user: UserModel, stats: UserStats, onClick: () -> Unit) {
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = user.name.ifEmpty { "No Name" },
+                text = user.name.ifEmpty { stringResource(id = R.string.no_name) },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -354,7 +358,7 @@ fun UserListItem(user: UserModel, stats: UserStats, onClick: () -> Unit) {
             
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "${stats.orderCount} orders",
+                    text = stringResource(id = R.string.orders_count_label, stats.orderCount),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
                 )

@@ -7,11 +7,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.easyshop.R
 import androidx.compose.ui.unit.sp
 
 @Composable
 fun ProductTabs(selectedTab: Int, onTabSelected: (Int) -> Unit) {
+    val titles = listOf(
+        stringResource(id = R.string.product_description),
+        stringResource(id = R.string.specifications),
+        stringResource(id = R.string.write_a_review)
+    )
     TabRow(
         selectedTabIndex = selectedTab,
         containerColor = Color.Transparent,
@@ -23,7 +30,7 @@ fun ProductTabs(selectedTab: Int, onTabSelected: (Int) -> Unit) {
             )
         }
     ) {
-        listOf("Description", "Specifications", "Reviews").forEachIndexed { index, title ->
+        titles.forEachIndexed { index, title ->
             Tab(
                 selected = selectedTab == index,
                 onClick = { onTabSelected(index) },

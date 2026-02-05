@@ -17,7 +17,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
+import com.example.easyshop.R
 import com.example.easyshop.model.OrderModel
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
@@ -25,10 +27,10 @@ import kotlinx.coroutines.tasks.await
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.ui.platform.LocalContext
 
 data class ProductStat(val id: String, val count: Int, val revenue: Double)
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
     navController: NavController,
@@ -101,10 +103,10 @@ fun AnalyticsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Business Analytics", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(id = R.string.business_analytics_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(id = R.string.back_to_home))
                     }
                 }
             )
@@ -131,7 +133,7 @@ fun AnalyticsScreen(
                 // Revenue Trend
                 item {
                     Text(
-                        "Revenue Trend (Last 7 Days)",
+                        stringResource(id = R.string.revenue_trend_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -142,7 +144,7 @@ fun AnalyticsScreen(
                 // Order Distribution
                 item {
                     Text(
-                        "Order Distribution",
+                        stringResource(id = R.string.order_distribution_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -157,7 +159,7 @@ fun AnalyticsScreen(
                 // Best Sellers
                 item {
                     Text(
-                        "Top Selling Products",
+                        stringResource(id = R.string.top_selling_products_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -165,10 +167,13 @@ fun AnalyticsScreen(
 
                 if (topProducts.isEmpty()) {
                     item {
-                        Text("No sales data available", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(id = R.string.no_sales_data), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 } else {
-                    items(items = topProducts) { stat: ProductStat ->
+                    items(
+                        items = topProducts,
+                        key = { it.id }
+                    ) { stat: ProductStat ->
                         TopProductItem(stat)
                     }
                 }
@@ -193,7 +198,7 @@ fun RevenueCard(total: Double, totalOrders: Int) {
                 Icon(Icons.Default.MonetizationOn, null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "Total Revenue",
+                    stringResource(id = R.string.total_revenue_label),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                 )
@@ -211,8 +216,8 @@ fun RevenueCard(total: Double, totalOrders: Int) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                StatSubItem("Orders", totalOrders.toString(), Icons.Default.Inventory2)
-                StatSubItem("Avg. Value", if (totalOrders > 0) currencyFormat.format(total / totalOrders) else "$0", Icons.Default.TrendingUp)
+                StatSubItem(stringResource(id = R.string.orders), totalOrders.toString(), Icons.Default.Inventory2)
+                StatSubItem(stringResource(id = R.string.avg_value_label), if (totalOrders > 0) currencyFormat.format(total / totalOrders) else "$0", Icons.Default.TrendingUp)
             }
         }
     }
@@ -303,9 +308,9 @@ fun OrderDistributionChart(delivered: Int, cancelled: Int, other: Int) {
             Spacer(Modifier.height(16.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                LegendItem("Delivered", Color(0xFF4CAF50))
-                LegendItem("Pending", Color(0xFFFFB300))
-                LegendItem("Cancelled", Color(0xFFF44336))
+                LegendItem(stringResource(id = R.string.delivered_status), Color(0xFF4CAF50))
+                LegendItem(stringResource(id = R.string.pending_status_legend), Color(0xFFFFB300))
+                LegendItem(stringResource(id = R.string.cancelled_status), Color(0xFFF44336))
             }
         }
     }
@@ -322,13 +327,15 @@ fun LegendItem(label: String, color: Color) {
 
 @Composable
 fun TopProductItem(stat: ProductStat) {
-    var productName by remember { mutableStateOf("Loading...") }
+    val context = LocalContext.current
+    var productName by remember { mutableStateOf("") }
+    if (productName.isEmpty()) productName = stringResource(id = R.string.loading_label)
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
 
     LaunchedEffect(stat.id) {
         Firebase.firestore.collection("data").document("stock").collection("products")
             .document(stat.id).get().addOnSuccessListener {
-                productName = it.getString("title") ?: "Unknown Product"
+                productName = it.getString("title") ?: context.getString(R.string.unknown_product)
             }
     }
 
@@ -352,7 +359,7 @@ fun TopProductItem(stat: ProductStat) {
 
         Column(Modifier.weight(1f)) {
             Text(productName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text("${stat.count} items sold", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(id = R.string.items_sold_label, stat.count), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         Column(horizontalAlignment = Alignment.End) {

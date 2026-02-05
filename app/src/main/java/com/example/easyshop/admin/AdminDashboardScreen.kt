@@ -20,7 +20,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.easyshop.R
 import androidx.navigation.NavController
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -28,7 +30,6 @@ import com.google.firebase.firestore.firestore
 import com.example.easyshop.model.AdminMenuItem
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(
     navController: NavController,
@@ -94,47 +95,47 @@ fun AdminDashboardScreen(
 
     val menuItems = listOf(
         AdminMenuItem(
-            "Manage Products",
+            stringResource(id = R.string.manage_products),
             Icons.Default.Inventory,
             "admin-products",
             Color(0xFF2196F3),
             totalProducts
         ),
         AdminMenuItem(
-            "Add Product",
+            stringResource(id = R.string.add_product_action),
             Icons.Default.Add,
             "add-product",
             Color(0xFF4CAF50)
         ),
         AdminMenuItem(
-            "Orders",
+            stringResource(id = R.string.orders),
             Icons.Default.ShoppingBag,
             "orders-management",
             Color(0xFFFF9800),
             pendingOrders
         ),
         AdminMenuItem(
-            "Categories",
+            stringResource(id = R.string.categories),
             Icons.Default.Category,
             "manage-categories",
             Color(0xFF9C27B0),
             totalCategories
         ),
         AdminMenuItem(
-            "Analytics",
+            stringResource(id = R.string.analytics),
             Icons.Default.Analytics,
             "analytics",
             Color(0xFF00BCD4)
         ),
         AdminMenuItem(
-            "Users",
+            stringResource(id = R.string.users),
             Icons.Default.People,
             "manage-users",
             Color(0xFFE91E63),
             totalUsers
         ),
         AdminMenuItem(
-            "Promo Codes",
+            stringResource(id = R.string.promo_codes),
             Icons.Default.ConfirmationNumber,
             "manage-promo-codes",
             Color(0xFF673AB7)
@@ -155,7 +156,7 @@ fun AdminDashboardScreen(
             ) {
                 // Spacer or Admin Title
                 Text(
-                    text = "Admin Dashboard",
+                    text = stringResource(id = R.string.admin_dashboard_title),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(start = 12.dp)
                 )
@@ -166,7 +167,7 @@ fun AdminDashboardScreen(
                         popUpTo("admin-dashboard") { inclusive = true }
                     }
                 }) {
-                    Icon(Icons.Default.ExitToApp, "Logout")
+                    Icon(Icons.Default.ExitToApp, stringResource(id = R.string.logout))
                 }
             }
         }
@@ -184,7 +185,7 @@ fun AdminDashboardScreen(
                         .padding(horizontal = 20.dp)
                 ) {
                     Text(
-                        text = "Welcome back",
+                        text = stringResource(id = R.string.welcome_back),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -205,7 +206,7 @@ fun AdminDashboardScreen(
             // Quick Actions Title
             item {
                 Text(
-                    text = "Quick Actions",
+                    text = stringResource(id = R.string.quick_actions),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 20.dp)
@@ -288,7 +289,7 @@ fun AdminMenuCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(50.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .background(
                             Brush.linearGradient(
@@ -304,7 +305,7 @@ fun AdminMenuCard(
                         item.icon,
                         contentDescription = null,
                         tint = item.color,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(69.dp)
                     )
                 }
 

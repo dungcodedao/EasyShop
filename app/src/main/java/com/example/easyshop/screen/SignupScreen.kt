@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -70,7 +71,7 @@ fun SignupScreen(
 
         // Header
         Text(
-            text = "Hello There!",
+            text = stringResource(id = R.string.hello_there),
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold
         )
@@ -78,7 +79,7 @@ fun SignupScreen(
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text = "Create an account",
+            text = stringResource(id = R.string.create_account_subtitle),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -100,14 +101,14 @@ fun SignupScreen(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it.trim() }, // Tự động trim email
-            label = { Text("Email address") },
+            label = { Text(stringResource(id = R.string.email_address)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             singleLine = true,
             isError = email.isNotEmpty() && !isEmailValid(email),
             supportingText = {
                 if (email.isNotEmpty() && !isEmailValid(email)) {
                     Text(
-                        text = "Please enter a valid email address",
+                        text = stringResource(id = R.string.email_invalid_error),
                         color = MaterialTheme.colorScheme.error
                     )
                 }
@@ -121,13 +122,13 @@ fun SignupScreen(
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Full Name") },
+            label = { Text(stringResource(id = R.string.full_name)) },
             singleLine = true,
             isError = name.isNotEmpty() && name.trim().isBlank(),
             supportingText = {
                 if (name.isNotEmpty() && name.trim().isBlank()) {
                     Text(
-                        text = "Name cannot be empty",
+                        text = stringResource(id = R.string.name_empty_error),
                         color = MaterialTheme.colorScheme.error
                     )
                 }
@@ -141,7 +142,7 @@ fun SignupScreen(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password") },
+            label = { Text(stringResource(id = R.string.password)) },
             visualTransformation = if (passwordVisible) VisualTransformation.None
             else PasswordVisualTransformation(),
             trailingIcon = {
@@ -149,8 +150,8 @@ fun SignupScreen(
                     Icon(
                         imageVector = if (passwordVisible) Icons.Filled.Visibility
                         else Icons.Filled.VisibilityOff,
-                        contentDescription = if (passwordVisible) "Hide password"
-                        else "Show password"
+                        contentDescription = if (passwordVisible) stringResource(id = R.string.hide_password)
+                        else stringResource(id = R.string.show_password)
                     )
                 }
             },
@@ -160,11 +161,11 @@ fun SignupScreen(
             supportingText = {
                 if (password.isNotEmpty() && !isPasswordValid(password)) {
                     Text(
-                        text = "Use 6+ characters with letters and numbers",
+                        text = stringResource(id = R.string.password_format_error),
                         color = MaterialTheme.colorScheme.error
                     )
                 } else {
-                    Text("Use 6+ characters with letters and numbers")
+                    Text(stringResource(id = R.string.password_format_error))
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -176,7 +177,7 @@ fun SignupScreen(
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
-            label = { Text("Confirm Password") },
+            label = { Text(stringResource(id = R.string.confirm_password)) },
             visualTransformation = if (confirmPasswordVisible) VisualTransformation.None
             else PasswordVisualTransformation(),
             trailingIcon = {
@@ -184,8 +185,8 @@ fun SignupScreen(
                     Icon(
                         imageVector = if (confirmPasswordVisible) Icons.Filled.Visibility
                         else Icons.Filled.VisibilityOff,
-                        contentDescription = if (confirmPasswordVisible) "Hide password"
-                        else "Show password"
+                        contentDescription = if (confirmPasswordVisible) stringResource(id = R.string.hide_password)
+                        else stringResource(id = R.string.show_password)
                     )
                 }
             },
@@ -195,7 +196,7 @@ fun SignupScreen(
             supportingText = {
                 if (confirmPassword.isNotEmpty() && !isPasswordMatch) {
                     Text(
-                        text = "Passwords don't match",
+                        text = stringResource(id = R.string.password_mismatch_error),
                         color = MaterialTheme.colorScheme.error
                     )
                 }
@@ -223,7 +224,7 @@ fun SignupScreen(
                         } else {
                             AppUtil.showToast(
                                 context,
-                                errorMessage ?: "Something went wrong"
+                                errorMessage ?: context.getString(R.string.something_went_wrong)
                             )
                         }
                     }
@@ -242,7 +243,7 @@ fun SignupScreen(
                 )
             } else {
                 Text(
-                    text = "Create Account",
+                    text = stringResource(id = R.string.create_account_btn),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -257,12 +258,12 @@ fun SignupScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Already have an account?",
+                text = stringResource(id = R.string.already_have_account),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             TextButton(onClick = { navController.navigateUp() }) {
-                Text("Login")
+                Text(stringResource(id = R.string.login_btn))
             }
         }
 

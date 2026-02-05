@@ -14,10 +14,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.easyshop.R
 
 @Composable
 fun ProductTabContent(
@@ -56,7 +58,7 @@ fun DescriptionTab(description: String) {
         if (description.length > 200) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = if (isExpanded) "Read Less" else "Read More",
+                text = if (isExpanded) stringResource(R.string.read_less) else stringResource(R.string.read_more),
                 color = Color.Red,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
@@ -88,7 +90,7 @@ fun SpecificationsTab(specifications: Map<String, String>) {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "No specifications available",
+                text = stringResource(R.string.no_specifications),
                 color = Color.Gray,
                 fontSize = 14.sp
             )
@@ -129,28 +131,28 @@ fun ReviewsTab() {
 
         // Sample Reviews
         ReviewCard(
-            userName = "John Doe",
+            userName = "Nguyễn Văn A",
             rating = 5,
-            comment = "Great product! Highly recommended. The quality is excellent and delivery was fast.",
-            date = "2 days ago"
+            comment = "Sản phẩm tuyệt vời! Rất đáng tiền. Chất lượng hoàn thiện tốt và giao hàng nhanh chóng.",
+            date = "2 ngày trước"
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
         ReviewCard(
-            userName = "Jane Smith",
+            userName = "Trần Thị B",
             rating = 4,
-            comment = "Good value for money. Works as expected, but could be better packaged.",
-            date = "1 week ago"
+            comment = "Đáng đồng tiền bát gạo. Hoạt động tốt như mong đợi, nhưng đóng gói có thể làm cẩn thận hơn.",
+            date = "1 tuần trước"
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
         ReviewCard(
-            userName = "Mike Johnson",
+            userName = "Lê Văn C",
             rating = 5,
-            comment = "Perfect! Exactly what I was looking for. Fast shipping and great customer service.",
-            date = "2 weeks ago"
+            comment = "Hoàn hảo! Chính xác là những gì tôi đang tìm kiếm. Giao hàng thần tốc và dịch vụ khách hàng tốt.",
+            date = "2 tuần trước"
         )
     }
 }
@@ -193,7 +195,7 @@ fun OverallRatingCard() {
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "120 reviews",
+                    text = "120 ${stringResource(R.string.reviews_count_suffix)}",
                     fontSize = 12.sp,
                     color = Color.Gray
                 )

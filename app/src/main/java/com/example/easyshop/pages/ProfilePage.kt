@@ -17,13 +17,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.easyshop.AppUtil
-import com.example.easyshop.GlobalNavigation
-import com.example.easyshop.R
+import com.example.easyshop.*
+import com.example.easyshop.R.*
 import com.example.easyshop.model.UserModel
 import com.example.easyshop.sale.AvatarPickerDialog
 import com.google.firebase.Firebase
@@ -37,7 +37,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
     var nameInput by remember { mutableStateOf("") }
     var showAvatarDialog by remember { mutableStateOf(false) }
     var showEditNameDialog by remember { mutableStateOf(false) }
-    var selectedAvatar by remember { mutableStateOf(R.drawable.profile_nam) }
+    var selectedAvatar by remember { mutableStateOf(drawable.profile_nam) }
     val context = LocalContext.current
 
     // Function save address
@@ -109,7 +109,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Profile",
+                    text = stringResource(string.profile),
                     style = MaterialTheme.typography.titleMedium
                 )
             }
@@ -165,7 +165,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                     OutlinedTextField(
                         value = addressInput,
                         onValueChange = { addressInput = it },
-                        label = { Text("Address") },
+                        label = { Text(stringResource(string.address)) },
                         leadingIcon = {
                             Icon(
                                 Icons.Default.LocationOn,
@@ -194,12 +194,79 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                         Icon(Icons.Default.Email, null, modifier = Modifier.size(20.dp))
                         Column(modifier = Modifier.padding(start = 8.dp)) {
                             Text(
-                                "Email",
+                                stringResource(string.email),
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(userModel.value.email, fontSize = 14.sp)
                         }
+                    }
+                }
+            }
+
+            // Language Selection Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Language, null)
+                    Column(modifier = Modifier.padding(start = 12.dp)) {
+                        Text(
+                            stringResource(string.language),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        val currentLang = LocaleHelper.getLanguage(context)
+                        Text(
+                            if (currentLang == "vi") "Tiếng Việt" else "English",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    
+                    var showLangDialog by remember { mutableStateOf(false) }
+                    TextButton(onClick = { showLangDialog = true }) {
+                        Text("Change")
+                    }
+
+                    if (showLangDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showLangDialog = false },
+                            title = { Text(stringResource(string.select_language)) },
+                            text = {
+                                Column {
+                                    val languages = listOf("en" to "English", "vi" to "Tiếng Việt")
+                                    languages.forEach { (code, name) ->
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    LocaleHelper.setLocale(context, code)
+                                                    (context as? android.app.Activity)?.recreate()
+                                                    showLangDialog = false
+                                                }
+                                                .padding(16.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            RadioButton(
+                                                selected = LocaleHelper.getLanguage(context) == code,
+                                                onClick = null
+                                            )
+                                            Spacer(Modifier.width(16.dp))
+                                            Text(name)
+                                        }
+                                    }
+                                }
+                            },
+                            confirmButton = {}
+                        )
                     }
                 }
             }
@@ -219,7 +286,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                     Icon(Icons.Default.ShoppingCart, null)
                     Column(modifier = Modifier.padding(start = 12.dp)) {
                         Text(
-                            "Cart Items",
+                            stringResource(string.cart_items),
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -246,7 +313,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(Icons.Default.List, null)
-                    Text("My Orders", modifier = Modifier.padding(start = 12.dp))
+                    Text(stringResource(string.my_orders), modifier = Modifier.padding(start = 12.dp))
                     Spacer(Modifier.weight(1f))
                     Icon(Icons.Default.KeyboardArrowRight, null)
                 }
@@ -270,7 +337,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
             ) {
                 Icon(Icons.Default.ExitToApp, null)
                 Spacer(Modifier.width(8.dp))
-                Text("Sign Out", fontWeight = FontWeight.Bold)
+                Text(stringResource(string.sign_out), fontWeight = FontWeight.Bold)
             }
         }
     }

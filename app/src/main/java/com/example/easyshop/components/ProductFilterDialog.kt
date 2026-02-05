@@ -10,7 +10,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.easyshop.R
 
 @Composable
 fun ProductFilterDialog(
@@ -24,8 +26,14 @@ fun ProductFilterDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Filter & Sort") },
+        title = { Text(stringResource(id = R.string.filter_sort)) },
         text = {
+            val sortOptions = listOf(
+                stringResource(id = R.string.sort_default),
+                stringResource(id = R.string.sort_price_low_high),
+                stringResource(id = R.string.sort_price_high_low)
+            )
+
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -33,7 +41,7 @@ fun ProductFilterDialog(
                 // Brand Section
                 item {
                     Text(
-                        "Brand",
+                        stringResource(id = R.string.brand),
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
@@ -55,13 +63,13 @@ fun ProductFilterDialog(
                 // Price Sort Section
                 item {
                     Text(
-                        "Sort by Price",
+                        stringResource(id = R.string.sort_by_price),
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
 
-                items(listOf("Default", "Price: Low to High", "Price: High to Low")) { sortOption ->
+                items(sortOptions) { sortOption ->
                     FilterItem(
                         text = sortOption,
                         isSelected = sortOption == selectedPriceSort,
@@ -72,7 +80,7 @@ fun ProductFilterDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Apply")
+                Text(stringResource(id = R.string.apply))
             }
         },
         dismissButton = {
@@ -80,7 +88,7 @@ fun ProductFilterDialog(
                 onReset()
                 onDismiss()
             }) {
-                Text("Reset")
+                Text(stringResource(id = R.string.reset))
             }
         }
     )

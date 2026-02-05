@@ -1,3 +1,275 @@
 <resources>
-    <string name="app_name">ShopOnline</string>
+    <string name="app_name">EasyShop</string>
+    
+    <!-- General -->
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="read_more">Read More</string>
+    <string name="read_less">Read Less</string>
+    
+    <!-- Profile Page -->
+    <string name="profile">Profile</string>
+    <string name="address">Address</string>
+    <string name="email">Email</string>
+    <string name="cart_items">Cart Items</string>
+    <string name="your_cart">Your cart</string>
+    <string name="empty_cart_msg">Your cart is empty</string>
+    <string name="total_items">Total Items</string>
+    <string name="checkout">Check out</string>
+    <string name="my_orders">My Orders</string>
+    <string name="your_orders">Your orders</string>
+    <string name="processing">Processing</string>
+    <string name="history">History</string>
+    <string name="no_active_orders">No active orders</string>
+    <string name="no_order_history">No order history</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="edit_name">Edit Name</string>
+    <string name="full_name">Full Name</string>
+    <string name="language">Language</string>
+    <string name="select_language">Select Language</string>
+    
+    <!-- Home Page -->
+    <string name="categories">Categories</string>
+    <string name="welcome_back">Welcome back</string>
+    <string name="search_hint">Search products...</string>
+    <string name="no_products_found">No products found</string>
+    <string name="in_stock">In Stock</string>
+    <string name="out_of_stock">Out of Stock</string>
+    <string name="product_out_of_stock_msg">This product is out of stock</string>
+    
+    <!-- Auth -->
+    <string name="sign_in_subtitle">Sign in to your account</string>
+    <string name="email_address">Email address</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="hide_password">Hide password</string>
+    <string name="show_password">Show password</string>
+    <string name="login_btn">Login</string>
+    <string name="no_account">"Don't have an account?"</string>
+    <string name="signup_link">Sign up</string>
+    <string name="login_failed">Login failed</string>
+    <string name="welcome_admin_msg">Welcome Admin, redirecting to Dashboard...</string>
+    <string name="login_success_msg">Login Successful!</string>
+    <string name="hello_there">Hello There!</string>
+    <string name="create_account_subtitle">Create an account</string>
+    <string name="email_invalid_error">Please enter a valid email address</string>
+    <string name="name_empty_error">Name cannot be empty</string>
+    <string name="password_format_error">Use 6+ characters with letters and numbers</string>
+    <string name="password_mismatch_error">"Passwords don't match"</string>
+    <string name="create_account_btn">Create Account</string>
+    <string name="already_have_account">"Already have an account?"</string>
+    <string name="something_went_wrong">Something went wrong</string>
+    
+    <!-- Product Details -->
+    <string name="product_details">Product Details</string>
+    <string name="add_to_cart">Add to Cart</string>
+    <string name="no_specifications">No specifications available</string>
+    <string name="write_a_review">Write a Review</string>
+    <string name="overall_rating">Overall Rating</string>
+    <string name="reviews_count_suffix">reviews</string>
+    
+    <!-- Payment -->
+    <string name="payment">Payment</string>
+    <string name="payment_subtitle">Complete your purchase securely</string>
+    <string name="delivery_address">Delivery Address</string>
+    <string name="order_summary">Order Summary</string>
+    <string name="subtotal">Subtotal</string>
+    <string name="discount">Discount</string>
+    <string name="tax">Tax</string>
+    <string name="total">Total</string>
+    <string name="pay_now">Pay Now</string>
+    <string name="payable_amount">Payable Amount</string>
+    <string name="total_amount">Total Amount</string>
+    <string name="pay">Pay</string>
+    <string name="pay_with_amount">Pay %s</string>
+    <string name="payment_method">Payment Method</string>
+    <string name="card_details">Card Details</string>
+    <string name="card_number">Card Number</string>
+    <string name="card_holder_name">Cardholder Name</string>
+    <string name="expiry">Expiry</string>
+    <string name="cvv">CVV</string>
+    <string name="secure">SECURE</string>
+    <string name="secure_notice_mock">🔒 This is a demo payment system. No real transactions are processed.</string>
+    <string name="secure_notice_real">🔒 Secure payment powered by Razorpay</string>
+    <string name="test_card_hint">Payment declined. Use test card 4111 1111 1111 1111</string>
+    <string name="redirect_notice">"You will be redirected to Razorpay's secure payment page to complete your transaction."</string>
+    
+    <!-- Payment Methods -->
+    <string name="method_mock_card">Credit Card (Mock)</string>
+    <string name="method_razorpay">Razorpay (Real)</string>
+    <string name="method_paypal">PayPal</string>
+    <string name="method_cod">Cash on Delivery</string>
+
+    <!-- Receipt -->
+    <string name="e_receipt">E-Receipt</string>
+    <string name="transaction_summary">Transaction Summary</string>
+    <string name="payment_successful">Payment Successful</string>
+    <string name="order_id">Order ID</string>
+    <string name="date">Date</string>
+    <string name="back_to_home">Back to Home</string>
+    <string name="order_not_found">Order not found</string>
+    <string name="order_status">Order Status</string>
+    <string name="order_details">Order Details</string>
+    <string name="ordered_items">Ordered Items</string>
+    <string name="summary">Summary</string>
+    <string name="shipping_address">Shipping Address</string>
+    <string name="cancel_order">Cancel Order</string>
+    <string name="cancel_order_confirm_title">Cancel Order?</string>
+    <string name="cancel_order_confirm_msg">Are you sure you want to cancel this order? This action cannot be undone.</string>
+    <string name="yes_cancel">Yes, Cancel</string>
+    <string name="no_keep_order">No, Keep Order</string>
+    <string name="quantity">Quantity</string>
+    <string name="product_info_not_available">Product info not available</string>
+    <string name="filter_sort">Filter &amp; Sort</string>
+    <string name="filter_sort_products">Filter &amp; Sort Products</string>
+    <string name="brand">Brand</string>
+    <string name="sort_by_price">Sort by Price</string>
+    <string name="sort_default">Default</string>
+    <string name="sort_price_low_high">Price: Low to High</string>
+    <string name="sort_price_high_low">Price: High to Low</string>
+    <string name="apply">Apply</string>
+    <string name="reset">Reset</string>
+    <string name="your_favorites">Your favorites</string>
+    <string name="no_favorites_yet">No favorite items yet</string>
+    <string name="all_brands">All Brands</string>
+    <string name="products_count">%d products</string>
+    <string name="reset_filters">Reset filters</string>
+
+    <!-- Admin -->
+    <string name="admin_dashboard_title">Admin Dashboard</string>
+    <string name="logout">Logout</string>
+    <string name="quick_actions">Quick Actions</string>
+    <string name="manage_products">Manage Products</string>
+    <string name="add_product_action">Add Product</string>
+    <string name="orders">Orders</string>
+    <string name="users">Users</string>
+    <string name="promo_codes">Promo Codes</string>
+    <string name="analytics">Analytics</string>
+    <string name="add_new_product">Add New Product</string>
+    <string name="edit_product">Edit Product</string>
+    <string name="category">Category</string>
+    <string name="specifications">Specifications</string>
+    <string name="product_images">Product Images</string>
+    <string name="paste_image_urls">Paste image URLs (e.g. from Amazon, Cloudinary...)</string>
+    <string name="product_title">Product Title</string>
+    <string name="product_description">Product Description</string>
+    <string name="add_specification">Add Specification</string>
+    <string name="save_product">Save Product</string>
+    <string name="please_fill_all_fields">Please fill in all required fields</string>
+    <string name="success">Success</string>
+    <string name="product_saved">Product has been saved successfully</string>
+    <string name="key">Key (e.g. RAM)</string>
+    <string name="value">Value (e.g. 16GB)</string>
+    <string name="add">Add</string>
+    <string name="add_more_url">Add More URL</string>
+    <string name="image_url_label">Image URL</string>
+    <string name="original_price">Original Price</string>
+    <string name="sale_price">Sale Price</string>
+    <string name="items_count">%d items</string>
+    <string name="uploading">Uploading...</string>
+    <string name="product_added_msg">Product has been added successfully.</string>
+    <string name="specification_name">Specification Name</string>
+    <string name="loading_product">Loading product...</string>
+    <string name="failed_load_product">Failed to load product</string>
+    <string name="product_updated_msg">Product has been updated successfully.</string>
+    <string name="update_product">Update Product</string>
+    <string name="updating">Updating...</string>
+    
+    <!-- Orders Management -->
+    <string name="orders_management_title">Orders Management</string>
+    <string name="all_filter">ALL</string>
+    <string name="ordered_status">ORDERED</string>
+    <string name="shipping_status">SHIPPING</string>
+    <string name="delivered_status">DELIVERED</string>
+    <string name="cancelled_status">CANCELLED</string>
+    <string name="no_orders_yet">No orders yet</string>
+    <string name="no_filtered_orders">No %s orders</string>
+    <string name="order_number_prefix">Order #</string>
+    <string name="ship_btn">Ship</string>
+    <string name="deliver_btn">Deliver</string>
+    <string name="cancel_btn">Cancel</string>
+    <string name="mark_as_delivered">Mark as Delivered</string>
+    <string name="customer_info_title">Customer Information</string>
+    <string name="payment_method_label">Payment</string>
+    <string name="update_status_label">Update Status</string>
+    <string name="close_btn">Close</string>
+    <string name="unknown_product">Unknown Product</string>
+    <string name="loading_label">Loading...</string>
+    <string name="order_id_label">Order ID</string>
+
+    <!-- Users Management -->
+    <string name="manage_users_title">Manage Users</string>
+    <string name="search_users_hint">Search by name or email</string>
+    <string name="no_users_found">No users found</string>
+    <string name="no_name">No Name</string>
+    <string name="user_id_label">User ID</string>
+    <string name="no_address_set">No address set</string>
+    <string name="total_spent_label">Total Spent</string>
+    <string name="current_role_label">Current Role</string>
+    <string name="change_role_title">Change Role</string>
+    <string name="make_user_btn">Make User</string>
+    <string name="make_admin_btn">Make Admin</string>
+    <string name="orders_count_label">%d orders</string>
+
+    <!-- Promo Codes Management -->
+    <string name="manage_promo_codes_title">Manage Promo Codes</string>
+    <string name="add_promo_code_action">Add Promo Code</string>
+    <string name="no_promo_codes_found">No promo codes found</string>
+    <string name="deleted_promo_msg">Deleted %s</string>
+    <string name="added_promo_msg">Added %s</string>
+    <string name="error_adding_promo">Error adding promo code</string>
+    <string name="exp_label">Exp: %s</string>
+    <string name="no_expiry">No Expiry</string>
+    <string name="new_promo_code_title">New Promo Code</string>
+    <string name="code_hint">Code (e.g. SUMMER50)</string>
+    <string name="discount_type_label">Discount Type</string>
+    <string name="percentage_type">Percentage</string>
+    <string name="fixed_amount_type">Fixed Amount</string>
+    <string name="value_percentage_label">Value (%)</string>
+    <string name="value_fixed_label">Value ($)</string>
+    <string name="min_order_label">Min Order</string>
+    <string name="max_discount_label">Max Discount</string>
+    <string name="usage_limit_label">Usage Limit</string>
+    <string name="expires_in_days_label">Expires in (days)</string>
+    <string name="create_btn">Create</string>
+
+    <!-- Categories Management -->
+    <string name="product_categories_title">Product Categories</string>
+    <string name="categories_overview_desc">Overview of categories and active inventory levels.</string>
+    <string name="no_categories_found">No categories found</string>
+    <string name="add_new_category_title">Add New Category</string>
+    <string name="edit_category_title">Edit Category</string>
+    <string name="category_id_label">Category ID (Slug)</string>
+    <string name="category_id_hint">e.g., computers</string>
+    <string name="display_name_label">Display Name</string>
+    <string name="display_name_hint">e.g., Computers</string>
+    <string name="category_image_url_label">Image URL (Icon)</string>
+    <string name="update_btn">Update</string>
+    <string name="products_count_label">%d products</string>
+    <string name="delete_category_title">Delete Category</string>
+    <string name="delete_category_confirm_msg">"Are you sure you want to delete '%s'?"</string>
+
+    <!-- Analytics Management -->
+    <string name="business_analytics_title">Business Analytics</string>
+    <string name="total_revenue_label">Total Revenue</string>
+    <string name="revenue_trend_title">Revenue Trend (Last 7 Days)</string>
+    <string name="order_distribution_title">Order Distribution</string>
+    <string name="top_selling_products_title">Top Selling Products</string>
+    <string name="no_sales_data">No sales data available</string>
+    <string name="avg_value_label">Avg. Value</string>
+    <string name="pending_status_legend">Pending</string>
+    <string name="items_sold_label">%d items sold</string>
+
+    <!-- Products Management (Admin) -->
+    <string name="manage_products_title">Manage Products</string>
+    <string name="no_products_yet">No products yet</string>
+    <string name="no_products_in_category">No products in this category</string>
+    <string name="delete_product_title">Delete Product?</string>
+    <string name="delete_product_confirm_msg">Are you sure you want to delete \"%s\"? This action cannot be undone.</string>
+
+    <string name="add_to_cart_btn">Add to Cart</string>
+    <string name="out_of_stock_btn">Out of Stock</string>
+    <string name="reviews_count">(%d reviews)</string>
+    <string name="off_label">OFF</string>
 </resources>

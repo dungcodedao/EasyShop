@@ -10,6 +10,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.example.easyshop.R
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,7 +47,7 @@ fun HeaderView(modifier: Modifier = Modifier,
         horizontalArrangement = Arrangement.SpaceBetween
     ){
         Column {
-            Text(text = "Welcome back")
+            Text(text = stringResource(id = R.string.welcome_back))
             Text(text = name, style = TextStyle(
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold

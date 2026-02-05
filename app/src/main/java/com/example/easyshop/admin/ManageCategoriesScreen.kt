@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.easyshop.AppUtil
@@ -23,9 +24,9 @@ import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.tasks.await
 
 import coil.compose.AsyncImage
+import com.example.easyshop.R
 import com.example.easyshop.model.CategoryModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManageCategoriesScreen(
     navController: NavController,
@@ -78,15 +79,15 @@ fun ManageCategoriesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Product Categories") },
+                title = { Text(stringResource(id = R.string.product_categories_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, "Back")
+                        Icon(Icons.Default.ArrowBack, stringResource(id = R.string.back_to_home))
                     }
                 },
                 actions = {
                     IconButton(onClick = { loadCategories() }) {
-                        Icon(Icons.Default.Refresh, "Refresh")
+                        Icon(Icons.Default.Refresh, stringResource(id = R.string.reset))
                     }
                 }
             )
@@ -101,7 +102,7 @@ fun ManageCategoriesScreen(
                 },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Default.Add, "Add Category")
+                Icon(Icons.Default.Add, stringResource(id = R.string.add_new_category_title))
             }
         }
     ) { padding ->
@@ -120,7 +121,7 @@ fun ManageCategoriesScreen(
             ) {
                 item {
                     Text(
-                        "Overview of categories and active inventory levels.",
+                        stringResource(id = R.string.categories_overview_desc),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 8.dp)
@@ -134,11 +135,14 @@ fun ManageCategoriesScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Icon(Icons.Default.Category, null, Modifier.size(64.dp), Color.LightGray)
-                            Text("No categories found", color = Color.Gray)
+                            Text(stringResource(id = R.string.no_categories_found), color = Color.Gray)
                         }
                     }
                 } else {
-                    items(categories) { category ->
+                    items(
+                        items = categories,
+                        key = { it.id }
+                    ) { category ->
                         CategoryItem(
                             category = category,
                             productCount = productCounts[category.id] ?: 0,
@@ -162,7 +166,7 @@ fun ManageCategoriesScreen(
     // Add Dialog
     if (showAddDialog) {
         CategoryFormDialog(
-            title = "Add New Category",
+            title = stringResource(id = R.string.add_new_category_title),
             id = catId,
             name = catName,
             imageUrl = catImageUrl,
@@ -187,7 +191,7 @@ fun ManageCategoriesScreen(
     // Edit Dialog
     if (editingCategory != null) {
         CategoryFormDialog(
-            title = "Edit Category",
+            title = stringResource(id = R.string.edit_category_title),
             id = catId,
             name = catName,
             imageUrl = catImageUrl,
@@ -231,8 +235,8 @@ fun CategoryFormDialog(
                 OutlinedTextField(
                     value = id,
                     onValueChange = onIdChange,
-                    label = { Text("Category ID (Slug)") },
-                    placeholder = { Text("e.g., computers") },
+                    label = { Text(stringResource(id = R.string.category_id_label)) },
+                    placeholder = { Text(stringResource(id = R.string.category_id_hint)) },
                     singleLine = true,
                     enabled = !isEdit, // Don't allow changing ID when editing
                     modifier = Modifier.fillMaxWidth()
@@ -240,15 +244,15 @@ fun CategoryFormDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = onNameChange,
-                    label = { Text("Display Name") },
-                    placeholder = { Text("e.g., Computers") },
+                    label = { Text(stringResource(id = R.string.display_name_label)) },
+                    placeholder = { Text(stringResource(id = R.string.display_name_hint)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = imageUrl,
                     onValueChange = onImageUrlChange,
-                    label = { Text("Image URL (Icon)") },
+                    label = { Text(stringResource(id = R.string.category_image_url_label)) },
                     placeholder = { Text("https://...") },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -256,12 +260,12 @@ fun CategoryFormDialog(
         },
         confirmButton = {
             Button(onClick = onConfirm) {
-                Text(if (isEdit) "Update" else "Add")
+                Text(if (isEdit) stringResource(id = R.string.update_btn) else stringResource(id = R.string.add))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(id = R.string.cancel))
             }
         }
     )
@@ -314,17 +318,17 @@ fun CategoryItem(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                     ) {
-                        Text("$productCount products", style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(id = R.string.products_count_label, productCount), style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
 
             Row {
                 IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, "Edit", tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Default.Edit, stringResource(id = R.string.edit_product), tint = MaterialTheme.colorScheme.primary)
                 }
                 IconButton(onClick = { showDeleteConfirm = true }) {
-                    Icon(Icons.Default.Delete, "Delete", tint = MaterialTheme.colorScheme.error)
+                    Icon(Icons.Default.Delete, stringResource(id = R.string.cancel_order), tint = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -333,8 +337,8 @@ fun CategoryItem(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete Category") },
-            text = { Text("Are you sure you want to delete '${category.name}'?") },
+            title = { Text(stringResource(id = R.string.delete_category_title)) },
+            text = { Text(stringResource(id = R.string.delete_category_confirm_msg, category.name)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -343,12 +347,12 @@ fun CategoryItem(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Delete")
+                    Text(stringResource(id = R.string.delete_category_title))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text("Cancel")
+                    Text(stringResource(id = R.string.cancel))
                 }
             }
         )

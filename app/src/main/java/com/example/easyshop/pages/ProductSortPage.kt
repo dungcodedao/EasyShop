@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.easyshop.R
 
 @Composable
 fun ProductFilterDialog(
@@ -18,7 +20,7 @@ fun ProductFilterDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Filter & Sort Products") },
+        title = { Text(stringResource(id = R.string.filter_sort_products)) },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -26,7 +28,7 @@ fun ProductFilterDialog(
             ) {
                 // Brand Filter
                 FilterDropdown(
-                    label = "Brand",
+                    label = stringResource(id = R.string.brand),
                     value = selectedBrand,
                     options = brandList,
                     onSelected = onBrandSelected
@@ -34,16 +36,20 @@ fun ProductFilterDialog(
 
                 // Price Sort
                 FilterDropdown(
-                    label = "Sort by Price",
+                    label = stringResource(id = R.string.sort_by_price),
                     value = selectedPriceSort,
-                    options = listOf("Default", "Price: Low to High", "Price: High to Low"),
+                    options = listOf(
+                        stringResource(id = R.string.sort_default),
+                        stringResource(id = R.string.sort_price_low_high),
+                        stringResource(id = R.string.sort_price_high_low)
+                    ),
                     onSelected = onPriceSortSelected
                 )
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Apply")
+                Text(stringResource(id = R.string.apply))
             }
         },
         dismissButton = {
@@ -51,13 +57,12 @@ fun ProductFilterDialog(
                 onReset()
                 onDismiss()
             }) {
-                Text("Reset")
+                Text(stringResource(id = R.string.reset))
             }
         }
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilterDropdown(
     label: String,

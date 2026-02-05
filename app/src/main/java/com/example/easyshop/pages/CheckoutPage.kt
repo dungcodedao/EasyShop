@@ -16,7 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.easyshop.R
 import androidx.compose.ui.unit.sp
 import com.example.easyshop.AppUtil
 import com.example.easyshop.GlobalNavigation
@@ -80,7 +82,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
         total.floatValue = subTotal.floatValue - discount.floatValue + tax.floatValue
     }
 
-    Column(modifier = modifier.fillMaxSize().statusBarsPadding().background(Color(0xFFF5F5F5))) {
+    Column(modifier = modifier.fillMaxSize().background(Color(0xFFF5F5F5))) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             tonalElevation = 1.dp
@@ -104,7 +106,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                 }
 
                 Text(
-                    text = "Checkout",
+                    text = stringResource(id = R.string.checkout),
                     style = MaterialTheme.typography.titleMedium
                 )
 
@@ -137,7 +139,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Delivery Address",
+                            text = stringResource(id = R.string.delivery_address),
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
                         )
@@ -175,13 +177,13 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Order Summary",
+                        text = stringResource(id = R.string.order_summary),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    PriceRow("Subtotal", subTotal.floatValue)
+                    PriceRow(stringResource(id = R.string.subtotal), subTotal.floatValue)
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // ✅ PROMO CODE INPUT COMPONENT
@@ -195,11 +197,11 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                     Spacer(modifier = Modifier.height(12.dp))
 
                     if (discount.floatValue > 0) {
-                        PriceRow("Discount", discount.floatValue, isDiscount = true)
+                        PriceRow(stringResource(id = R.string.discount), discount.floatValue, isDiscount = true)
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    PriceRow("Tax", tax.floatValue)
+                    PriceRow(stringResource(id = R.string.tax), tax.floatValue)
                     Spacer(modifier = Modifier.height(12.dp))
                     HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
                     Spacer(modifier = Modifier.height(12.dp))
@@ -210,7 +212,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Total",
+                            text = stringResource(id = R.string.total),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -241,7 +243,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                 )
             ) {
                 Text(
-                    text = "Pay Now - $${"%.2f".format(total.floatValue)}",
+                    text = "${stringResource(id = R.string.pay_now)} - $${"%.2f".format(total.floatValue)}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )

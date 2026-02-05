@@ -20,8 +20,9 @@ import com.google.firebase.firestore.firestore
 import androidx.navigation.NavController
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.ui.res.stringResource
+import com.example.easyshop.R
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CartPage(
     modifier: Modifier = Modifier,
@@ -65,7 +66,7 @@ fun CartPage(
                     }
 
                     Text(
-                        text = "Your cart",
+                        text = stringResource(id = R.string.your_cart),
                         style = MaterialTheme.typography.titleMedium
                     )
 
@@ -95,7 +96,7 @@ private fun CartPageContent(
     ) {
         if (showTitle) {
             Text(
-                text = "Your cart",
+                text = stringResource(id = R.string.your_cart),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -123,7 +124,7 @@ private fun EmptyCart() {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Your cart is empty",
+            text = stringResource(id = R.string.empty_cart_msg),
             fontSize = 20.sp,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -164,7 +165,7 @@ private fun ColumnScope.CartContent(userModel: UserModel) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Total Items",
+                text = stringResource(id = R.string.total_items),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -190,7 +191,7 @@ private fun ColumnScope.CartContent(userModel: UserModel) {
         shape = RoundedCornerShape(16.dp)
     ) {
         Text(
-            text = "Check out",
+            text = stringResource(id = R.string.checkout),
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold
         )
