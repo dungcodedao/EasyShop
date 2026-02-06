@@ -61,7 +61,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
     if (!isCheckingRole) {
         NavHost(navController = navController, startDestination = startDestination) {
 
-        
+
             composable("auth") {
                 AuthScreen(modifier, navController)
             }
@@ -74,7 +74,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 SignupScreen(modifier, navController)
             }
 
-         
+
             composable("home") {
                 HomeScreen(modifier, navController)
             }
@@ -93,7 +93,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 CartPage(modifier, navController)
             }
 
-                composable("checkout") {
+            composable("checkout") {
                 CheckoutPage(modifier)
             }
 
@@ -126,7 +126,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 )
             }
 
-    
+
             // Admin Dashboard - Main screen
             composable("admin-dashboard") {
                 AdminDashboardScreen(navController = navController)
@@ -161,11 +161,11 @@ fun AppNavigation(modifier: Modifier = Modifier) {
 
             // Categories
             composable("manage-categories") {
-            ManageCategoriesScreen(navController, modifier)
-        }
-        composable("manage-promo-codes") {
-            ManagePromoCodesScreen(navController, modifier)
-        }
+                ManageCategoriesScreen(navController, modifier)
+            }
+            composable("manage-promo-codes") {
+                ManagePromoCodesScreen(navController, modifier)
+            }
 
             // Analytics
             composable("analytics") {
