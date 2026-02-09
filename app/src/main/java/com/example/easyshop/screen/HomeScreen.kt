@@ -3,11 +3,13 @@ package com.example.easyshop.screen
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ShoppingCart
@@ -67,6 +69,20 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavController) {
                         )
                     )
                 }
+            }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { navController.navigate("ai-chat") },
+                containerColor = Color(0xFF2196F3),
+                contentColor = Color.White,
+                shape = CircleShape
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.SmartToy,
+                    contentDescription = "AI Chat",
+                    modifier = Modifier.size(28.dp)
+                )
             }
         }
     ) { innerPadding ->

@@ -12,7 +12,7 @@ android {
     defaultConfig {
         applicationId = "com.example.easyshop"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -89,6 +89,9 @@ dependencies {
     // Google Services
     implementation("com.google.android.gms:play-services-maps:19.0.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    // Gemini AI (Gọi trực tiếp từ Android)
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 
     // Testing
     testImplementation(libs.junit)

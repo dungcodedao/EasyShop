@@ -175,7 +175,7 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(stringResource(id = R.string.total_amount), fontSize = 15.sp)
-                                Text("$${"%.2f".format(order!!.total)}", 
+                                Text(AppUtil.formatPrice(order!!.total), 
                                     fontWeight = FontWeight.ExtraBold, 
                                     fontSize = 18.sp,
                                     color = Color(0xFF1976D2)
@@ -282,7 +282,7 @@ fun OrderItemRow(product: ProductModel?, quantity: Long) {
                 Text(product.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
                 Text("${stringResource(id = R.string.quantity)}: $quantity", fontSize = 12.sp, color = Color.Gray)
             }
-            Text("$${"%.2f".format(product.actualPrice.toDoubleOrNull() ?: 0.0)}", fontWeight = FontWeight.Bold)
+            Text(AppUtil.formatPrice(product.actualPrice), fontWeight = FontWeight.Bold)
         } else {
             // Placeholder for missing product info
             Box(Modifier.size(60.dp).background(Color.LightGray))

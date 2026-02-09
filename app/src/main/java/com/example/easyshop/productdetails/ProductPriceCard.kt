@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.easyshop.AppUtil
 
 @Composable
 fun ProductPriceCard(price: String, actualPrice: String) {
@@ -33,7 +34,7 @@ fun ProductPriceCard(price: String, actualPrice: String) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "$$price",
+                    text = AppUtil.formatPrice(price),
                     fontSize = 16.sp,
                     textDecoration = TextDecoration.LineThrough,
                     color = Color.Gray,
@@ -41,7 +42,7 @@ fun ProductPriceCard(price: String, actualPrice: String) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "$$actualPrice",
+                    text = AppUtil.formatPrice(actualPrice),
                     fontSize = 36.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color(0xFF1976D2),

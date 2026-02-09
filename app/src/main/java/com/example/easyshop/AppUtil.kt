@@ -168,6 +168,22 @@ object AppUtil {
         return sdf.format(timestamp.toDate())
     }
 
+    fun formatPrice(price: Any): String {
+        return try {
+            val p = when (price) {
+                is String -> price.replace(",", "").toDoubleOrNull() ?: 0.0
+                is Number -> price.toDouble()
+                else -> 0.0
+            }
+            val formatter = java.text.NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+            val formatted = formatter.format(p)
+            // Thay đổi ký hiệu từ '₫' hoặc 'VND' sang 'đ' cho gọn
+            formatted.replace("₫", "đ").replace("VND", "đ").trim()
+        } catch (e: Exception) {
+            price.toString() + "đ"
+        }
+    }
+
     private const val PREF_NAME = "favorite_pref"
     private const val KEY_FAVORITES = "favorites_list"
 

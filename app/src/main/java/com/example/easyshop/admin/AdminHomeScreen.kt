@@ -22,6 +22,7 @@ import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import com.example.easyshop.AppUtil
 import com.example.easyshop.model.CategoryModel
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -297,14 +298,14 @@ private fun AdminProductItem(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "$${product.actualPrice}",
+                        text = AppUtil.formatPrice(product.actualPrice),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
 
                     if (product.actualPrice != product.price) {
                         Text(
-                            text = "$${product.price}",
+                            text = AppUtil.formatPrice(product.price),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

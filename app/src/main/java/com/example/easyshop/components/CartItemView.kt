@@ -86,7 +86,7 @@ fun CartItemView(modifier: Modifier = Modifier, productId : String, qty : Long){
                 modifier = Modifier.padding(8.dp)
             )
                 Text(
-                    text = "$" +product.actualPrice,
+                    text = AppUtil.formatPrice(product.actualPrice),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
                 )

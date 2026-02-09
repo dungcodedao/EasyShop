@@ -103,13 +103,13 @@ fun ProductItemView(modifier: Modifier = Modifier, product: ProductModel) {
                 // Price Column
                 Column {
                     Text(
-                        text = "$${product.price}",
+                        text = AppUtil.formatPrice(product.price),
                         fontSize = 12.sp,
                         color = Color.Gray,
                         style = TextStyle(textDecoration = TextDecoration.LineThrough)
                     )
                     Text(
-                        text = "$${product.actualPrice}",
+                        text = AppUtil.formatPrice(product.actualPrice),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (product.inStock)

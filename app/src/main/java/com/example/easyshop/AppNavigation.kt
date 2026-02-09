@@ -18,6 +18,7 @@ import com.example.easyshop.admin.OrdersManagementScreen
 import com.example.easyshop.model.UserModel
 import com.example.easyshop.pages.*
 import com.example.easyshop.screen.*
+import com.example.easyshop.ai.ui.AIChatScreen
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
@@ -170,6 +171,11 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             // Analytics
             composable("analytics") {
                 AnalyticsScreen(navController = navController)
+            }
+
+            // AI Chat
+            composable("ai-chat") {
+                AIChatScreen(navController = navController)
             }
 
             // Manage Users
