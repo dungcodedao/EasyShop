@@ -44,7 +44,7 @@ fun AuthScreen(
 
         // Main Heading
         Text(
-            text = "Start your shopping journey now",
+            text = "Bắt đầu hành trình mua sắm ngay",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
@@ -55,7 +55,7 @@ fun AuthScreen(
 
         // Subheading
         Text(
-            text = "Best ecom platform with best prices",
+            text = "Nền tảng mua sắm tốt nhất với giá tốt nhất",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -72,7 +72,7 @@ fun AuthScreen(
             shape = MaterialTheme.shapes.medium
         ) {
             Text(
-                text = "Login",
+                text = "Đăng nhập",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -89,7 +89,7 @@ fun AuthScreen(
             shape = MaterialTheme.shapes.medium
         ) {
             Text(
-                text = "Sign Up",
+                text = "Đăng ký",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -101,7 +101,7 @@ fun AuthScreen(
         TextButton(
             onClick = { navController.navigate("home") }
         ) {
-            Text("Continue as Guest")
+            Text("Tiếp tục với tư cách khách")
         }
 
         Spacer(Modifier.height(32.dp))

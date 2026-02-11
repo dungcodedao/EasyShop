@@ -134,7 +134,7 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
                             }
                             Spacer(Modifier.height(16.dp))
 
-                            Divider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+                            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
                             Spacer(Modifier.height(12.dp))
                             Text("ID: #${order!!.id}", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                             Text("Date: ${AppUtil.formatData(order!!.date)}", fontSize = 13.sp, color = Color.Gray)
@@ -183,7 +183,7 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
                             }
 
                             Spacer(Modifier.height(16.dp))
-                            Divider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+                            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
                             Spacer(Modifier.height(16.dp))
                             
                             Text(stringResource(id = R.string.shipping_address), fontWeight = FontWeight.Bold, fontSize = 16.sp)

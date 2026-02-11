@@ -17,6 +17,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.easyshop.AppUtil
 import com.example.easyshop.R
 import java.text.SimpleDateFormat
 import java.util.*
@@ -82,7 +83,7 @@ fun ReceiptScreen(
                 ) {
                     Text(stringResource(id = R.string.total_amount), fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     Text(
-                        "$${"%.2f".format(amount)}",
+                        AppUtil.formatPrice(amount),
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp,
                         color = MaterialTheme.colorScheme.primary

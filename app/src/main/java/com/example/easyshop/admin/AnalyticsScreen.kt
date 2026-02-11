@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -106,7 +108,7 @@ fun AnalyticsScreen(
                 title = { Text(stringResource(id = R.string.business_analytics_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(id = R.string.back_to_home))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back_to_home))
                     }
                 }
             )
@@ -184,7 +186,7 @@ fun AnalyticsScreen(
 
 @Composable
 fun RevenueCard(total: Double, totalOrders: Int) {
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -210,14 +212,14 @@ fun RevenueCard(total: Double, totalOrders: Int) {
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Spacer(Modifier.height(16.dp))
-            Divider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f))
             Spacer(Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 StatSubItem(stringResource(id = R.string.orders), totalOrders.toString(), Icons.Default.Inventory2)
-                StatSubItem(stringResource(id = R.string.avg_value_label), if (totalOrders > 0) currencyFormat.format(total / totalOrders) else "$0", Icons.Default.TrendingUp)
+                StatSubItem(stringResource(id = R.string.avg_value_label), if (totalOrders > 0) currencyFormat.format(total / totalOrders) else "$0", Icons.AutoMirrored.Filled.TrendingUp)
             }
         }
     }
@@ -246,7 +248,7 @@ fun StatSubItem(label: String, value: String, icon: androidx.compose.ui.graphics
 @Composable
 fun RevenueBarChart(data: List<Pair<String, Double>>) {
     val maxRevenue = data.maxOfOrNull { it.second } ?: 1.0
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -330,7 +332,7 @@ fun TopProductItem(stat: ProductStat) {
     val context = LocalContext.current
     var productName by remember { mutableStateOf("") }
     if (productName.isEmpty()) productName = stringResource(id = R.string.loading_label)
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
 
     LaunchedEffect(stat.id) {
         Firebase.firestore.collection("data").document("stock").collection("products")

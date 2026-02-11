@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,6 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.easyshop.R
+import com.example.easyshop.AppUtil
 import androidx.navigation.NavController
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
@@ -104,7 +106,15 @@ fun EditProductPage(
             errorMessage = null
 
             try {
+                // 1. Filter manual URLs
                 val finalImageUrls = imageUrls.filter { it.isNotBlank() }
+
+                if (finalImageUrls.isEmpty()) {
+                    errorMessage = "Vui lòng thêm ít nhất 1 hình ảnh"
+                    isLoading = false
+                    return@launch
+                }
+
                 val otherDetails = specifications
                     .filter { it.first.isNotBlank() && it.second.isNotBlank() }
                     .toMap()
@@ -154,7 +164,7 @@ fun EditProductPage(
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        Icons.Default.ArrowBack,
+                        Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
                         modifier = Modifier.size(22.dp)
                     )
@@ -197,80 +207,83 @@ fun EditProductPage(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                     )
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                stringResource(id = R.string.product_images),
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                "${imageUrls.count { it.isNotBlank() }}/5",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
                         Text(
-                            stringResource(id = R.string.paste_image_urls),
+                            stringResource(id = R.string.product_images),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        val totalImages = imageUrls.count { it.isNotBlank() }
+                        Text(
+                            "$totalImages/5",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
 
-                        imageUrls.forEachIndexed { index, url ->
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                OutlinedTextField(
-                                    value = url,
-                                    onValueChange = { newUrl ->
-                                        imageUrls = imageUrls.toMutableList().apply {
-                                            this[index] = newUrl
-                                        }
-                                    },
-                                     label = { Text("${stringResource(id = R.string.image_url_label)} ${index + 1}") },
-                                     placeholder = { Text("https://example.com/image.jpg") },
-                                    modifier = Modifier.weight(1f),
-                                    leadingIcon = {
-                                        Icon(Icons.Default.Link, null,
-                                            modifier = Modifier.size(20.dp))
-                                    }
-                                )
+                    Spacer(modifier = Modifier.height(4.dp))
 
-                                if (imageUrls.size > 1) {
-                                    IconButton(
-                                        onClick = {
-                                            imageUrls = imageUrls.filterIndexed { i, _ -> i != index }
-                                        }
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Delete,
-                                            "Remove",
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
+                    Text(
+                        "Dán URL hình ảnh",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    imageUrls.forEachIndexed { index, url ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedTextField(
+                                value = url,
+                                onValueChange = { newUrl ->
+                                    imageUrls = imageUrls.toMutableList().apply {
+                                        this[index] = newUrl
                                     }
+                                },
+                                label = { Text("URL hình ảnh ${index + 1}") },
+                                placeholder = { Text("https://example.com/image.jpg") },
+                                modifier = Modifier.weight(1f),
+                                leadingIcon = {
+                                    Icon(Icons.Default.Link, null,
+                                        modifier = Modifier.size(20.dp))
+                                }
+                            )
+
+                            if (imageUrls.size > 1) {
+                                IconButton(
+                                    onClick = {
+                                        imageUrls = imageUrls.filterIndexed { i, _ -> i != index }
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        "Remove",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
                                 }
                             }
                         }
+                    }
 
-                        if (imageUrls.size < 5) {
-                            OutlinedButton(
-                                onClick = { imageUrls = imageUrls + "" },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                 Text(stringResource(id = R.string.add_more_url))
-                            }
+                    if (imageUrls.size < 5) {
+                        OutlinedButton(
+                            onClick = { imageUrls = imageUrls + "" },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Thêm URL")
                         }
                     }
+                }
                 }
 
                 // Title
@@ -304,7 +317,6 @@ fun EditProductPage(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor()
                     )
 
                     ExposedDropdownMenu(
@@ -411,7 +423,7 @@ fun EditProductPage(
                         label = { Text("${stringResource(id = R.string.original_price)} *") },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
-                        prefix = { Text("$") }
+                        suffix = { Text("đ") }
                     )
 
                     OutlinedTextField(
@@ -420,7 +432,7 @@ fun EditProductPage(
                         label = { Text(stringResource(id = R.string.sale_price)) },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
-                        prefix = { Text("$") }
+                        suffix = { Text("đ") }
                     )
                 }
 

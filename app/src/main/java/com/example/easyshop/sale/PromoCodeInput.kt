@@ -172,7 +172,7 @@ fun PromoCodeInput(
                         )
                     }
                     Text(
-                        "-$${"%.2f".format(discountAmount)}",
+                        "-${com.example.easyshop.AppUtil.formatPrice(discountAmount)}",
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF4CAF50),
                         fontSize = 16.sp

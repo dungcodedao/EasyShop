@@ -5,8 +5,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,7 +30,7 @@ fun PaymentScreen(
     navController: NavController,
     totalAmount: Double = 0.0
 ) {
-    var selectedPaymentMethod by remember { mutableStateOf("Credit Card") }
+    var selectedPaymentMethod by remember { mutableStateOf("") }
     var cardNumber by remember { mutableStateOf("") }
     var cardName by remember { mutableStateOf("") }
     var expiryDate by remember { mutableStateOf("") }
@@ -58,7 +58,7 @@ fun PaymentScreen(
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        Icons.Default.ArrowBack,
+                        Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
                         modifier = Modifier.size(22.dp)
                     )
@@ -111,7 +111,7 @@ fun PaymentScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            "$${"%.2f".format(totalAmount)}",
+                            AppUtil.formatPrice(totalAmount),
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -312,7 +312,7 @@ fun PaymentScreen(
                     )
                 } else {
                     Text(
-                        text = stringResource(R.string.pay_with_amount, "$${"%.2f".format(totalAmount)}"),
+                        text = stringResource(R.string.pay_with_amount, AppUtil.formatPrice(totalAmount)),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -409,6 +409,7 @@ private fun isFormValid(
     expiryDate: String,
     cvv: String
 ): Boolean {
+    if (method.isEmpty()) return false
     return when (method) {
         "Credit Card (Mock)" -> {
             cardNumber.replace(" ", "").length == 16 &&
@@ -416,6 +417,7 @@ private fun isFormValid(
                     expiryDate.length == 5 &&
                     cvv.length == 3
         }
-        else -> true
+        "Razorpay (Real)", "PayPal", "Cash on Delivery" -> true
+        else -> false
     }
 }

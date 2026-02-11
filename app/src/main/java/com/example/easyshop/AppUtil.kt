@@ -29,6 +29,7 @@ object AppUtil {
             .document(FirebaseAuth.getInstance().currentUser?.uid!!)
         userDoc.get().addOnCompleteListener(){
             if(it.isSuccessful) {
+                @Suppress("UNCHECKED_CAST")
                 val currentCart = it.result.get("cartItems") as? Map<String, Long> ?: emptyMap()
                 val currentQuantity = currentCart[productId]?:0
                 val updateQuantity = currentQuantity + 1;
@@ -52,6 +53,7 @@ object AppUtil {
             .document(FirebaseAuth.getInstance().currentUser?.uid!!)
         userDoc.get().addOnCompleteListener(){
             if(it.isSuccessful) {
+                @Suppress("UNCHECKED_CAST")
                 val currentCart = it.result.get("cartItems") as? Map<String, Long> ?: emptyMap()
                 val currentQuantity = currentCart[productId]?:0
                 val updateQuantity = currentQuantity - 1;
@@ -175,7 +177,7 @@ object AppUtil {
                 is Number -> price.toDouble()
                 else -> 0.0
             }
-            val formatter = java.text.NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+            val formatter = java.text.NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
             val formatted = formatter.format(p)
             // Thay đổi ký hiệu từ '₫' hoặc 'VND' sang 'đ' cho gọn
             formatted.replace("₫", "đ").replace("VND", "đ").trim()
@@ -229,7 +231,7 @@ object AppUtil {
         builder.setTitle("💳 Mock Payment")
             .setMessage(
                 "Test Payment\n" +
-                        "Amount: $${"%.2f".format(amount)}\n\n" +
+                        "Amount: đ${"%.2f".format(amount)}\n\n" +
                         "Choose result:"
             )
             .setPositiveButton("✅ Success") { _, _ ->

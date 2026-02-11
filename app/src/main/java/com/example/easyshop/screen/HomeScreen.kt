@@ -28,10 +28,10 @@ import com.example.easyshop.pages.*
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier, navController: NavController) {
     val navItemList = listOf(
-        NavItemModel("Home", Icons.Filled.Home, Icons.Filled.Home, "home"),
-        NavItemModel("Favorite", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder, "favorite"),
-        NavItemModel("Cart", Icons.Filled.ShoppingCart, Icons.Outlined.ShoppingCart, "cart"),
-        NavItemModel("Profile", Icons.Filled.Person, Icons.Outlined.Person, "profile"),
+        NavItemModel("Trang chủ", Icons.Filled.Home, Icons.Filled.Home, "home"),
+        NavItemModel("Yêu thích", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder, "favorite"),
+        NavItemModel("Giỏ hàng", Icons.Filled.ShoppingCart, Icons.Outlined.ShoppingCart, "cart"),
+        NavItemModel("Hồ sơ", Icons.Filled.Person, Icons.Outlined.Person, "profile"),
     )
 
     var selectedIndex by rememberSaveable { mutableStateOf(0) }

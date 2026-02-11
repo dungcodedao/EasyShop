@@ -43,6 +43,7 @@ fun BannerView(modifier: Modifier = Modifier) {
             .document("banners")
             .get().addOnCompleteListener { task ->
                 if (task.isSuccessful) {
+                    @Suppress("UNCHECKED_CAST")
                     val urls = task.result?.get("urls") as? List<String>
                     if (urls != null) {
                         bannerList = urls

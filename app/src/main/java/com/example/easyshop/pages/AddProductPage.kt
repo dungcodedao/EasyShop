@@ -1,21 +1,30 @@
 package com.example.easyshop.pages
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import com.example.easyshop.model.CategoryModel
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.example.easyshop.R
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.example.easyshop.AppUtil
+import com.example.easyshop.R
+import com.example.easyshop.model.CategoryModel
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
@@ -73,7 +82,14 @@ fun AddProductPage(
             errorMessage = null
 
             try {
+                // 1. Filter manual URLs
                 val finalImageUrls = imageUrls.filter { it.isNotBlank() }
+
+                if (finalImageUrls.isEmpty()) {
+                    errorMessage = "Vui lòng thêm ít nhất 1 hình ảnh"
+                    isLoading = false
+                    return@launch
+                }
 
                 val otherDetails = specifications
                     .filter { it.first.isNotBlank() && it.second.isNotBlank() }
@@ -135,7 +151,7 @@ fun AddProductPage(
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        Icons.Default.ArrowBack,
+                        Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
                         modifier = Modifier.size(22.dp)
                     )
@@ -167,6 +183,7 @@ fun AddProductPage(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // Header
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -176,15 +193,18 @@ fun AddProductPage(
                             stringResource(id = R.string.product_images),
                             style = MaterialTheme.typography.titleMedium
                         )
+                        val totalImages = imageUrls.count { it.isNotBlank() }
                         Text(
-                            "${imageUrls.count { it.isNotBlank() }}/5",
+                            "$totalImages/5",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     Text(
-                        stringResource(id = R.string.paste_image_urls),
+                        "Dán URL hình ảnh",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -201,8 +221,8 @@ fun AddProductPage(
                                         this[index] = newUrl
                                     }
                                 },
-                                 label = { Text("${stringResource(id = R.string.image_url_label)} ${index + 1}") },
-                                 placeholder = { Text("https://example.com/image.jpg") },
+                                label = { Text("URL hình ảnh ${index + 1}") },
+                                placeholder = { Text("https://example.com/image.jpg") },
                                 modifier = Modifier.weight(1f),
                                 leadingIcon = {
                                     Icon(
@@ -236,7 +256,7 @@ fun AddProductPage(
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(id = R.string.add_more_url))
+                            Text("Thêm URL")
                         }
                     }
                 }
@@ -275,7 +295,7 @@ fun AddProductPage(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor()
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                 )
 
                 ExposedDropdownMenu(
@@ -382,7 +402,7 @@ fun AddProductPage(
                     label = { Text("${stringResource(id = R.string.original_price)} *") },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
-                    prefix = { Text("$") }
+                    suffix = { Text("đ") }
                 )
 
                 OutlinedTextField(
@@ -391,7 +411,7 @@ fun AddProductPage(
                     label = { Text(stringResource(id = R.string.sale_price)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
-                    prefix = { Text("$") }
+                    suffix = { Text("đ") }
                 )
             }
 

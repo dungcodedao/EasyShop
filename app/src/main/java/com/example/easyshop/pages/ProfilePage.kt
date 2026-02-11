@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -231,7 +232,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                         )
                     }
                     Spacer(Modifier.weight(1f))
-                    Icon(Icons.Default.KeyboardArrowRight, null)
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null)
                 }
             }
 
@@ -246,7 +247,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxWidth().padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.List, null)
+                    Icon(Icons.AutoMirrored.Filled.List, null)
                     Text(stringResource(string.my_orders), modifier = Modifier.padding(start = 12.dp))
                     Spacer(Modifier.weight(1f))
                     Icon(Icons.Default.KeyboardArrowRight, null)
@@ -269,7 +270,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                     containerColor = MaterialTheme.colorScheme.error
                 )
             ) {
-                Icon(Icons.Default.ExitToApp, null)
+                Icon(Icons.AutoMirrored.Filled.ExitToApp, null)
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(string.sign_out), fontWeight = FontWeight.Bold)
             }

@@ -35,7 +35,6 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
     val productList = remember { mutableStateListOf<ProductModel>() }
     val subTotal = remember { mutableFloatStateOf(0f) }
     val discount = remember { mutableFloatStateOf(0f) }
-    val tax = remember { mutableFloatStateOf(0f) }
     val total = remember { mutableFloatStateOf(0f) }
 
     fun calculateAndAssign() {
@@ -46,8 +45,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                 subTotal.floatValue += it.actualPrice.toFloat() * qty
             }
         }
-        tax.floatValue = subTotal.floatValue * (AppUtil.getTaxPercentage() / 100)
-        total.floatValue = subTotal.floatValue - discount.floatValue + tax.floatValue
+        total.floatValue = subTotal.floatValue - discount.floatValue
     }
 
     LaunchedEffect(Unit) {
@@ -79,7 +77,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
 
     // Recalculate when discount changes
     LaunchedEffect(discount.floatValue) {
-        total.floatValue = subTotal.floatValue - discount.floatValue + tax.floatValue
+        total.floatValue = subTotal.floatValue - discount.floatValue
     }
 
     Column(modifier = modifier.fillMaxSize().background(Color(0xFFF5F5F5))) {
@@ -201,8 +199,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    PriceRow(stringResource(id = R.string.tax), tax.floatValue)
-                    Spacer(modifier = Modifier.height(12.dp))
+
                     HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -217,7 +214,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "$${"%.2f".format(total.floatValue)}",
+                            text = AppUtil.formatPrice(total.floatValue),
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF4CAF50)
@@ -243,7 +240,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                 )
             ) {
                 Text(
-                    text = "${stringResource(id = R.string.pay_now)} - $${"%.2f".format(total.floatValue)}",
+                    text = "${stringResource(id = R.string.pay_now)} - ${AppUtil.formatPrice(total.floatValue)}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -260,7 +257,7 @@ fun PriceRow(title: String, value: Float, isDiscount: Boolean = false) {
     ) {
         Text(text = title, fontSize = 15.sp, color = Color.Gray)
         Text(
-            text = "${if (isDiscount) "-" else ""}$${"%.2f".format(value)}",
+            text = "${if (isDiscount) "-" else ""}${AppUtil.formatPrice(value)}",
             fontSize = 15.sp,
             fontWeight = FontWeight.Medium,
             color = if (isDiscount) Color(0xFFFF5252) else Color.Black

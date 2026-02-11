@@ -8,6 +8,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -102,7 +104,7 @@ fun OrdersManagementScreen(
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        Icons.Default.ArrowBack,
+                        Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
                         modifier = Modifier.size(22.dp)
                     )
@@ -239,7 +241,7 @@ fun OrderCard(
 ) {
     val context = LocalContext.current
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -357,7 +359,7 @@ fun OrderStatusBadge(status: String) {
         "SHIPPING" -> Triple(MaterialTheme.colorScheme.tertiaryContainer, stringResource(id = R.string.shipping_status), Icons.Default.LocalShipping)
         "DELIVERED" -> Triple(MaterialTheme.colorScheme.secondaryContainer, stringResource(id = R.string.delivered_status), Icons.Default.CheckCircle)
         "CANCELLED" -> Triple(MaterialTheme.colorScheme.errorContainer, stringResource(id = R.string.cancelled_status), Icons.Default.Cancel)
-        else -> Triple(MaterialTheme.colorScheme.surfaceVariant, stringResource(id = R.string.no_active_orders), Icons.Default.HelpOutline)
+        else -> Triple(MaterialTheme.colorScheme.surfaceVariant, stringResource(id = R.string.no_active_orders), Icons.AutoMirrored.Filled.HelpOutline)
     }
 
     Surface(
@@ -383,7 +385,7 @@ fun OrderDetailsDialog(
     onUpdateStatus: (String) -> Unit
 ) {
     val context = LocalContext.current
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
     val productNames = remember { mutableStateMapOf<String, String>() }
 
@@ -399,7 +401,7 @@ fun OrderDetailsDialog(
         }
     }
 
-    AlertDialog(onDismissRequest = onDismiss) {
+    BasicAlertDialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surface

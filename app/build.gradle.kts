@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.easyshop"
-    compileSdk = 36
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.easyshop"
@@ -49,7 +49,6 @@ android {
         compose = true
     }
 
-
 }
 
 dependencies {
@@ -85,6 +84,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("com.tbuonomo:dotsindicator:5.1.0")
     implementation("com.razorpay:checkout:1.6.40")
+    implementation(libs.okhttp)
 
     // Google Services
     implementation("com.google.android.gms:play-services-maps:19.0.0")
