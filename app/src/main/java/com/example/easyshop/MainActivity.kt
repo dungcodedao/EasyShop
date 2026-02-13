@@ -18,7 +18,7 @@ class MainActivity : ComponentActivity(), PaymentResultListener {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            EasyShopTheme(darkTheme = false, dynamicColor = false) {
+            EasyShopTheme(darkTheme = false) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     AppNavigation(Modifier.padding(innerPadding))
                 }

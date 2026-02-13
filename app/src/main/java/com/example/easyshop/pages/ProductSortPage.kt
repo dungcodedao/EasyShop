@@ -1,8 +1,8 @@
 package com.example.easyshop.pages
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -22,20 +22,18 @@ fun ProductFilterDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(id = R.string.filter_sort_products)) },
+        shape = RoundedCornerShape(24.dp),
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Brand Filter
                 FilterDropdown(
                     label = stringResource(id = R.string.brand),
                     value = selectedBrand,
                     options = brandList,
                     onSelected = onBrandSelected
                 )
-
-                // Price Sort
                 FilterDropdown(
                     label = stringResource(id = R.string.sort_by_price),
                     value = selectedPriceSort,
@@ -49,15 +47,15 @@ fun ProductFilterDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            Button(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(12.dp)
+            ) {
                 Text(stringResource(id = R.string.apply))
             }
         },
         dismissButton = {
-            TextButton(onClick = {
-                onReset()
-                onDismiss()
-            }) {
+            TextButton(onClick = { onReset(); onDismiss() }) {
                 Text(stringResource(id = R.string.reset))
             }
         }
@@ -86,7 +84,8 @@ fun FilterDropdown(
             modifier = Modifier
                 .fillMaxWidth()
                 .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-            textStyle = MaterialTheme.typography.bodyMedium
+            textStyle = MaterialTheme.typography.bodyMedium,
+            shape = RoundedCornerShape(14.dp)
         )
         ExposedDropdownMenu(
             expanded = expanded,
@@ -95,10 +94,7 @@ fun FilterDropdown(
             options.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(option) },
-                    onClick = {
-                        onSelected(option)
-                        expanded = false
-                    }
+                    onClick = { onSelected(option); expanded = false }
                 )
             }
         }

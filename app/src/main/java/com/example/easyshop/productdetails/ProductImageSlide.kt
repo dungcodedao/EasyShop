@@ -1,6 +1,5 @@
 package com.example.easyshop.productdetails
 
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -20,11 +19,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.easyshop.*
+import com.example.easyshop.R
 import com.tbuonomo.viewpagerdotsindicator.compose.DotsIndicator
 import com.tbuonomo.viewpagerdotsindicator.compose.model.DotGraphic
 import com.tbuonomo.viewpagerdotsindicator.compose.type.ShiftIndicatorType
@@ -43,40 +43,29 @@ fun ProductImageSlider(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(380.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
         ) {
             val pagerState = rememberPagerState(pageCount = { images.size })
 
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize()
-            ) { page ->
+            HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                 AsyncImage(
                     model = images[page],
                     contentDescription = "Product image",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
                     contentScale = ContentScale.Fit
                 )
             }
 
-            // Dots Indicator
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(20.dp)
-            ) {
+            // Dots
+            Box(modifier = Modifier.align(Alignment.BottomCenter).padding(20.dp)) {
                 DotsIndicator(
                     dotCount = images.size,
-                    type = ShiftIndicatorType(
-                        DotGraphic(color = MaterialTheme.colorScheme.primary, size = 10.dp)
-                    ),
+                    type = ShiftIndicatorType(DotGraphic(color = MaterialTheme.colorScheme.primary, size = 8.dp)),
                     pagerState = pagerState
                 )
             }
 
-            // Favorite Button
+            // Favorite
             IconButton(
                 onClick = {
                     AppUtil.addOrRemoveFromFavorite(context, productId)
@@ -85,33 +74,32 @@ fun ProductImageSlider(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(16.dp)
-                    .size(52.dp)
-                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(26.dp))
-                    .clip(RoundedCornerShape(26.dp))
+                    .size(48.dp)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f), RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(14.dp))
             ) {
                 Icon(
                     imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    tint = if (isFav) Color(0xFFE91E63) else Color.Gray,
+                    tint = if (isFav) Color(0xFFE91E63) else MaterialTheme.colorScheme.onSurfaceVariant,
                     contentDescription = "Favorite",
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
-            // Out of Stock Badge
+            // Out of Stock
             if (!inStock) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .padding(16.dp)
-                        .background(Color.Red, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .background(MaterialTheme.colorScheme.error, RoundedCornerShape(10.dp))
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = "OUT OF STOCK",
+                        text = stringResource(id = R.string.out_of_stock).uppercase(),
                         color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }

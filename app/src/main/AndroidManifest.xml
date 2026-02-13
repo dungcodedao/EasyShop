@@ -25,6 +25,7 @@
         </activity>
     </application>
     <queries>
+        <package android:name="com.google.android.gms" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="momo" />

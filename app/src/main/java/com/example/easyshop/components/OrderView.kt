@@ -1,77 +1,79 @@
 package com.example.easyshop.components
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.easyshop.AppUtil
 import com.example.easyshop.GlobalNavigation
 import com.example.easyshop.model.OrderModel
 
 @Composable
 fun OrderView(orderItems: OrderModel, modifier: Modifier = Modifier) {
+    val statusColor = when (orderItems.status) {
+        "ORDERED" -> MaterialTheme.colorScheme.primary
+        "SHIPPING" -> Color(0xFFFF9800)
+        "DELIVERED" -> Color(0xFF4CAF50)
+        "CANCELLED" -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
 
     Card(
         modifier = modifier
-            .padding(8.dp)
             .fillMaxWidth()
-            .clickable {
-                GlobalNavigation.navController.navigate("order-details/${orderItems.id}")
-            },
-        shape = RoundedCornerShape(8.dp),
+            .clickable { GlobalNavigation.navController.navigate("order-details/${orderItems.id}") },
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(8.dp)
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                "Order ID: " + orderItems.id,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                AppUtil.formatData(orderItems.date),
-                fontSize = 14.sp
-            )
-
-            val statusColor = when (orderItems.status) {
-                "ORDERED" -> Color(0xFF2196F3) // Blue
-                "SHIPPING" -> Color(0xFFFF9800) // Orange
-                "DELIVERED" -> Color(0xFF4CAF50) // Green
-                "CANCELLED" -> Color(0xFFF44336) // Red
-                else -> Color.Gray
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "#${orderItems.id}",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Surface(
+                    color = statusColor.copy(alpha = 0.12f),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(
+                        text = orderItems.status,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                        color = statusColor,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = orderItems.status,
-                fontWeight = FontWeight.ExtraBold,
-                color = statusColor,
-                fontSize = 16.sp
-            )
+            Spacer(Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                orderItems.items.size.toString() + " items",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    AppUtil.formatData(orderItems.date),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "${orderItems.items.size} items",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
     }
 }

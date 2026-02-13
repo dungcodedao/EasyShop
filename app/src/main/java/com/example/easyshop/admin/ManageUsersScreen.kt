@@ -128,7 +128,7 @@ fun ManageUsersScreen(
                     .padding(16.dp),
                 placeholder = { Text(stringResource(id = R.string.search_users_hint)) },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 singleLine = true
             )
 
@@ -275,8 +275,8 @@ fun UserDetailContent(
                 modifier = Modifier.weight(1f),
                 enabled = user.role != "admin",
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFE3F2FD),
-                    contentColor = Color(0xFF1976D2)
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             ) {
                 Text(stringResource(id = R.string.make_admin_btn))
@@ -368,22 +368,22 @@ fun UserListItem(user: UserModel, stats: UserStats, onClick: () -> Unit) {
                     text = currencyFormat.format(stats.totalSpent),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2E7D32) // Green
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
 
         // Role Badge
         Surface(
-            color = if (user.role == "admin") Color(0xFFE3F2FD) else Color(0xFFF5F5F5),
-            shape = RoundedCornerShape(8.dp)
+            color = if (user.role == "admin") MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+            shape = RoundedCornerShape(10.dp)
         ) {
             Text(
                 text = user.role.uppercase(),
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = if (user.role == "admin") Color(0xFF1976D2) else Color(0xFF757575),
+                color = if (user.role == "admin") MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                 letterSpacing = 0.5.sp
             )
         }

@@ -13,10 +13,13 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -42,38 +45,27 @@ fun SearchView(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Dùng rememberSaveable để lưu search query khi navigate
     var searchQuery by rememberSaveable { mutableStateOf("") }
-
     var allProducts by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
     var filteredProducts by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
 
-    // Remember scroll position
     val gridState = rememberLazyGridState()
 
-    // Lấy dữ liệu từ Firebase
     LaunchedEffect(key1 = Unit) {
+        isLoading = true
         Firebase.firestore.collection("data")
             .document("stock")
             .collection("products")
             .get().addOnSuccessListener { snapshot ->
-                val list = snapshot.documents.mapNotNull {
-                    it.toObject(ProductModel::class.java)
-                }
+                val list = snapshot.documents.mapNotNull { it.toObject(ProductModel::class.java) }
                 allProducts = list
-                // Áp dụng filter ngay nếu có searchQuery
-                filteredProducts = if (searchQuery.isBlank()) {
-                    list
-                } else {
-                    list.filter { product ->
-                        val title = product.otherDetails["title"] ?: product.title
-                        title.contains(searchQuery, ignoreCase = true)
-                    }
-                }
+                isLoading = false
+            }.addOnFailureListener {
+                isLoading = false
             }
     }
 
-    // Tự động lọc khi searchQuery thay đổi
     LaunchedEffect(searchQuery, allProducts) {
         filteredProducts = if (searchQuery.isBlank()) {
             allProducts
@@ -87,54 +79,68 @@ fun SearchView(
 
     Column(modifier = modifier.fillMaxSize()) {
         // Search Bar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Surface(
+            tonalElevation = 2.dp,
+            shadowElevation = 2.dp,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            IconButton(onClick = onBackClick) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
-            }
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text(stringResource(id = R.string.search_hint)) },
-                modifier = Modifier.weight(1f),
-                singleLine = true,
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBackClick) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                }
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text(stringResource(id = R.string.search_hint)) },
+                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                    singleLine = true,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    )
                 )
-            )
+            }
         }
 
-        // Danh sách kết quả với scroll state
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier.padding(horizontal = 8.dp),
-            state = gridState // Giữ scroll position
-        ) {
-            if (filteredProducts.isEmpty()) {
-                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(400.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.no_products_found),
-                            fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.padding(horizontal = 8.dp),
+                state = gridState
+            ) {
+                if (filteredProducts.isEmpty()) {
+                    item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(400.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("🔎", style = androidx.compose.ui.text.TextStyle(fontSize = 60.sp))
+                                Spacer(Modifier.height(16.dp))
+                                Text(
+                                    text = stringResource(id = R.string.no_products_found),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
-                }
-            } else {
-                items(filteredProducts) { product ->
-                    ProductItemView(product = product)
+                } else {
+                    items(filteredProducts) { product ->
+                        ProductItemView(product = product)
+                    }
                 }
             }
         }

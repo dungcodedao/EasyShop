@@ -1,5 +1,6 @@
 package com.example.easyshop.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,7 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -19,7 +22,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.easyshop.R
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.easyshop.AppUtil
 import com.example.easyshop.GlobalNavigation
@@ -33,113 +35,94 @@ fun ProductItemView(modifier: Modifier = Modifier, product: ProductModel) {
         modifier = modifier
             .width(180.dp)
             .height(280.dp)
-            .padding(8.dp)
-            .clickable {
-                GlobalNavigation.navController.navigate("product-details/" + product.id)
-            },
-        shape = RoundedCornerShape(12.dp),
+            .padding(6.dp)
+            .clickable { GlobalNavigation.navController.navigate("product-details/${product.id}") },
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(8.dp)
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp)
-        ) {
-            // ========== PRODUCT IMAGE WITH STOCK BADGE ==========
+        Column(modifier = Modifier.padding(10.dp)) {
+            // Image + Badge
             Box(
                 modifier = Modifier
-                    .height(100.dp)
+                    .height(110.dp)
                     .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             ) {
                 AsyncImage(
                     model = product.images.firstOrNull(),
                     contentDescription = product.title,
                     modifier = Modifier
                         .fillMaxSize()
-                        .alpha(if (product.inStock) 1f else 0.6f) // Làm mờ ảnh nếu hết hàng
+                        .alpha(if (product.inStock) 1f else 0.5f),
+                    contentScale = ContentScale.Crop
                 )
 
-                // Stock Status Badge (góc trên phải)
                 Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp),
-                    shape = RoundedCornerShape(4.dp),
+                    modifier = Modifier.align(Alignment.TopEnd).padding(6.dp),
+                    shape = RoundedCornerShape(8.dp),
                     color = if (product.inStock)
-                        Color(0xFF4CAF50)  // Xanh lá nếu còn hàng
+                        Color(0xFF4CAF50).copy(alpha = 0.9f)
                     else
-                        Color(0xFFE53935)   // Đỏ nếu hết hàng
+                        MaterialTheme.colorScheme.error.copy(alpha = 0.9f)
                 ) {
                     Text(
                         text = if (product.inStock) stringResource(id = R.string.in_stock) else stringResource(id = R.string.out_of_stock),
                         color = Color.White,
-                        fontSize = 9.sp,
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(Modifier.height(8.dp))
 
-            // ========== PRODUCT TITLE ==========
+            // Title
             Text(
                 text = product.title,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.bodyMedium,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+                overflow = TextOverflow.Ellipsis
             )
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(Modifier.weight(1f))
 
-            // ========== PRICE & ADD TO CART ==========
+            // Price + Cart
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Price Column
                 Column {
-                    Text(
-                        text = AppUtil.formatPrice(product.price),
-                        fontSize = 12.sp,
-                        color = Color.Gray,
-                        style = TextStyle(textDecoration = TextDecoration.LineThrough)
-                    )
+                    if (product.actualPrice != product.price) {
+                        Text(
+                            text = AppUtil.formatPrice(product.price),
+                            style = MaterialTheme.typography.labelSmall.copy(textDecoration = TextDecoration.LineThrough),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
                     Text(
                         text = AppUtil.formatPrice(product.actualPrice),
-                        fontSize = 16.sp,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = if (product.inStock)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            Color.Gray
+                        color = if (product.inStock) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
+                Spacer(Modifier.weight(1f))
 
-                // Add to Cart Button
-                IconButton(
+                FilledTonalIconButton(
                     onClick = {
-                        if (product.inStock) {
-                            AppUtil.addItemToCart(context, product.id)
-                        } else {
-                            AppUtil.showToast(context, context.getString(R.string.product_out_of_stock_msg))
-                        }
+                        if (product.inStock) AppUtil.addItemToCart(context, product.id)
+                        else AppUtil.showToast(context, context.getString(R.string.product_out_of_stock_msg))
                     },
-                    enabled = product.inStock
+                    enabled = product.inStock,
+                    modifier = Modifier.size(36.dp),
+                    shape = RoundedCornerShape(10.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.ShoppingCart,
-                        contentDescription = "Add to cart",
-                        tint = if (product.inStock)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            Color.Gray
-                    )
+                    Icon(Icons.Default.ShoppingCart, "Add to cart", Modifier.size(18.dp))
                 }
             }
         }

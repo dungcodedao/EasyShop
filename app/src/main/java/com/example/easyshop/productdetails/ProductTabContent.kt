@@ -6,19 +6,20 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.easyshop.R
 
 @Composable
@@ -40,31 +41,25 @@ fun DescriptionTab(description: String) {
 
     Column(
         modifier = Modifier.animateContentSize(
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
-            )
+            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
         )
     ) {
         Text(
             text = description,
-            fontSize = 15.sp,
-            lineHeight = 24.sp,
-            color = Color.Black,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = if (isExpanded) Int.MAX_VALUE else 5,
             overflow = TextOverflow.Ellipsis
         )
 
         if (description.length > 200) {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = if (isExpanded) stringResource(R.string.read_less) else stringResource(R.string.read_more),
-                color = Color.Red,
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                modifier = Modifier
-                    .clickable { isExpanded = !isExpanded }
-                    .padding(vertical = 4.dp)
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.clickable { isExpanded = !isExpanded }.padding(vertical = 4.dp)
             )
         }
     }
@@ -76,138 +71,63 @@ fun SpecificationsTab(specifications: Map<String, String>) {
         Column {
             specifications.forEach { (key, value) ->
                 SpecificationRow(label = key, value = value)
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    color = Color.LightGray
-                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
     } else {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(32.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = stringResource(R.string.no_specifications),
-                color = Color.Gray,
-                fontSize = 14.sp
-            )
+        Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+            Text(stringResource(R.string.no_specifications), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
 
 @Composable
 fun SpecificationRow(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-    ) {
-        Text(
-            text = "$label:",
-            fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color.Black,
-            modifier = Modifier.weight(0.4f)
-        )
-        Text(
-            text = value,
-            fontSize = 15.sp,
-            color = Color.Gray,
-            modifier = Modifier.weight(0.6f)
-        )
+    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Text("$label:", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(0.4f))
+        Text(value, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(0.6f))
     }
 }
 
 @Composable
 fun ReviewsTab() {
     Column {
-        // Overall Rating Card
         OverallRatingCard()
+        Spacer(Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Sample Reviews
-        ReviewCard(
-            userName = "Nguyễn Văn A",
-            rating = 5,
-            comment = "Sản phẩm tuyệt vời! Rất đáng tiền. Chất lượng hoàn thiện tốt và giao hàng nhanh chóng.",
-            date = "2 ngày trước"
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        ReviewCard(
-            userName = "Trần Thị B",
-            rating = 4,
-            comment = "Đáng đồng tiền bát gạo. Hoạt động tốt như mong đợi, nhưng đóng gói có thể làm cẩn thận hơn.",
-            date = "1 tuần trước"
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        ReviewCard(
-            userName = "Lê Văn C",
-            rating = 5,
-            comment = "Hoàn hảo! Chính xác là những gì tôi đang tìm kiếm. Giao hàng thần tốc và dịch vụ khách hàng tốt.",
-            date = "2 tuần trước"
-        )
+        ReviewCard("Nguyễn Văn A", 5, "Sản phẩm tuyệt vời! Rất đáng tiền. Chất lượng hoàn thiện tốt và giao hàng nhanh chóng.", "2 ngày trước")
+        Spacer(Modifier.height(12.dp))
+        ReviewCard("Trần Thị B", 4, "Đáng đồng tiền bát gạo. Hoạt động tốt như mong đợi, nhưng đóng gói có thể làm cẩn thận hơn.", "1 tuần trước")
+        Spacer(Modifier.height(12.dp))
+        ReviewCard("Lê Văn C", 5, "Hoàn hảo! Chính xác là những gì tôi đang tìm kiếm. Giao hàng thần tốc và dịch vụ khách hàng tốt.", "2 tuần trước")
     }
 }
 
-// ========== REVIEW COMPONENTS ==========
-
 @Composable
 fun OverallRatingCard() {
-    androidx.compose.material3.Card(
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = androidx.compose.material3.CardDefaults.cardColors(
-            containerColor = Color(0xFFFFF9C4)
-        ),
-        shape = RoundedCornerShape(12.dp)
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFC107).copy(alpha = 0.08f)),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Left: Big Rating
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(end = 24.dp)
-            ) {
-                Text(
-                    text = "4.5",
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFFF8F00)
-                )
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(end = 24.dp)) {
+                Text("4.5", style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold, color = Color(0xFFFF8F00))
                 Row {
                     repeat(5) {
-                        androidx.compose.material3.Icon(
-                            imageVector = androidx.compose.material.icons.Icons.Default.Star,
-                            contentDescription = null,
-                            tint = Color(0xFFFFC107),
-                            modifier = Modifier.size(16.dp)
-                        )
+                        Icon(Icons.Default.Star, null, tint = Color(0xFFFFC107), modifier = Modifier.size(16.dp))
                     }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "120 ${stringResource(R.string.reviews_count_suffix)}",
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
+                Spacer(Modifier.height(4.dp))
+                Text("120 ${stringResource(R.string.reviews_count_suffix)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-
-            // Right: Rating Breakdown
             Column(modifier = Modifier.weight(1f)) {
-                RatingBar(stars = 5, count = 85)
-                RatingBar(stars = 4, count = 25)
-                RatingBar(stars = 3, count = 7)
-                RatingBar(stars = 2, count = 2)
-                RatingBar(stars = 1, count = 1)
+                RatingBar(5, 85)
+                RatingBar(4, 25)
+                RatingBar(3, 7)
+                RatingBar(2, 2)
+                RatingBar(1, 1)
             }
         }
     }
@@ -215,109 +135,51 @@ fun OverallRatingCard() {
 
 @Composable
 fun RatingBar(stars: Int, count: Int) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 2.dp)
-    ) {
-        Text(
-            text = "$stars",
-            fontSize = 12.sp,
-            modifier = Modifier.width(16.dp)
-        )
-        androidx.compose.material3.Icon(
-            imageVector = androidx.compose.material.icons.Icons.Default.Star,
-            contentDescription = null,
-            tint = Color(0xFFFFC107),
-            modifier = Modifier.size(14.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        androidx.compose.material3.LinearProgressIndicator(
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
+        Text("$stars", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(16.dp))
+        Icon(Icons.Default.Star, null, tint = Color(0xFFFFC107), modifier = Modifier.size(14.dp))
+        Spacer(Modifier.width(8.dp))
+        LinearProgressIndicator(
             progress = { count / 120f },
-            modifier = Modifier
-                .weight(1f)
-                .height(6.dp)
-                .padding(end = 8.dp),
+            modifier = Modifier.weight(1f).height(6.dp).padding(end = 8.dp),
             color = Color(0xFFFF8F00),
-            trackColor = Color(0xFFEEEEEE)
+            trackColor = MaterialTheme.colorScheme.surfaceVariant
         )
-        Text(
-            text = "$count",
-            fontSize = 12.sp,
-            color = Color.Gray,
-            modifier = Modifier.width(30.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.End
-        )
+        Text("$count", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(30.dp), textAlign = TextAlign.End)
     }
 }
 
 @Composable
 fun ReviewCard(userName: String, rating: Int, comment: String, date: String) {
-    androidx.compose.material3.Card(
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = androidx.compose.material3.CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        shape = RoundedCornerShape(8.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(1.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Avatar
                     Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(Color.Red, androidx.compose.foundation.shape.CircleShape),
+                        modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.primary, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = userName.first().toString(),
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
+                        Text(userName.first().toString(), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                     }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
+                    Spacer(Modifier.width(12.dp))
                     Column {
-                        Text(
-                            text = userName,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp
-                        )
-                        // Star Rating
+                        Text(userName, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
                         Row {
                             repeat(5) { index ->
-                                androidx.compose.material3.Icon(
-                                    imageVector = androidx.compose.material.icons.Icons.Default.Star,
-                                    contentDescription = null,
-                                    tint = if (index < rating) Color(0xFFFFC107) else Color(0xFFE0E0E0),
-                                    modifier = Modifier.size(14.dp)
-                                )
+                                Icon(Icons.Default.Star, null, tint = if (index < rating) Color(0xFFFFC107) else MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.size(14.dp))
                             }
                         }
                     }
                 }
-
-                Text(
-                    text = date,
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
+                Text(date, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = comment,
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
-                color = Color.Black
-            )
+            Spacer(Modifier.height(8.dp))
+            Text(comment, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }

@@ -1,35 +1,22 @@
 package com.example.easyshop.pages
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.easyshop.R
 import com.example.easyshop.components.BannerView
 import com.example.easyshop.components.CategoriesView
 import com.example.easyshop.components.HeaderView
 import com.example.easyshop.components.SearchView
-
-import androidx.compose.foundation.layout.Box
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 
 @Composable
 fun HomePage(modifier: Modifier = Modifier) {
@@ -38,27 +25,49 @@ fun HomePage(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(8.dp)
-    ) {
-        if (isSearching) {
-            SearchView(
-                onBackClick = { isSearching = false }
-            )
-        } else {
-            HeaderView(onSearchClick = { isSearching = true })
-            Spacer(modifier = Modifier.height(10.dp))
-            BannerView(modifier = Modifier.height(150.dp))
-
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                stringResource(R.string.categories),
-                style = TextStyle(
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.03f),
+                        MaterialTheme.colorScheme.background
+                    )
                 )
             )
-            Spacer(modifier = Modifier.height(10.dp))
-            CategoriesView()
+    ) {
+        if (isSearching) {
+            SearchView(onBackClick = { isSearching = false })
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+            ) {
+                Spacer(Modifier.height(8.dp))
+
+                HeaderView(onSearchClick = { isSearching = true })
+
+                Spacer(Modifier.height(20.dp))
+
+                // Banner
+                BannerView(modifier = Modifier.height(160.dp))
+
+                Spacer(Modifier.height(24.dp))
+
+                // Section Title
+                Text(
+                    text = stringResource(R.string.categories),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                CategoriesView()
+
+                Spacer(Modifier.height(24.dp))
+            }
         }
     }
 }

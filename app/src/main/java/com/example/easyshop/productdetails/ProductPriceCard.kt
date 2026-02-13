@@ -1,52 +1,45 @@
 package com.example.easyshop.productdetails
 
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.ui.res.stringResource
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import com.example.easyshop.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.example.easyshop.R
 import com.example.easyshop.AppUtil
 
 @Composable
 fun ProductPriceCard(price: String, actualPrice: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(12.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = AppUtil.formatPrice(price),
-                    fontSize = 16.sp,
-                    textDecoration = TextDecoration.LineThrough,
-                    color = Color.Gray,
-                    fontWeight = FontWeight.Normal
-                )
-                Spacer(modifier = Modifier.height(4.dp))
+                if (price != actualPrice) {
+                    Text(
+                        text = AppUtil.formatPrice(price),
+                        style = MaterialTheme.typography.bodyLarge.copy(textDecoration = TextDecoration.LineThrough),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                    Spacer(Modifier.height(4.dp))
+                }
                 Text(
                     text = AppUtil.formatPrice(actualPrice),
-                    fontSize = 36.sp,
+                    style = MaterialTheme.typography.displaySmall,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF1976D2),
-                    letterSpacing = (-0.5).sp
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -56,24 +49,23 @@ fun ProductPriceCard(price: String, actualPrice: String) {
             if (priceValue != actualPriceValue && priceValue > 0) {
                 val discount = ((priceValue - actualPriceValue) / priceValue * 100).toInt()
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFF1976D2),
-                    modifier = Modifier.padding(start = 8.dp)
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.primary
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                     ) {
                         Text(
-                            text = "$discount%",
+                            "$discount%",
                             color = Color.White,
-                            fontSize = 24.sp,
+                            style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = stringResource(id = R.string.off_label),
-                            color = Color.White,
-                            fontSize = 12.sp,
+                            stringResource(id = R.string.off_label),
+                            color = Color.White.copy(alpha = 0.9f),
+                            style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold
                         )
                     }

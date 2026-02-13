@@ -1,22 +1,14 @@
 package com.example.easyshop.components
 
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,12 +24,8 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun BannerView(modifier: Modifier = Modifier) {
+    var bannerList by remember { mutableStateOf<List<String>>(emptyList()) }
 
-    var bannerList by remember {
-        mutableStateOf<List<String>>(emptyList())
-    }
-
-    // Lấy dữ liệu banner từ Firebase
     LaunchedEffect(key1 = Unit) {
         Firebase.firestore.collection("data")
             .document("banners")
@@ -45,64 +33,59 @@ fun BannerView(modifier: Modifier = Modifier) {
                 if (task.isSuccessful) {
                     @Suppress("UNCHECKED_CAST")
                     val urls = task.result?.get("urls") as? List<String>
-                    if (urls != null) {
-                        bannerList = urls
-                    }
+                    if (urls != null) bannerList = urls
                 }
             }
     }
+
+    if (bannerList.isEmpty()) return
 
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val pagerState = rememberPagerState(0) {
-            bannerList.size
-        }
+        val pagerState = rememberPagerState(0) { bannerList.size }
 
-        // Tự động chuyển banner mượt mà hơn
+        // Auto-scroll
         LaunchedEffect(key1 = bannerList) {
-            if (bannerList.isNotEmpty()) {
-                while (true) {
-                    delay(3000) // Đợi 4 giây cho mỗi banner
-                    if (!pagerState.isScrollInProgress) {
-                        val nextPage = (pagerState.currentPage + 1) % bannerList.size
-                        pagerState.animateScrollToPage(
-                            nextPage,
-                            animationSpec = tween(durationMillis = 1000) // Animation kéo dài 1s
-                        )
-                    }
+            while (true) {
+                delay(4000)
+                if (!pagerState.isScrollInProgress) {
+                    val nextPage = (pagerState.currentPage + 1) % bannerList.size
+                    pagerState.animateScrollToPage(nextPage, animationSpec = tween(800))
                 }
             }
         }
 
-        HorizontalPager(
-            state = pagerState,
-            contentPadding = PaddingValues(horizontal = 0.dp), // Bỏ hiệu ứng peek
-            pageSpacing = 0.dp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp) // Padding ngoài để banner không dính sát mép máy
-        ) { pageIndex ->
-            AsyncImage(
-                model = bannerList.get(pageIndex),
-                contentDescription = "Banner image",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .height(150.dp),
-                contentScale = ContentScale.Crop
-            )
+        // Banner Pager wrapped in Card for shadow
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxWidth()
+            ) { pageIndex ->
+                AsyncImage(
+                    model = bannerList[pageIndex],
+                    contentDescription = "Banner",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp),
+                    contentScale = ContentScale.Crop
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(Modifier.height(12.dp))
 
         DotsIndicator(
             dotCount = bannerList.size,
             type = ShiftIndicatorType(
                 DotGraphic(
                     color = MaterialTheme.colorScheme.primary,
-                    size = 8.dp
+                    size = 7.dp
                 )
             ),
             pagerState = pagerState

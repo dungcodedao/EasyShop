@@ -19,9 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.easyshop.R
 import androidx.navigation.NavController
@@ -29,7 +29,6 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
 import com.example.easyshop.model.AdminMenuItem
-
 
 @Composable
 fun AdminDashboardScreen(
@@ -46,175 +45,117 @@ fun AdminDashboardScreen(
     val firestore = Firebase.firestore
     val currentUser = FirebaseAuth.getInstance().currentUser
 
-    // Load stats
     LaunchedEffect(key1 = Unit) {
-        // Get admin name
         currentUser?.let { user ->
-            firestore.collection("users").document(user.uid)
-                .get()
-                .addOnSuccessListener { doc ->
-                    adminName = doc.getString("name") ?: "Admin"
-                }
+            firestore.collection("users").document(user.uid).get()
+                .addOnSuccessListener { doc -> adminName = doc.getString("name") ?: "Admin" }
         }
-
-        // Count products
-        firestore.collection("data").document("stock")
-            .collection("products")
-            .get()
-            .addOnSuccessListener { result ->
-                totalProducts = result.size()
-            }
-
-        // Count orders
-        firestore.collection("orders")
-            .get()
+        firestore.collection("data").document("stock").collection("products").get()
+            .addOnSuccessListener { totalProducts = it.size() }
+        firestore.collection("orders").get()
             .addOnSuccessListener { result ->
                 totalOrders = result.size()
-                pendingOrders = result.documents.count {
-                    it.getString("status") == "ORDERED"
-                }
+                pendingOrders = result.documents.count { it.getString("status") == "ORDERED" }
             }
-
-        // Count only customers (including those with default "user" role)
-        firestore.collection("users")
-            .get()
+        firestore.collection("users").get()
             .addOnSuccessListener { result ->
-                totalUsers = result.documents.count { doc ->
-                    val role = doc.getString("role") ?: "user"
-                    role == "user"
-                }
+                totalUsers = result.documents.count { (it.getString("role") ?: "user") == "user" }
             }
-
-        // Count categories
-        firestore.collection("data").document("stock")
-            .collection("categories")
-            .get()
-            .addOnSuccessListener { result ->
-                totalCategories = result.size()
-            }
+        firestore.collection("data").document("stock").collection("categories").get()
+            .addOnSuccessListener { totalCategories = it.size() }
     }
 
     val menuItems = listOf(
-        AdminMenuItem(
-            stringResource(id = R.string.manage_products),
-            Icons.Default.Inventory,
-            "admin-products",
-            Color(0xFF2196F3),
-            totalProducts
-        ),
-        AdminMenuItem(
-            stringResource(id = R.string.add_product_action),
-            Icons.Default.Add,
-            "add-product",
-            Color(0xFF4CAF50)
-        ),
-        AdminMenuItem(
-            stringResource(id = R.string.orders),
-            Icons.Default.ShoppingBag,
-            "orders-management",
-            Color(0xFFFF9800),
-            pendingOrders
-        ),
-        AdminMenuItem(
-            stringResource(id = R.string.categories),
-            Icons.Default.Category,
-            "manage-categories",
-            Color(0xFF9C27B0),
-            totalCategories
-        ),
-        AdminMenuItem(
-            stringResource(id = R.string.analytics),
-            Icons.Default.Analytics,
-            "analytics",
-            Color(0xFF00BCD4)
-        ),
-        AdminMenuItem(
-            stringResource(id = R.string.users),
-            Icons.Default.People,
-            "manage-users",
-            Color(0xFFE91E63),
-            totalUsers
-        ),
-        AdminMenuItem(
-            stringResource(id = R.string.promo_codes),
-            Icons.Default.ConfirmationNumber,
-            "manage-promo-codes",
-            Color(0xFF673AB7)
-        )
+        AdminMenuItem(stringResource(id = R.string.manage_products), Icons.Default.Inventory, "admin-products", Color(0xFF2196F3), totalProducts),
+        AdminMenuItem(stringResource(id = R.string.add_product_action), Icons.Default.Add, "add-product", Color(0xFF4CAF50)),
+        AdminMenuItem(stringResource(id = R.string.orders), Icons.Default.ShoppingBag, "orders-management", Color(0xFFFF9800), pendingOrders),
+        AdminMenuItem(stringResource(id = R.string.categories), Icons.Default.Category, "manage-categories", Color(0xFF9C27B0), totalCategories),
+        AdminMenuItem(stringResource(id = R.string.analytics), Icons.Default.Analytics, "analytics", Color(0xFF00BCD4)),
+        AdminMenuItem(stringResource(id = R.string.users), Icons.Default.People, "manage-users", Color(0xFFE91E63), totalUsers),
+        AdminMenuItem(stringResource(id = R.string.promo_codes), Icons.Default.ConfirmationNumber, "manage-promo-codes", Color(0xFF673AB7))
     )
 
-    Column(modifier = modifier.fillMaxSize().statusBarsPadding()) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            tonalElevation = 1.dp
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+    Scaffold(
+        topBar = {
+            Surface(
+                tonalElevation = 2.dp,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                // Spacer or Admin Title
-                Text(
-                    text = stringResource(id = R.string.admin_dashboard_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(start = 12.dp)
-                )
-
-                IconButton(onClick = {
-                    FirebaseAuth.getInstance().signOut()
-                    navController.navigate("auth") {
-                        popUpTo("admin-dashboard") { inclusive = true }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.admin_dashboard_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    FilledTonalIconButton(
+                        onClick = {
+                            FirebaseAuth.getInstance().signOut()
+                            navController.navigate("auth") { popUpTo("admin-dashboard") { inclusive = true } }
+                        },
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ExitToApp, stringResource(id = R.string.logout))
                     }
-                }) {
-                    Icon(Icons.AutoMirrored.Filled.ExitToApp, stringResource(id = R.string.logout))
                 }
             }
         }
+    ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(padding)
                 .background(MaterialTheme.colorScheme.background),
-            contentPadding = PaddingValues(bottom = 16.dp)
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Header
+            // Welcome Header
             item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
+                Card(
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = stringResource(id = R.string.welcome_back),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = adminName,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        Text(
+                            stringResource(id = R.string.welcome_back),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                        Text(
+                            adminName,
+                            style = MaterialTheme.typography.displaySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        // Stat row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            StatChip("📦", "$totalOrders", stringResource(id = R.string.orders))
+                            StatChip("⏳", "$pendingOrders", "Pending")
+                            StatChip("👥", "$totalUsers", stringResource(id = R.string.users))
+                        }
+                    }
                 }
             }
-
-            item { Spacer(Modifier.height(24.dp)) }
-
-            item { Spacer(Modifier.height(8.dp)) }
-
-            item { Spacer(Modifier.height(32.dp)) }
 
             // Quick Actions Title
             item {
                 Text(
                     text = stringResource(id = R.string.quick_actions),
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 20.dp)
+                    fontWeight = FontWeight.Bold
                 )
             }
-
-            item { Spacer(Modifier.height(16.dp)) }
 
             // Menu Grid
             item {
@@ -222,19 +163,13 @@ fun AdminDashboardScreen(
                     columns = GridCells.Fixed(2),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(850.dp) // Tăng chiều cao để hiện đủ 4 hàng (7-8 mục)
-                        .padding(horizontal = 20.dp),
+                        .height(800.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     userScrollEnabled = false
                 ) {
                     items(menuItems) { item ->
-                        AdminMenuCard(
-                            item = item,
-                            onClick = {
-                                navController.navigate(item.route)
-                            }
-                        )
+                        AdminMenuCard(item = item, onClick = { navController.navigate(item.route) })
                     }
                 }
             }
@@ -242,33 +177,31 @@ fun AdminDashboardScreen(
     }
 }
 
+@Composable
+private fun StatChip(emoji: String, value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(emoji, style = MaterialTheme.typography.titleLarge)
+        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.7f))
+    }
+}
 
 @Composable
-fun AdminMenuCard(
-    item: AdminMenuItem,
-    onClick: () -> Unit
-) {
+fun AdminMenuCard(item: AdminMenuItem, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(20.dp)
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Badge for count
+        Box(modifier = Modifier.fillMaxSize()) {
             if (item.count != null && item.count > 0) {
                 Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(12.dp),
-                    color = Color(0xFFFF5252),
+                    modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
+                    color = MaterialTheme.colorScheme.error,
                     shape = CircleShape
                 ) {
                     Text(
@@ -282,41 +215,25 @@ fun AdminMenuCard(
             }
 
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(20.dp),
+                modifier = Modifier.fillMaxSize().padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
                 Box(
                     modifier = Modifier
-                        .size(50.dp)
+                        .size(56.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    item.color.copy(alpha = 0.2f),
-                                    item.color.copy(alpha = 0.05f)
-                                )
-                            )
-                        ),
+                        .background(item.color.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        item.icon,
-                        contentDescription = null,
-                        tint = item.color,
-                        modifier = Modifier.size(69.dp)
-                    )
+                    Icon(item.icon, null, tint = item.color, modifier = Modifier.size(28.dp))
                 }
-
                 Spacer(Modifier.height(12.dp))
-
                 Text(
                     text = item.title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
                     maxLines = 2
                 )
             }

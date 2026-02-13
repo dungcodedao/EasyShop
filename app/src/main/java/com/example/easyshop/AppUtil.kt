@@ -25,8 +25,9 @@ object AppUtil {
     }
 
     fun addItemToCart(context: Context, productId :String){
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
         val userDoc = Firebase.firestore.collection("users")
-            .document(FirebaseAuth.getInstance().currentUser?.uid!!)
+            .document(currentUser.uid)
         userDoc.get().addOnCompleteListener(){
             if(it.isSuccessful) {
                 @Suppress("UNCHECKED_CAST")
@@ -39,9 +40,9 @@ object AppUtil {
                 userDoc.update(updateCart)
                     .addOnCompleteListener {
                         if(it.isSuccessful) {
-                            showToast(context, "Item added to cart")
+                            showToast(context, "Đã thêm vào giỏ hàng")
                         } else {
-                            showToast(context, "Failed adding item to the cart")
+                            showToast(context, "Không thể thêm vào giỏ hàng")
                         }
                     }
             }
@@ -49,8 +50,9 @@ object AppUtil {
     }
 
     fun removeItemFromCart(context: Context, productId :String, removeAll : Boolean = false){
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
         val userDoc = Firebase.firestore.collection("users")
-            .document(FirebaseAuth.getInstance().currentUser?.uid!!)
+            .document(currentUser.uid)
         userDoc.get().addOnCompleteListener(){
             if(it.isSuccessful) {
                 @Suppress("UNCHECKED_CAST")
@@ -67,9 +69,9 @@ object AppUtil {
                 userDoc.update(updateCart)
                     .addOnCompleteListener {
                         if(it.isSuccessful) {
-                            showToast(context, "Item removed to cart")
+                            showToast(context, "Đã xóa khỏi giỏ hàng")
                         } else {
-                            showToast(context, "Failed removing item to the cart")
+                            showToast(context, "Không thể xóa khỏi giỏ hàng")
                         }
                     }
             }
@@ -92,13 +94,13 @@ object AppUtil {
                 val order = OrderModel(
                     id = orderId,
                     userId = currentUser.uid,
-                    userName = user?.name ?: "Customer",
+                    userName = user?.name ?: "Khách hàng",
                     userEmail = user?.email ?: "N/A",
                     date = Timestamp.now(),
                     items = cartItems,
                     total = totalAmount,
                     status = "ORDERED",
-                    address = user?.address ?: "No Address",
+                    address = user?.address ?: "Chưa có địa chỉ",
                     paymentMethod = paymentMethod
                 )
 
@@ -131,7 +133,7 @@ object AppUtil {
                     showSuccessDialog(context)
                 },
                 onFailure = {
-                    showToast(context, "Payment Failed")
+                    showToast(context, "Thanh toán thất bại")
                 }
             )
         } else {
@@ -153,8 +155,8 @@ object AppUtil {
 
     private fun showSuccessDialog(context: Context) {
         val builder = AlertDialog.Builder(context)
-        builder.setTitle("✅ Payment Successful")
-            .setMessage("Your order has been placed successfully!")
+        builder.setTitle("✅ Thanh toán thành công")
+            .setMessage("Đơn hàng của bạn đã được đặt thành công!")
             .setPositiveButton("OK") { _, _ ->
                 GlobalNavigation.navController.navigate("home") {
                     popUpTo("checkout") { inclusive = true }
@@ -193,9 +195,10 @@ object AppUtil {
         val list = getFavoriteList(context).toMutableSet()
         if(list.contains(productId)){
             list.remove(productId)
+            showToast(context, "Item removed from Favorite")
         } else {
             list.add(productId)
-            showToast(context, "Item removed from Favorite")
+            showToast(context, "Item added to Favorite")
         }
 
         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -228,22 +231,22 @@ object AppUtil {
         onFailure: () -> Unit
     ) {
         val builder = AlertDialog.Builder(context)
-        builder.setTitle("💳 Mock Payment")
+        builder.setTitle("💳 Thanh toán Demo")
             .setMessage(
-                "Test Payment\n" +
-                        "Amount: đ${"%.2f".format(amount)}\n\n" +
-                        "Choose result:"
+                "Thanh toán thử nghiệm\n" +
+                        "Số tiền: đ${"%.2f".format(amount)}\n\n" +
+                        "Chọn kết quả:"
             )
-            .setPositiveButton("✅ Success") { _, _ ->
+            .setPositiveButton("✅ Thành công") { _, _ ->
                 // Delay để giống thật
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                     onSuccess()
                 }, 1500)
             }
-            .setNegativeButton("❌ Failed") { _, _ ->
+            .setNegativeButton("❌ Thất bại") { _, _ ->
                 onFailure()
             }
-            .setNeutralButton("Cancel", null)
+            .setNeutralButton("Hủy", null)
             .setCancelable(true)
             .show()
     }

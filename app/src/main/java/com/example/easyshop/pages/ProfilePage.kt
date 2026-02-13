@@ -1,13 +1,16 @@
 package com.example.easyshop.pages
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -16,13 +19,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.easyshop.*
 import com.example.easyshop.R.*
 import com.example.easyshop.model.UserModel
@@ -41,37 +45,27 @@ fun ProfilePage(modifier: Modifier = Modifier) {
     var selectedAvatar by remember { mutableStateOf(drawable.profile_nam) }
     val context = LocalContext.current
 
-    // Function save address
     fun saveAddress() {
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (addressInput.isNotEmpty() && currentUser != null) {
-            Firebase.firestore.collection("users")
-                .document(currentUser.uid)
+            Firebase.firestore.collection("users").document(currentUser.uid)
                 .update("address", addressInput)
-                .addOnSuccessListener {
-                    AppUtil.showToast(context, "Address updated!")
-                }
-                .addOnFailureListener {
-                    AppUtil.showToast(context, "Failed to update")
-                }
+                .addOnSuccessListener { AppUtil.showToast(context, "Address updated!") }
+                .addOnFailureListener { AppUtil.showToast(context, "Failed to update") }
         }
     }
 
-    // Function save name
     fun saveName() {
         val currentUser = FirebaseAuth.getInstance().currentUser
         val cleanedName = nameInput.trim().replace(Regex("\\s+"), " ")
         if (cleanedName.isNotEmpty() && currentUser != null) {
-            Firebase.firestore.collection("users")
-                .document(currentUser.uid)
+            Firebase.firestore.collection("users").document(currentUser.uid)
                 .update("name", cleanedName)
                 .addOnSuccessListener {
                     userModel.value = userModel.value.copy(name = cleanedName)
                     AppUtil.showToast(context, "Name updated!")
                 }
-                .addOnFailureListener {
-                    AppUtil.showToast(context, "Failed to update")
-                }
+                .addOnFailureListener { AppUtil.showToast(context, "Failed to update") }
         }
     }
 
@@ -81,10 +75,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
             GlobalNavigation.navController.navigate("auth")
             return@LaunchedEffect
         }
-
-        Firebase.firestore.collection("users")
-            .document(currentUser.uid)
-            .get()
+        Firebase.firestore.collection("users").document(currentUser.uid).get()
             .addOnSuccessListener { document ->
                 document.toObject(UserModel::class.java)?.let { user ->
                     userModel.value = user
@@ -92,188 +83,153 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                     nameInput = user.name
                 }
             }
-            .addOnFailureListener { e ->
-                AppUtil.showToast(context, "Error: ${e.message}")
-            }
+            .addOnFailureListener { e -> AppUtil.showToast(context, "Error: ${e.message}") }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            tonalElevation = 1.dp
-        ) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        // Profile Header
+        Surface(tonalElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = stringResource(string.profile),
-                    style = MaterialTheme.typography.titleMedium
-                )
+                Text(stringResource(string.profile), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
         }
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(8.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Avatar - Clickable
-            Image(
-                painter = painterResource(selectedAvatar),
-                contentDescription = "Avatar",
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(CircleShape)
-                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                    .clickable { showAvatarDialog = true }
-            )
+            Spacer(Modifier.height(16.dp))
 
-            // Name với icon Edit
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(top = 12.dp)
+            // Avatar with gradient border
+            Box(
+                modifier = Modifier
+                    .size(110.dp)
+                    .clip(CircleShape)
+                    .border(3.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    .clickable { showAvatarDialog = true },
+                contentAlignment = Alignment.Center
             ) {
+                Image(
+                    painter = painterResource(selectedAvatar),
+                    contentDescription = "Avatar",
+                    modifier = Modifier.size(104.dp).clip(CircleShape)
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Name + Edit
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = userModel.value.name,
-                    fontSize = 22.sp,
+                    style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold
                 )
-                IconButton(
-                    onClick = { showEditNameDialog = true },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = "Edit name",
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                IconButton(onClick = { showEditNameDialog = true }, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Default.Edit, "Edit name", Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
                 }
             }
 
+            Text(
+                text = userModel.value.email,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(Modifier.height(28.dp))
+
             // Info Card
             Card(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(2.dp)
             ) {
-                Column(modifier = Modifier.padding(8.dp)) {
-                    // Address
+                Column(modifier = Modifier.padding(16.dp)) {
                     OutlinedTextField(
                         value = addressInput,
                         onValueChange = { addressInput = it },
                         label = { Text(stringResource(string.address)) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.LocationOn,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        },
+                        leadingIcon = { Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.primary) },
                         trailingIcon = {
                             IconButton(onClick = { saveAddress() }) {
-                                Icon(
-                                    Icons.Default.Check,
-                                    contentDescription = "Save",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
+                                Icon(Icons.Default.Check, "Save", tint = MaterialTheme.colorScheme.primary)
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { saveAddress() })
                     )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    // Email
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Email, null, modifier = Modifier.size(20.dp))
-                        Column(modifier = Modifier.padding(start = 8.dp)) {
-                            Text(
-                                stringResource(string.email),
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(userModel.value.email, fontSize = 14.sp)
-                        }
-                    }
                 }
             }
 
+            Spacer(Modifier.height(16.dp))
 
-            // Cart Items Card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp)
-                    .clickable { GlobalNavigation.navController.navigate("cart") },
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.ShoppingCart, null)
-                    Column(modifier = Modifier.padding(start = 12.dp)) {
-                        Text(
-                            stringResource(string.cart_items),
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            userModel.value.cartItems.values.sum().toString(),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                    Spacer(Modifier.weight(1f))
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null)
+            // Quick links
+            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), elevation = CardDefaults.cardElevation(2.dp)) {
+                Column {
+                    // Cart
+                    ListItem(
+                        headlineContent = { Text(stringResource(string.cart_items), fontWeight = FontWeight.Medium) },
+                        supportingContent = { Text("${userModel.value.cartItems.values.sum()} items") },
+                        leadingContent = {
+                            Box(
+                                Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                                contentAlignment = Alignment.Center
+                            ) { Icon(Icons.Default.ShoppingCart, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp)) }
+                        },
+                        trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                        modifier = Modifier.clickable { GlobalNavigation.navController.navigate("cart") }
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
+
+                    // Orders
+                    ListItem(
+                        headlineContent = { Text(stringResource(string.my_orders), fontWeight = FontWeight.Medium) },
+                        leadingContent = {
+                            Box(
+                                Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)),
+                                contentAlignment = Alignment.Center
+                            ) { Icon(Icons.AutoMirrored.Filled.List, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(22.dp)) }
+                        },
+                        trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                        modifier = Modifier.clickable { GlobalNavigation.navController.navigate("orders") }
+                    )
                 }
             }
 
-            // My Orders Card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { GlobalNavigation.navController.navigate("orders") },
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.List, null)
-                    Text(stringResource(string.my_orders), modifier = Modifier.padding(start = 12.dp))
-                    Spacer(Modifier.weight(1f))
-                    Icon(Icons.Default.KeyboardArrowRight, null)
-                }
-            }
-
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(32.dp))
 
             // Sign Out
             Button(
                 onClick = {
                     FirebaseAuth.getInstance().signOut()
-                    GlobalNavigation.navController.apply {
-                        popBackStack()
-                        navigate("auth")
-                    }
+                    GlobalNavigation.navController.apply { popBackStack(); navigate("auth") }
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                )
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Icon(Icons.AutoMirrored.Filled.ExitToApp, null)
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(string.sign_out), fontWeight = FontWeight.Bold)
             }
+
+            Spacer(Modifier.height(24.dp))
         }
     }
 
@@ -282,10 +238,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
         AvatarPickerDialog(
             currentAvatar = selectedAvatar,
             onDismiss = { showAvatarDialog = false },
-            onAvatarSelected = { avatarRes ->
-                selectedAvatar = avatarRes
-                showAvatarDialog = false
-            }
+            onAvatarSelected = { selectedAvatar = it; showAvatarDialog = false }
         )
     }
 
@@ -300,24 +253,13 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                     onValueChange = { nameInput = it },
                     label = { Text("Full Name") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp)
                 )
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        saveName()
-                        showEditNameDialog = false
-                    }
-                ) {
-                    Text("Save")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showEditNameDialog = false }) {
-                    Text("Cancel")
-                }
-            }
+            confirmButton = { TextButton(onClick = { saveName(); showEditNameDialog = false }) { Text("Save") } },
+            dismissButton = { TextButton(onClick = { showEditNameDialog = false }) { Text("Cancel") } },
+            shape = RoundedCornerShape(24.dp)
         )
     }
 }

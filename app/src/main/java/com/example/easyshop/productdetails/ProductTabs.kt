@@ -1,16 +1,13 @@
 package com.example.easyshop.productdetails
 
-
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.easyshop.R
-import androidx.compose.ui.unit.sp
 
 @Composable
 fun ProductTabs(selectedTab: Int, onTabSelected: (Int) -> Unit) {
@@ -21,7 +18,7 @@ fun ProductTabs(selectedTab: Int, onTabSelected: (Int) -> Unit) {
     )
     TabRow(
         selectedTabIndex = selectedTab,
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.surface,
         indicator = { tabPositions ->
             TabRowDefaults.SecondaryIndicator(
                 modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
@@ -38,7 +35,7 @@ fun ProductTabs(selectedTab: Int, onTabSelected: (Int) -> Unit) {
                     Text(
                         title,
                         fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
-                        fontSize = 16.sp
+                        style = MaterialTheme.typography.bodyLarge
                     )
                 }
             )

@@ -87,48 +87,24 @@ fun OrdersManagementScreen(
         }
     }
 
-    Column(modifier = modifier.fillMaxSize().statusBarsPadding()) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            tonalElevation = 1.dp
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { navController.navigateUp() },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-
-                Text(
-                    text = stringResource(id = R.string.orders_management_title),
-                    style = MaterialTheme.typography.titleMedium
-                )
-
-                IconButton(
-                    onClick = { loadOrders() },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Refresh,
-                        contentDescription = stringResource(id = R.string.reset),
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(id = R.string.orders_management_title), fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { loadOrders() }) { Icon(Icons.Default.Refresh, stringResource(id = R.string.reset)) }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+            )
         }
+    ) { padding ->
 
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = modifier.fillMaxSize().padding(padding)) {
             // Filter Chips
             LazyRow(
                 contentPadding = PaddingValues(16.dp),
@@ -155,6 +131,7 @@ fun OrdersManagementScreen(
                                 }
                             )
                         },
+                        shape = RoundedCornerShape(12.dp),
                         leadingIcon = if (selectedFilter == filter) {
                             { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
                         } else null
@@ -245,7 +222,9 @@ fun OrderCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        onClick = onViewDetails
+        onClick = onViewDetails,
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -364,7 +343,7 @@ fun OrderStatusBadge(status: String) {
 
     Surface(
         color = color,
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(10.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -403,7 +382,7 @@ fun OrderDetailsDialog(
 
     BasicAlertDialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surface
         ) {
             Column(
@@ -498,7 +477,7 @@ fun OrderDetailsDialog(
                     Text(
                         text = stringResource(id = R.string.update_status_label),
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(8.dp))
                     
@@ -510,10 +489,10 @@ fun OrderDetailsDialog(
                             Button(
                                 onClick = { onUpdateStatus("SHIPPING") },
                                 modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3)),
-                                shape = RoundedCornerShape(8.dp)
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text(stringResource(id = R.string.ship_btn), fontSize = 12.sp)
+                                Text(stringResource(id = R.string.ship_btn), style = MaterialTheme.typography.labelMedium)
                             }
                         }
                         if (order.status == "SHIPPING" || order.status == "ORDERED") {
@@ -521,18 +500,18 @@ fun OrderDetailsDialog(
                                 onClick = { onUpdateStatus("DELIVERED") },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
-                                shape = RoundedCornerShape(8.dp)
+                                shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text(stringResource(id = R.string.deliver_btn), fontSize = 12.sp)
+                                Text(stringResource(id = R.string.deliver_btn), style = MaterialTheme.typography.labelMedium)
                             }
                         }
                         OutlinedButton(
                             onClick = { onUpdateStatus("CANCELLED") },
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
-                            shape = RoundedCornerShape(8.dp)
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text(stringResource(id = R.string.cancel_btn), fontSize = 12.sp)
+                            Text(stringResource(id = R.string.cancel_btn), style = MaterialTheme.typography.labelMedium)
                         }
                     }
                     Spacer(Modifier.height(16.dp))
@@ -541,7 +520,7 @@ fun OrderDetailsDialog(
                 Button(
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(stringResource(id = R.string.close_btn))
                 }
