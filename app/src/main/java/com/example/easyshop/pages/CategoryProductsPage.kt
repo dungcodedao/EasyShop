@@ -53,7 +53,7 @@ fun CategoryProductsPage(
                         doc.toObject(ProductModel::class.java)?.apply { id = doc.id }
                     }
                     brandList = listOf(allBrandsLabel) + allProducts
-                        .mapNotNull { it.otherDetails["Brand"]?.trim() }
+                        .mapNotNull { it.otherDetails["Thương hiệu"]?.trim() }
                         .filter { it.isNotBlank() }
                         .distinct()
                         .sorted()
@@ -66,7 +66,7 @@ fun CategoryProductsPage(
         allProducts
             .filter { product ->
                 selectedBrand == allBrandsLabel ||
-                        product.otherDetails["Brand"]?.trim().equals(selectedBrand, ignoreCase = true)
+                        product.otherDetails["Thương hiệu"]?.trim().equals(selectedBrand, ignoreCase = true)
             }
             .let { products ->
                 when (selectedPriceSort) {
