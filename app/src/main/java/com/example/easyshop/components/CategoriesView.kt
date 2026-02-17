@@ -117,7 +117,7 @@ fun CategoryItem(category: CategoryModel, modifier: Modifier = Modifier) {
             AsyncImage(
                 model = category.imageUrl,
                 contentDescription = category.name,
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(65.dp),
                 contentScale = ContentScale.Fit
             )
 
