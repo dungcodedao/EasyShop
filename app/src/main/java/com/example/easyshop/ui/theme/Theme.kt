@@ -14,10 +14,12 @@ import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryDark,
+    primaryContainer = PrimaryContainerDark,
     secondary = SecondaryColor,
-    tertiary = AccentColor,
+    tertiary = AccentDark,
     background = BackgroundDark,
     surface = SurfaceDark,
+    surfaceVariant = SurfaceVariantDark,
     onPrimary = Color.White,
     onSecondary = Color.White,
     onBackground = TextPrimaryDark,
@@ -28,6 +30,7 @@ private val DarkColorScheme = darkColorScheme(
 
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryColor,
+    primaryContainer = PrimaryContainer,
     secondary = SecondaryColor,
     tertiary = AccentColor,
     background = BackgroundLight,
@@ -60,10 +63,10 @@ fun EasyShopTheme(
         colorScheme = colorScheme,
         typography = Typography,
         shapes = Shapes(
-            small = RoundedCornerShape(8.dp),
-            medium = RoundedCornerShape(12.dp),
-            large = RoundedCornerShape(16.dp),
-            extraLarge = RoundedCornerShape(24.dp)
+            small = RoundedCornerShape(12.dp),
+            medium = RoundedCornerShape(16.dp),
+            large = RoundedCornerShape(24.dp),
+            extraLarge = RoundedCornerShape(32.dp)
         ),
         content = content
     )
