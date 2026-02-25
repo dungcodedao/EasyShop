@@ -105,14 +105,14 @@ fun CategoryItem(category: CategoryModel, modifier: Modifier = Modifier) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(12.dp),
+                .padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             AsyncImage(
                 model = category.imageUrl,
                 contentDescription = category.name,
-                modifier = Modifier.size(65.dp),
+                modifier = Modifier.size(80.dp),
                 contentScale = ContentScale.Fit
             )
 
@@ -120,8 +120,8 @@ fun CategoryItem(category: CategoryModel, modifier: Modifier = Modifier) {
 
             Text(
                 text = category.name,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Medium,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis

@@ -9,12 +9,27 @@ android {
     namespace = "com.example.easyshop"
     compileSdk = 34
 
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+
+    // Đọc key từ local.properties
+    val localProperties = java.util.Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localProperties.load(localPropertiesFile.inputStream())
+    }
+    val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
+
     defaultConfig {
         applicationId = "com.example.easyshop"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -45,10 +60,6 @@ android {
             "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
         )
     }
-    buildFeatures {
-        compose = true
-    }
-
 }
 
 dependencies {

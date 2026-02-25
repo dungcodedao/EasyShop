@@ -174,15 +174,7 @@ fun ManageUsersScreen(
             ) {
                 UserDetailContent(
                     user = selectedUser!!,
-                    stats = userStats[selectedUser!!.uid] ?: UserStats(0, 0.0),
-                    onRoleChange = { newRole ->
-                        firestore.collection("users").document(selectedUser!!.uid)
-                            .update("role", newRole)
-                            .addOnSuccessListener {
-                                loadUsers()
-                                showBottomSheet = false
-                            }
-                    }
+                    stats = userStats[selectedUser!!.uid] ?: UserStats(0, 0.0)
                 )
             }
         }
@@ -192,8 +184,7 @@ fun ManageUsersScreen(
 @Composable
 fun UserDetailContent(
     user: UserModel,
-    stats: UserStats,
-    onRoleChange: (String) -> Unit
+    stats: UserStats
 ) {
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
     Column(
@@ -242,46 +233,6 @@ fun UserDetailContent(
         DetailInfoRow(stringResource(id = R.string.total_spent_label), currencyFormat.format(stats.totalSpent))
         DetailInfoRow(stringResource(id = R.string.current_role_label), user.role.uppercase())
 
-        Spacer(Modifier.height(32.dp))
-
-        // Action Buttons
-        Text(
-            text = stringResource(id = R.string.change_role_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.align(Alignment.Start)
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Button(
-                onClick = { onRoleChange("user") },
-                modifier = Modifier.weight(1f),
-                enabled = user.role != "user",
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            ) {
-                Text(stringResource(id = R.string.make_user_btn))
-            }
-
-            Button(
-                onClick = { onRoleChange("admin") },
-                modifier = Modifier.weight(1f),
-                enabled = user.role != "admin",
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            ) {
-                Text(stringResource(id = R.string.make_admin_btn))
-            }
-        }
     }
 }
 

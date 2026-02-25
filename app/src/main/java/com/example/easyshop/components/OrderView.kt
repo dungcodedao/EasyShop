@@ -8,6 +8,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.example.easyshop.ui.theme.SuccessColor
+import com.example.easyshop.ui.theme.WarningColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.easyshop.AppUtil
@@ -18,8 +20,8 @@ import com.example.easyshop.model.OrderModel
 fun OrderView(orderItems: OrderModel, modifier: Modifier = Modifier) {
     val statusColor = when (orderItems.status) {
         "ORDERED" -> MaterialTheme.colorScheme.primary
-        "SHIPPING" -> Color(0xFFFF9800)
-        "DELIVERED" -> Color(0xFF4CAF50)
+        "SHIPPING" -> WarningColor
+        "DELIVERED" -> SuccessColor
         "CANCELLED" -> MaterialTheme.colorScheme.error
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }

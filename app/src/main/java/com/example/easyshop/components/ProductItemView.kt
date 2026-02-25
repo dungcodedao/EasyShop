@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import com.example.easyshop.ui.theme.SuccessColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -63,7 +64,7 @@ fun ProductItemView(modifier: Modifier = Modifier, product: ProductModel) {
                     modifier = Modifier.align(Alignment.TopEnd).padding(6.dp),
                     shape = RoundedCornerShape(8.dp),
                     color = if (product.inStock)
-                        Color(0xFF4CAF50).copy(alpha = 0.9f)
+                        SuccessColor.copy(alpha = 0.9f)
                     else
                         MaterialTheme.colorScheme.error.copy(alpha = 0.9f)
                 ) {

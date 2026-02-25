@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.example.easyshop.ui.theme.WarningColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -107,16 +108,16 @@ fun ReviewsTab() {
 fun OverallRatingCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFC107).copy(alpha = 0.08f)),
+        colors = CardDefaults.cardColors(containerColor = WarningColor.copy(alpha = 0.08f)),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(end = 24.dp)) {
-                Text("4.5", style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold, color = Color(0xFFFF8F00))
+                Text("4.5", style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold, color = WarningColor)
                 Row {
                     repeat(5) {
-                        Icon(Icons.Default.Star, null, tint = Color(0xFFFFC107), modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Star, null, tint = WarningColor, modifier = Modifier.size(16.dp))
                     }
                 }
                 Spacer(Modifier.height(4.dp))
@@ -137,12 +138,12 @@ fun OverallRatingCard() {
 fun RatingBar(stars: Int, count: Int) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
         Text("$stars", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(16.dp))
-        Icon(Icons.Default.Star, null, tint = Color(0xFFFFC107), modifier = Modifier.size(14.dp))
+        Icon(Icons.Default.Star, null, tint = WarningColor, modifier = Modifier.size(14.dp))
         Spacer(Modifier.width(8.dp))
         LinearProgressIndicator(
             progress = { count / 120f },
             modifier = Modifier.weight(1f).height(6.dp).padding(end = 8.dp),
-            color = Color(0xFFFF8F00),
+            color = WarningColor,
             trackColor = MaterialTheme.colorScheme.surfaceVariant
         )
         Text("$count", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(30.dp), textAlign = TextAlign.End)
@@ -171,7 +172,7 @@ fun ReviewCard(userName: String, rating: Int, comment: String, date: String) {
                         Text(userName, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
                         Row {
                             repeat(5) { index ->
-                                Icon(Icons.Default.Star, null, tint = if (index < rating) Color(0xFFFFC107) else MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.size(14.dp))
+                                Icon(Icons.Default.Star, null, tint = if (index < rating) WarningColor else MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.size(14.dp))
                             }
                         }
                     }

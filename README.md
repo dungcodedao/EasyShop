@@ -8,14 +8,19 @@
 
 ### 👤 Đối với Người dùng
 - **Khám phá sản phẩm:** Duyệt sản phẩm theo danh mục, tìm kiếm thông minh và lọc sản phẩm.
+- **🤖 Trợ lý ảo AI (Gemini):**
+    - Hỗ trợ tư vấn sản phẩm thông minh dựa trên ngữ cảnh cuộc hội thoại.
+    - **Multi-turn Memory:** Ghi nhớ nội dung đã trao đổi để tư vấn chính xác hơn.
+    - **Smart Search:** Tự động đề xuất sản phẩm liên quan từ dữ liệu Firestore dựa trên từ khóa câu hỏi.
 - **Quản lý mua sắm:** Giỏ hàng tiện lợi, tính toán đơn hàng thời gian thực và áp dụng mã giảm giá.
 - **Theo dõi đơn hàng:** Xem lịch sử mua hàng và chi tiết các sản phẩm đã đặt.
-- **Cá nhân hóa:** Quản lý hồ sơ, địa chỉ giao hàng và danh sách yêu thích.
+- **Cá nhân hóa:** Quản lý hồ sơ, chọn ảnh đại diện đồng bộ hệ thống và danh sách yêu thích.
 
 ### 🛡️ Đối với Quản trị viên
 - **Dashboard thông minh:** Theo dõi doanh thu, tăng trưởng người dùng và thống kê đơn hàng.
 - **Quản lý kho hàng:** CRUD sản phẩm, quản lý danh mục và tồn kho.
 - **Xử lý đơn hàng:** Tiếp nhận và cập nhật trạng thái đơn hàng của khách hàng.
+- **Quản lý khách hàng:** Xem chi tiết thông tin và thống kê mua sắm của từng user.
 
 ---
 
@@ -23,8 +28,10 @@
 - **Ngôn ngữ:** Kotlin
 - **UI:** Jetpack Compose (Material 3)
 - **Backend:** Firebase (Auth, Firestore, Storage)
-- **Kiến trúc:** MVVM (Model-View-ViewModel)
-- **Thư viện:** Coil (Image Loading), Compose Navigation.
+- **AI:** Google Gemini AI (Generative AI SDK)
+- **Bảo mật:** Quản lý API Key an toàn qua `local.properties` và `BuildConfig`.
+- **Kiến trúc:** MVVM (Model-View-ViewModel) + Repository Pattern.
+- **Thư viện:** Coil (Image Loading), Compose Navigation, Razorpay (Payment).
 
 ---
 *Dự án tập trung vào tính thẩm mỹ, bảo mật và hiệu năng cao cho trải nghiệm thương mại điện tử di động.*

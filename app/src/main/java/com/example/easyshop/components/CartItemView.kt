@@ -78,28 +78,18 @@ fun CartItemView(modifier: Modifier = Modifier, productId: String, qty: Long) {
                 )
                 Spacer(Modifier.height(8.dp))
 
-                // Qty controls
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    FilledTonalIconButton(
-                        onClick = { AppUtil.removeItemFromCart(context, productId) },
-                        modifier = Modifier.size(32.dp),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text("−", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                    }
+                // Số lượng — hiển thị dạng badge "x1" thay vì nút +/-
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
                     Text(
-                        text = "$qty",
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        text = "x$qty",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
-                    FilledTonalIconButton(
-                        onClick = { AppUtil.addItemToCart(context, productId) },
-                        modifier = Modifier.size(32.dp),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text("+", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                    }
                 }
             }
 
