@@ -49,7 +49,7 @@ class AiRepository {
         awaitClose { listener.remove() }
     }
 
-    suspend fun sendMessage(userMessage: String): Result<String> {
+    suspend fun sendMessage(userMessage: String, history: List<ChatMessage>): Result<String> {
         val userId = auth.currentUser?.uid ?: return Result.failure(Exception("Chưa đăng nhập"))
         return try {
             val chatDocRef = db.collection("chats").document(userId)
@@ -63,8 +63,8 @@ class AiRepository {
                 )
             ).await()
 
-            // Gọi Gemini API qua OkHttp (v1 endpoint - hỗ trợ gemini-2.0-flash)
-            val aiReply = callGeminiApi(userMessage)
+            // Gọi Gemini API qua OkHttp kèm theo lịch sử để AI có "trí nhớ"
+            val aiReply = callGeminiApi(userMessage, history)
 
             // Lưu phản hồi AI
             chatDocRef.collection("messages").add(
@@ -83,7 +83,7 @@ class AiRepository {
         }
     }
 
-    private suspend fun callGeminiApi(message: String): String = withContext(Dispatchers.IO) {
+    private suspend fun callGeminiApi(currentMessage: String, history: List<ChatMessage>): String = withContext(Dispatchers.IO) {
         // Thêm hướng dẫn để AI trả lời ngắn gọn, súc tích
         val systemInstruction = "Bạn là trợ lý AI chuyên nghiệp của cửa hàng EasyShop. " +
                 "Hãy trả lời ngắn gọn, súc tích, thân thiện. " +
@@ -95,14 +95,29 @@ class AiRepository {
                     put("text", systemInstruction)
                 })
             })
-            put("contents", JSONArray().apply {
-                put(JSONObject().apply {
-                    put("role", "user")
+            
+            val contentsArray = JSONArray()
+            
+            // 1. Thêm lịch sử cũ (Giới hạn 10 tin nhắn gần nhất để tối ưu)
+            val recentHistory = history.takeLast(10)
+            recentHistory.forEach { msg ->
+                contentsArray.put(JSONObject().apply {
+                    put("role", if (msg.isUser) "user" else "model")
                     put("parts", JSONArray().apply {
-                        put(JSONObject().put("text", message))
+                        put(JSONObject().put("text", msg.content))
                     })
                 })
+            }
+            
+            // 2. Thêm tin nhắn hiện tại của người dùng
+            contentsArray.put(JSONObject().apply {
+                put("role", "user")
+                put("parts", JSONArray().apply {
+                    put(JSONObject().put("text", currentMessage))
+                })
             })
+
+            put("contents", contentsArray)
         }.toString().toRequestBody("application/json".toMediaType())
 
         val request = Request.Builder().url(apiUrl).post(body).build()

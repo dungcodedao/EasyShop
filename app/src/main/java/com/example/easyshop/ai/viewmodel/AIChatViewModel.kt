@@ -36,7 +36,7 @@ class AIChatViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
-            repository.sendMessage(message).onFailure { e ->
+            repository.sendMessage(message, messages.value).onFailure { e ->
                 _error.value = e.message
             }
             _isLoading.value = false
