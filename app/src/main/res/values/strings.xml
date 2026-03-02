@@ -107,6 +107,9 @@
     <string name="order_id">Mã đơn hàng</string>
     <string name="date">Ngày</string>
     <string name="back_to_home">Về trang chủ</string>
+    <string name="view_receipt_btn">Xem hóa đơn</string>
+    <string name="print_save_pdf">In / Lưu PDF</string>
+    <string name="invoice_title_promax">HÓA ĐƠN CHI TIẾT</string>
     <string name="order_not_found">Không tìm thấy đơn hàng</string>
     <string name="order_status">Trạng thái đơn hàng</string>
     <string name="order_details">Chi tiết đơn hàng</string>
@@ -189,6 +192,7 @@
     <string name="deliver_btn">Đã giao</string>
     <string name="cancel_btn">Hủy</string>
     <string name="mark_as_delivered">Đánh dấu đã giao</string>
+    <string name="customer_label">Khách hàng</string>
     <string name="customer_info_title">Thông tin khách hàng</string>
     <string name="payment_method_label">Thanh toán</string>
     <string name="update_status_label">Cập nhật trạng thái</string>
@@ -210,6 +214,10 @@
     <string name="make_user_btn">Đặt làm User</string>
     <string name="make_admin_btn">Đặt làm Admin</string>
     <string name="orders_count_label">%d đơn hàng</string>
+    <string name="promote_to_admin">Cấp quyền Admin</string>
+    <string name="demote_to_user">Gỡ quyền Admin</string>
+    <string name="role_updated_success">Đã cập nhật vai trò cho %s</string>
+    <string name="role_updated_failed">Cập nhật vai trò thất bại</string>
 
     <!-- Promo Codes Management -->
     <string name="manage_promo_codes_title">Quản lý mã giảm giá</string>

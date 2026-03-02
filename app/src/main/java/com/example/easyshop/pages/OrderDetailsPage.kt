@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -129,8 +130,15 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
                                     },
                                     shape = RoundedCornerShape(10.dp)
                                 ) {
+                                    val statusText = when (order!!.status) {
+                                        "ORDERED" -> stringResource(id = R.string.ordered_status)
+                                        "SHIPPING" -> stringResource(id = R.string.shipping_status)
+                                        "DELIVERED" -> stringResource(id = R.string.delivered_status)
+                                        "CANCELLED" -> stringResource(id = R.string.cancelled_status)
+                                        else -> order!!.status
+                                    }
                                     Text(
-                                        text = order!!.status,
+                                        text = statusText,
                                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                                         color = when (order!!.status) {
                                             "DELIVERED" -> SuccessColor
@@ -146,7 +154,7 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
                             HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                             Spacer(Modifier.height(12.dp))
                             Text("ID: #${order!!.id}", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                            Text("Date: ${AppUtil.formatData(order!!.date)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("${stringResource(id = R.string.date)}: ${AppUtil.formatData(order!!.date)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -188,6 +196,25 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
                             Spacer(Modifier.height(4.dp))
                             Text(order!!.address, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
+                    }
+                }
+
+                // View Receipt Button
+                item {
+                    Button(
+                        onClick = {
+                            navController.navigate("receipt/${order!!.total}/${order!!.id}")
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    ) {
+                        Icon(Icons.Default.Print, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(id = R.string.view_receipt_btn), fontWeight = FontWeight.Bold)
                     }
                 }
 
