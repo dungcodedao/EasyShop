@@ -28,7 +28,9 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -73,6 +75,7 @@ import com.google.firebase.firestore.firestore
 fun ProfilePage(modifier: Modifier = Modifier) {
     val userModel = remember { mutableStateOf(UserModel()) }
     var addressInput by remember { mutableStateOf("") }
+    var phoneInput by remember { mutableStateOf("") }
     var nameInput by remember { mutableStateOf("") }
     var showAvatarDialog by remember { mutableStateOf(false) }
     var showEditNameDialog by remember { mutableStateOf(false) }
@@ -84,8 +87,22 @@ fun ProfilePage(modifier: Modifier = Modifier) {
         if (addressInput.isNotEmpty() && currentUser != null) {
             Firebase.firestore.collection("users").document(currentUser.uid)
                 .update("address", addressInput)
-                .addOnSuccessListener { AppUtil.showToast(context, "Address updated!") }
-                .addOnFailureListener { AppUtil.showToast(context, "Failed to update") }
+                .addOnSuccessListener { AppUtil.showToast(context, "Đã lưu địa chỉ!") }
+                .addOnFailureListener { AppUtil.showToast(context, "Lỗi khi lưu") }
+        }
+    }
+
+    fun savePhone() {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val cleanedPhone = phoneInput.trim()
+        if (cleanedPhone.isNotEmpty() && currentUser != null) {
+            Firebase.firestore.collection("users").document(currentUser.uid)
+                .update("phone", cleanedPhone)
+                .addOnSuccessListener {
+                    userModel.value = userModel.value.copy(phone = cleanedPhone)
+                    AppUtil.showToast(context, "Đã lưu số điện thoại!")
+                }
+                .addOnFailureListener { AppUtil.showToast(context, "Lỗi khi lưu") }
         }
     }
 
@@ -114,6 +131,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                 document.toObject(UserModel::class.java)?.let { user ->
                     userModel.value = user
                     addressInput = user.address
+                    phoneInput = user.phone
                     nameInput = user.name
                 }
                 // Load avatar đã chọn trước đó
@@ -197,7 +215,30 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                 shape = RoundedCornerShape(20.dp),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Số điện thoại
+                    OutlinedTextField(
+                        value = phoneInput,
+                        onValueChange = { phoneInput = it },
+                        label = { Text("Số điện thoại") },
+                        placeholder = { Text("0901 234 567") },
+                        leadingIcon = { Icon(Icons.Default.Phone, null, tint = MaterialTheme.colorScheme.primary) },
+                        trailingIcon = {
+                            IconButton(onClick = { savePhone() }) {
+                                Icon(Icons.Default.Check, "Lưu SĐT", tint = MaterialTheme.colorScheme.primary)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Phone,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(onNext = { savePhone() }),
+                        singleLine = true
+                    )
+
+                    // Địa chỉ
                     OutlinedTextField(
                         value = addressInput,
                         onValueChange = { addressInput = it },
@@ -205,7 +246,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                         leadingIcon = { Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.primary) },
                         trailingIcon = {
                             IconButton(onClick = { saveAddress() }) {
-                                Icon(Icons.Default.Check, "Save", tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Default.Check, "Lưu địa chỉ", tint = MaterialTheme.colorScheme.primary)
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
