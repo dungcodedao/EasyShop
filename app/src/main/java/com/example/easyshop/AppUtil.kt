@@ -96,6 +96,7 @@ object AppUtil {
                     userId = currentUser.uid,
                     userName = user?.name ?: "Khách hàng",
                     userEmail = user?.email ?: "N/A",
+                    userPhone = user?.phone ?: "",
                     date = Timestamp.now(),
                     items = cartItems,
                     total = totalAmount,

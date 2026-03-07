@@ -8,6 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -42,7 +44,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                 subTotal.floatValue += it.actualPrice.toFloat() * qty
             }
         }
-        total.floatValue = subTotal.floatValue - discount.floatValue
+        total.floatValue = (subTotal.floatValue - discount.floatValue).coerceAtLeast(0f)
     }
 
     LaunchedEffect(Unit) {
@@ -69,7 +71,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
     }
 
     LaunchedEffect(discount.floatValue) {
-        total.floatValue = subTotal.floatValue - discount.floatValue
+        total.floatValue = (subTotal.floatValue - discount.floatValue).coerceAtLeast(0f)
     }
 
     Scaffold(
@@ -106,12 +108,39 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                         Text(stringResource(id = R.string.delivery_address), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                     }
                     Spacer(Modifier.height(12.dp))
+
+                    // Tên
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(userModel.value.name, style = MaterialTheme.typography.bodyLarge)
                     }
-                    Spacer(Modifier.height(4.dp))
+
+                    Spacer(Modifier.height(6.dp))
+
+                    // Số điện thoại
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Phone, null,
+                            tint = if (userModel.value.phone.isEmpty()) MaterialTheme.colorScheme.error
+                                   else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        if (userModel.value.phone.isEmpty()) {
+                            Text(
+                                "⚠️ Chưa có số điện thoại — vui lòng cập nhật trong Trang cá nhân",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        } else {
+                            Text(userModel.value.phone, style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+
+                    Spacer(Modifier.height(6.dp))
+
+                    // Địa chỉ
                     Text(
                         userModel.value.address,
                         style = MaterialTheme.typography.bodyMedium,

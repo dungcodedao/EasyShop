@@ -1,5 +1,7 @@
 package com.example.easyshop.screen
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,13 +13,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.easyshop.AppUtil
 import com.example.easyshop.R
 import com.example.easyshop.components.VirtualCreditCard
@@ -134,8 +140,14 @@ fun PaymentScreen(
 
             Spacer(Modifier.height(16.dp))
 
+            // MoMo QR Section
+            if (selectedPaymentMethod == "MoMo QR") {
+                MoMoQRSection(totalAmount = totalAmount)
+                Spacer(Modifier.height(24.dp))
+            }
+
             // Virtual Card Section
-            if (selectedPaymentMethod == "Credit Card (Mock)") {
+            if (selectedPaymentMethod == "Credit Card") {
                 VirtualCreditCard(
                     number = cardNumber,
                     name = cardName,
@@ -165,7 +177,7 @@ fun PaymentScreen(
             Spacer(Modifier.height(24.dp))
 
             // Card Details (if Credit Card selected)
-            if (selectedPaymentMethod == "Credit Card (Mock)") {
+            if (selectedPaymentMethod == "Credit Card") {
                 Text(
                     text = stringResource(R.string.card_details),
                     style = MaterialTheme.typography.titleMedium,
@@ -231,7 +243,7 @@ fun PaymentScreen(
             }
 
             // Razorpay Info
-            if (selectedPaymentMethod == "Razorpay (Real)") {
+            if (selectedPaymentMethod == "Razorpay") {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -260,7 +272,19 @@ fun PaymentScreen(
             Button(
                 onClick = {
                     when (selectedPaymentMethod) {
-                        "Credit Card (Mock)" -> {
+                        "MoMo QR" -> {
+                    scope.launch {
+                        isProcessing = true
+                        delay(1500)
+                        isProcessing = false
+                        val orderId = "ORD" + java.util.UUID.randomUUID().toString().replace("-", "").take(8).uppercase()
+                        AppUtil.clearCartAndAddToOrder(totalAmount, "MoMo QR", orderId)
+                        navController.navigate("receipt/${totalAmount.toFloat()}/$orderId") {
+                            popUpTo("payment") { inclusive = true }
+                        }
+                    }
+                }
+                "Credit Card" -> {
                             // Mock Payment Logic
                             scope.launch {
                                 isProcessing = true
@@ -280,7 +304,7 @@ fun PaymentScreen(
                                 }
                             }
                         }
-                        "Razorpay (Real)" -> {
+                        "Razorpay" -> {
                             // Razorpay Real Payment
                             AppUtil.startPayment(context, totalAmount.toFloat(), useMockPayment = false)
                         }
@@ -323,7 +347,7 @@ fun PaymentScreen(
 
             // Security Notice
             Text(
-                text = if (selectedPaymentMethod == "Razorpay (Real)")
+                text = if (selectedPaymentMethod == "Razorpay")
                     stringResource(R.string.secure_notice_real)
                 else
                     stringResource(R.string.secure_notice_mock),
@@ -342,8 +366,9 @@ private fun PaymentMethodSelector(
     onMethodSelected: (String) -> Unit
 ) {
     val methods = listOf(
-        "Credit Card (Mock)" to "💳",
-        "Razorpay (Real)" to "🚀",
+        "MoMo QR" to "🟣",
+        "Credit Card" to "💳",
+        "Razorpay" to "🚀",
         "PayPal" to "🅿️",
         "Cash on Delivery" to "💵"
     )
@@ -387,6 +412,113 @@ private fun PaymentMethodSelector(
     }
 }
 
+// ── VietQR MoMo QR Section ────────────────────────────────────────────────
+@Composable
+private fun MoMoQRSection(totalAmount: Double) {
+    // Thông tin tài khoản MoMo
+    val bankId = "MOMO"
+    val accountNo = "0969690132"
+    val accountName = "NGO VAN DUNG"
+    val orderId = remember { "EasyShop-" + System.currentTimeMillis().toString().takeLast(6) }
+
+    val qrUrl = "https://img.vietqr.io/image/$bankId-$accountNo-compact2.png" +
+            "?amount=${totalAmount.toLong()}" +
+            "&addInfo=${android.net.Uri.encode(orderId)}" +
+            "&accountName=${android.net.Uri.encode(accountName)}"
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Header card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFFF0F0F0)
+            )
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // MoMo logo badge
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFFAE2070)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Mo\nMo", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center, lineHeight = 11.sp)
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("MoMo", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                    Text(accountNo, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    Text(accountName, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                }
+                // Amount badge
+                Surface(
+                    color = Color(0xFFAE2070).copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        AppUtil.formatPrice(totalAmount),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFAE2070),
+                        fontSize = 13.sp
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // QR Image (dynamic via VietQR)
+        Box(
+            modifier = Modifier
+                .size(240.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .border(2.dp, Color(0xFFAE2070).copy(alpha = 0.3f), RoundedCornerShape(20.dp))
+                .background(Color.White)
+                .padding(12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(qrUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = "QR MoMo",
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // Instruction
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3F8))
+        ) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text("📲 Hướng dẫn thanh toán", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFAE2070))
+                Text("1. Mở app MoMo → Chọn \"Quét QR\"", fontSize = 12.sp, color = Color.DarkGray)
+                Text("2. Quét mã QR bên trên", fontSize = 12.sp, color = Color.DarkGray)
+                Text("3. Số tiền ${AppUtil.formatPrice(totalAmount)} đã được điền sẵn", fontSize = 12.sp, color = Color.DarkGray)
+                Text("4. Nhấn \"Xác nhận thanh toán\" trên app MoMo", fontSize = 12.sp, color = Color.DarkGray)
+                Text("5. Quay lại đây và nhấn nút \"Đã thanh toán\"", fontSize = 12.sp, color = Color.DarkGray)
+            }
+        }
+    }
+}
+
 // Helper functions
 private fun formatCardNumber(input: String): String {
     val digits = input.replace(" ", "").filter { it.isDigit() }
@@ -411,13 +543,13 @@ private fun isFormValid(
 ): Boolean {
     if (method.isEmpty()) return false
     return when (method) {
-        "Credit Card (Mock)" -> {
+        "Credit Card" -> {
             cardNumber.replace(" ", "").length == 16 &&
                     cardName.isNotBlank() &&
                     expiryDate.length == 5 &&
                     cvv.length == 3
         }
-        "Razorpay (Real)", "PayPal", "Cash on Delivery" -> true
+        "Razorpay", "PayPal", "Cash on Delivery", "MoMo QR" -> true
         else -> false
     }
 }

@@ -28,23 +28,26 @@ fun PromoCodeInput(
     var promoCode by remember { mutableStateOf("") }
     var appliedPromo by remember { mutableStateOf<PromoCodeModel?>(null) }
     var isPromoError by remember { mutableStateOf(false) }
+    var errorText by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
     // Calculate discount based on applied promo
     val discountAmount: Float = appliedPromo?.let { promo ->
-        when (promo.type) {
+        val calculation = when (promo.type) {
             "percentage" -> {
-                val discount = subtotal * (promo.value.toFloat() / 100f)
+                val disc = subtotal * (promo.value.toFloat() / 100f)
                 // Apply max discount limit if set
-                if (promo.maxDiscount > 0 && discount > promo.maxDiscount.toFloat()) {
+                if (promo.maxDiscount > 0 && disc > promo.maxDiscount.toFloat()) {
                     promo.maxDiscount.toFloat()
                 } else {
-                    discount
+                    disc
                 }
             }
             "fixed" -> promo.value.toFloat()
             else -> 0f
         }
+        // Cap discount to subtotal
+        if (calculation > subtotal) subtotal else calculation
     } ?: 0f
 
     // Update parent component when discount changes
@@ -60,41 +63,47 @@ fun PromoCodeInput(
                 promoCode = it.uppercase()
                 isPromoError = false
             },
-            label = { Text("Promo Code") },
-            placeholder = { Text("Enter code") },
+            label = { Text("Mã giảm giá") },
+            placeholder = { Text("Nhập mã tại đây") },
             modifier = Modifier.fillMaxWidth(),
             isError = isPromoError,
             trailingIcon = {
                 if (appliedPromo == null) {
                     TextButton(
                         onClick = {
-                            if (promoCode.isBlank()) {
+                            val trimmedCode = promoCode.trim()
+                            if (trimmedCode.isBlank()) {
                                 Toast.makeText(
                                     context,
-                                    "Please enter a promo code",
+                                    "Vui lòng nhập mã giảm giá",
                                     Toast.LENGTH_SHORT
                                 ).show()
                                 return@TextButton
                             }
 
                             isLoading = true
-                            validatePromoCode(promoCode, subtotal) { promo ->
+                            validatePromoCode(trimmedCode, subtotal) { result ->
                                 isLoading = false
-                                if (promo != null) {
-                                    appliedPromo = promo
-                                    isPromoError = false
-                                    Toast.makeText(
-                                        context,
-                                        "Promo code applied!",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                } else {
-                                    isPromoError = true
-                                    Toast.makeText(
-                                        context,
-                                        "Invalid or expired promo code",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                when (result) {
+                                    is PromoResult.Success -> {
+                                        appliedPromo = result.promo
+                                        isPromoError = false
+                                        errorText = ""
+                                        Toast.makeText(
+                                            context,
+                                            "Áp dụng mã thành công!",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                    is PromoResult.Error -> {
+                                        isPromoError = true
+                                        errorText = result.message
+                                        Toast.makeText(
+                                            context,
+                                            result.message,
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
                                 }
                             }
                         },
@@ -106,7 +115,7 @@ fun PromoCodeInput(
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text("Apply")
+                            Text("Áp dụng")
                         }
                     }
                 } else {
@@ -114,11 +123,12 @@ fun PromoCodeInput(
                         onClick = {
                             appliedPromo = null
                             promoCode = ""
+                            errorText = ""
                         }
                     ) {
                         Icon(
                             Icons.Default.Close,
-                            contentDescription = "Remove",
+                            contentDescription = "Xóa mã",
                             tint = Color.Red
                         )
                     }
@@ -131,7 +141,7 @@ fun PromoCodeInput(
         // Error Message
         if (isPromoError) {
             Text(
-                "Invalid or expired promo code",
+                errorText,
                 color = MaterialTheme.colorScheme.error,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(start = 16.dp, top = 4.dp)
@@ -183,11 +193,17 @@ fun PromoCodeInput(
     }
 }
 
+// Sealed class for better result handling
+sealed class PromoResult {
+    data class Success(val promo: PromoCodeModel) : PromoResult()
+    data class Error(val message: String) : PromoResult()
+}
+
 // Validate Promo Code from Firebase
 fun validatePromoCode(
     code: String,
     subtotal: Float,
-    callback: (PromoCodeModel?) -> Unit
+    callback: (PromoResult) -> Unit
 ) {
     Firebase.firestore
         .collection("promoCodes")
@@ -195,13 +211,13 @@ fun validatePromoCode(
         .get()
         .addOnSuccessListener { doc ->
             if (!doc.exists()) {
-                callback(null)
+                callback(PromoResult.Error("Mã giảm giá không tồn tại"))
                 return@addOnSuccessListener
             }
 
             val promo = doc.toObject(PromoCodeModel::class.java)
             if (promo == null) {
-                callback(null)
+                callback(PromoResult.Error("Lỗi dữ liệu mã giảm giá"))
                 return@addOnSuccessListener
             }
 
@@ -209,14 +225,14 @@ fun validatePromoCode(
             val now = System.currentTimeMillis()
 
             when {
-                !promo.active -> callback(null) // Promo not active
-                promo.expiryDate > 0 && now > promo.expiryDate -> callback(null) // Expired
-                subtotal < promo.minOrder -> callback(null) // Minimum order not met
-                promo.usageLimit > 0 && promo.usedCount >= promo.usageLimit -> callback(null) // Usage limit reached
-                else -> callback(promo) // Valid
+                !promo.active -> callback(PromoResult.Error("Mã giảm giá hiện không khả dụng"))
+                promo.expiryDate > 0 && now > promo.expiryDate -> callback(PromoResult.Error("Mã giảm giá đã hết hạn"))
+                subtotal < promo.minOrder -> callback(PromoResult.Error("Đơn hàng phải tối thiểu đ${promo.minOrder.toLong()} để dùng mã này"))
+                promo.usageLimit > 0 && promo.usedCount >= promo.usageLimit -> callback(PromoResult.Error("Mã giảm giá đã hết lượt sử dụng"))
+                else -> callback(PromoResult.Success(promo))
             }
         }
         .addOnFailureListener {
-            callback(null)
+            callback(PromoResult.Error("Lỗi kết nối máy chủ"))
         }
 }

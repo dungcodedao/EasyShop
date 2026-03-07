@@ -23,6 +23,7 @@ data class OrderModel(
     val userId: String = "",                    // Customer user ID
     val userName: String = "",                  // Customer name
     val userEmail: String = "",                 // Customer email
+    val userPhone: String = "",                 // Customer phone number
     val date: Timestamp = Timestamp.now(), // Order timestamp
     val items: Map<String, Long> = emptyMap(),  // Map: productId -> quantity
     val total: Double = 0.0,                    // Total amount
