@@ -39,6 +39,7 @@ fun ManagePromoCodesScreen(
     var promoCodes by remember { mutableStateOf<List<PromoCodeModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var showAddDialog by remember { mutableStateOf(false) }
+    var editingPromo by remember { mutableStateOf<PromoCodeModel?>(null) }
     val firestore = Firebase.firestore
 
     fun loadPromoCodes() {
@@ -101,6 +102,7 @@ fun ManagePromoCodesScreen(
                                     .update("active", !promo.active)
                                     .addOnSuccessListener { loadPromoCodes() }
                             },
+                            onEdit = { editingPromo = promo },
                             onDelete = {
                                 firestore.collection("promoCodes").document(promo.code).delete()
                                     .addOnSuccessListener {
@@ -130,10 +132,45 @@ fun ManagePromoCodesScreen(
             }
         )
     }
+
+    // Edit dialog
+    editingPromo?.let { promo ->
+        EditPromoCodeDialog(
+            promo = promo,
+            onDismiss = { editingPromo = null },
+            onConfirm = { updated ->
+                firestore.collection("promoCodes").document(promo.code)
+                    .update(
+                        mapOf(
+                            "description" to updated.description,
+                            "type" to updated.type,
+                            "value" to updated.value,
+                            "minOrder" to updated.minOrder,
+                            "maxDiscount" to updated.maxDiscount,
+                            "usageLimit" to updated.usageLimit,
+                            "expiryDate" to updated.expiryDate
+                        )
+                    )
+                    .addOnSuccessListener {
+                        editingPromo = null
+                        loadPromoCodes()
+                        Toast.makeText(context, "Cập nhật mã ${promo.code} thành công!", Toast.LENGTH_SHORT).show()
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(context, "Lỗi khi cập nhật", Toast.LENGTH_SHORT).show()
+                    }
+            }
+        )
+    }
 }
 
 @Composable
-fun PromoCodeItem(promo: PromoCodeModel, onToggleActive: () -> Unit, onDelete: () -> Unit) {
+fun PromoCodeItem(
+    promo: PromoCodeModel,
+    onToggleActive: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val isExpired = promo.isExpired()
 
@@ -192,8 +229,13 @@ fun PromoCodeItem(promo: PromoCodeModel, onToggleActive: () -> Unit, onDelete: (
                     onCheckedChange = { onToggleActive() },
                     colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF4CAF50), checkedTrackColor = Color(0xFF4CAF50).copy(alpha = 0.3f))
                 )
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
+                Row {
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
+                    }
                 }
             }
         }
@@ -262,6 +304,106 @@ fun AddPromoCodeDialog(onDismiss: () -> Unit, onConfirm: (PromoCodeModel) -> Uni
                 },
                 shape = RoundedCornerShape(12.dp)
             ) { Text(stringResource(id = R.string.create_btn)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(id = R.string.cancel)) } }
+    )
+}
+
+// ── Dialog chỉnh sửa mã giảm giá ─────────────────────────────────────────
+@Composable
+fun EditPromoCodeDialog(
+    promo: PromoCodeModel,
+    onDismiss: () -> Unit,
+    onConfirm: (PromoCodeModel) -> Unit
+) {
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    var description by remember { mutableStateOf(promo.description) }
+    var type by remember { mutableStateOf(promo.type) }
+    var value by remember { mutableStateOf(promo.value.toString()) }
+    var minOrder by remember { mutableStateOf(if (promo.minOrder > 0) promo.minOrder.toInt().toString() else "") }
+    var maxDiscount by remember { mutableStateOf(if (promo.maxDiscount > 0) promo.maxDiscount.toInt().toString() else "") }
+    var usageLimit by remember { mutableStateOf(if (promo.usageLimit > 0) promo.usageLimit.toString() else "") }
+    val remainingDays = if (promo.expiryDate > 0)
+        ((promo.expiryDate - System.currentTimeMillis()) / (24 * 60 * 60 * 1000)).coerceAtLeast(0).toString()
+    else ""
+    var expiryDays by remember { mutableStateOf(remainingDays) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("Chinh sua ma giam gia", fontWeight = FontWeight.Bold)
+                Surface(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
+                    Text(promo.code, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        },
+        shape = RoundedCornerShape(24.dp),
+        text = {
+            Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(value = description, onValueChange = { description = it },
+                    label = { Text(stringResource(id = R.string.product_description)) },
+                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp))
+                Text(stringResource(id = R.string.discount_type_label), style = MaterialTheme.typography.labelMedium)
+                Row(Modifier.fillMaxWidth()) {
+                    FilterChip(selected = type == "percentage", onClick = { type = "percentage" },
+                        label = { Text(stringResource(id = R.string.percentage_type)) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
+                    Spacer(Modifier.width(8.dp))
+                    FilterChip(selected = type == "fixed", onClick = { type = "fixed" },
+                        label = { Text(stringResource(id = R.string.fixed_amount_type)) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
+                }
+                Row(Modifier.fillMaxWidth()) {
+                    OutlinedTextField(value = value, onValueChange = { value = it },
+                        label = { Text(if (type == "percentage") stringResource(id = R.string.value_percentage_label) else stringResource(id = R.string.value_fixed_label)) },
+                        modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp))
+                    Spacer(Modifier.width(8.dp))
+                    OutlinedTextField(value = minOrder, onValueChange = { minOrder = it },
+                        label = { Text(stringResource(id = R.string.min_order_label)) },
+                        modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp))
+                }
+                Row(Modifier.fillMaxWidth()) {
+                    OutlinedTextField(value = maxDiscount, onValueChange = { maxDiscount = it },
+                        label = { Text(stringResource(id = R.string.max_discount_label)) },
+                        modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp))
+                    Spacer(Modifier.width(8.dp))
+                    OutlinedTextField(value = usageLimit, onValueChange = { usageLimit = it },
+                        label = { Text(stringResource(id = R.string.usage_limit_label)) },
+                        modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp))
+                }
+                OutlinedTextField(value = expiryDays, onValueChange = { expiryDays = it },
+                    label = { Text("Gia han them (ngay)") },
+                    supportingText = {
+                        if (promo.expiryDate > 0)
+                            Text("HSD hien tai: ${dateFormat.format(Date(promo.expiryDate))}", style = MaterialTheme.typography.labelSmall)
+                    },
+                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp))
+                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(10.dp)) {
+                    Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Group, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Da dung: ${promo.usedCount} luot (khong the sua)",
+                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (value.isBlank()) return@Button
+                    val newExpiry = if (expiryDays.isNotBlank())
+                        System.currentTimeMillis() + (expiryDays.toLongOrNull() ?: 0L) * 24 * 60 * 60 * 1000
+                    else promo.expiryDate
+                    onConfirm(promo.copy(description = description, type = type,
+                        value = value.toDoubleOrNull() ?: promo.value,
+                        minOrder = minOrder.toDoubleOrNull() ?: 0.0,
+                        maxDiscount = maxDiscount.toDoubleOrNull() ?: 0.0,
+                        usageLimit = usageLimit.toIntOrNull() ?: -1,
+                        expiryDate = newExpiry))
+                },
+                shape = RoundedCornerShape(12.dp)
+            ) { Text("Luu thay doi") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(id = R.string.cancel)) } }
     )

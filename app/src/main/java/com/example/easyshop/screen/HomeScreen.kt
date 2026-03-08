@@ -72,7 +72,11 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavController) {
         floatingActionButtonPosition = FabPosition.End
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
-            ContentScreen(Modifier.fillMaxSize(), selectedIndex)
+            ContentScreen(
+                modifier = Modifier.fillMaxSize(),
+                selectedIndex = selectedIndex,
+                onNavigateToProfile = { selectedIndex = 3 }
+            )
         }
     }
 }
@@ -168,10 +172,10 @@ fun CustomFloatingNavigationBar(
 }
 
 @Composable
-fun ContentScreen(modifier: Modifier = Modifier, selectedIndex: Int) {
+fun ContentScreen(modifier: Modifier = Modifier, selectedIndex: Int, onNavigateToProfile: () -> Unit = {}) {
     Box(modifier = modifier) {
         when (selectedIndex) {
-            0 -> HomePage(Modifier.fillMaxSize())
+            0 -> HomePage(Modifier.fillMaxSize(), onNavigateToProfile = onNavigateToProfile)
             1 -> FavoritePage(Modifier.fillMaxSize())
             2 -> CartPage(Modifier.fillMaxSize())
             3 -> ProfilePage(Modifier.fillMaxSize())

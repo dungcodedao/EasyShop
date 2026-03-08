@@ -1,25 +1,71 @@
 package com.example.easyshop.admin
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Leaderboard
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Pending
+import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.easyshop.R
 import com.example.easyshop.model.OrderModel
@@ -28,10 +74,18 @@ import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.tasks.await
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
-import java.util.*
-import androidx.compose.ui.platform.LocalContext
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 data class ProductStat(val id: String, val count: Int, val revenue: Double)
+
+// Design tokens
+private val GreenSuccess  = Color(0xFF00C896)
+private val AmberWarn     = Color(0xFFFFB300)
+private val RedCancel     = Color(0xFFFF5252)
+private val PurpleAccent  = Color(0xFF7C4DFF)
+private val BlueCard      = Color(0xFF1565C0)
 
 @Composable
 fun AnalyticsScreen(
@@ -41,74 +95,72 @@ fun AnalyticsScreen(
     var orders by remember { mutableStateOf<List<OrderModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Metrics
     var totalRevenue by remember { mutableDoubleStateOf(0.0) }
-    var delivedOrdersCount by remember { mutableIntStateOf(0) }
+    var deliveredOrdersCount by remember { mutableIntStateOf(0) }
     var cancelledOrdersCount by remember { mutableIntStateOf(0) }
     var topProducts by remember { mutableStateOf<List<ProductStat>>(emptyList()) }
     var dailyRevenue by remember { mutableStateOf<List<Pair<String, Double>>>(emptyList()) }
 
-
     val firestore = Firebase.firestore
 
-    LaunchedEffect(key1 = Unit) {
+    LaunchedEffect(Unit) {
         try {
             val result = firestore.collection("orders").get().await()
             orders = result.documents.mapNotNull { it.toObject(OrderModel::class.java) }
 
-            // Calculate Metrics
             totalRevenue = orders.filter { it.status == "DELIVERED" }.sumOf { it.total }
-            delivedOrdersCount = orders.count { it.status == "DELIVERED" }
+            deliveredOrdersCount = orders.count { it.status == "DELIVERED" }
             cancelledOrdersCount = orders.count { it.status == "CANCELLED" }
 
-            // Top Products with Revenue
             val productStats = mutableMapOf<String, ProductStat>()
             val productCache = mutableMapOf<String, com.example.easyshop.model.ProductModel?>()
-            
             orders.filter { it.status == "DELIVERED" }.forEach { order ->
                 order.items.forEach { (id, qty) ->
-                    val product = if (productCache.containsKey(id)) {
-                        productCache[id]
-                    } else {
+                    val product = if (productCache.containsKey(id)) productCache[id]
+                    else {
                         val p = firestore.collection("data").document("stock").collection("products")
-                            .document(id).get().await().toObject(com.example.easyshop.model.ProductModel::class.java)
-                        productCache[id] = p
-                        p
+                            .document(id).get().await()
+                            .toObject(com.example.easyshop.model.ProductModel::class.java)
+                        productCache[id] = p; p
                     }
-                    
                     val price = product?.actualPrice?.toDoubleOrNull() ?: 0.0
-                    val current = productStats[id] ?: ProductStat(id, 0, 0.0)
-                    productStats[id] = ProductStat(
-                        id = id,
-                        count = current.count + qty.toInt(),
-                        revenue = current.revenue + (price * qty)
-                    )
+                    val cur = productStats[id] ?: ProductStat(id, 0, 0.0)
+                    productStats[id] = ProductStat(id, cur.count + qty.toInt(), cur.revenue + price * qty)
                 }
             }
             topProducts = productStats.values.sortedByDescending { it.revenue }.take(5)
 
-            // Daily Revenue (Last 7 days)
             val sdf = SimpleDateFormat("dd/MM", Locale.getDefault())
             val dailyMap = mutableMapOf<String, Double>()
             orders.filter { it.status == "DELIVERED" }.forEach { order ->
-                val dateStr = sdf.format(order.date.toDate())
-                dailyMap[dateStr] = (dailyMap[dateStr] ?: 0.0) + order.total
+                val d = sdf.format(order.date.toDate())
+                dailyMap[d] = (dailyMap[d] ?: 0.0) + order.total
             }
-            dailyRevenue = dailyMap.toList().sortedByDescending { it.first }.reversed().takeLast(7)
+            // Luôn generate đủ 7 ngày — fill 0.0 cho ngày không có data
+            val cal = Calendar.getInstance()
+            val last7Days = (6 downTo 0).map { offset ->
+                cal.time = Date(System.currentTimeMillis() - offset * 24 * 60 * 60 * 1000L)
+                val label = sdf.format(cal.time)
+                label to (dailyMap[label] ?: 0.0)
+            }
+            dailyRevenue = last7Days
 
             isLoading = false
-        } catch (e: Exception) {
-            isLoading = false
-        }
+        } catch (e: Exception) { isLoading = false }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(id = R.string.business_analytics_title), fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        stringResource(id = R.string.business_analytics_title),
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back_to_home))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -116,262 +168,535 @@ fun AnalyticsScreen(
         }
     ) { padding ->
         if (isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else {
+            val currencyFmt = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
+            val pendingCount = orders.size - deliveredOrdersCount - cancelledOrdersCount
+
             LazyColumn(
                 modifier = modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .background(MaterialTheme.colorScheme.surface),
-                contentPadding = PaddingValues(16.dp),
+                    .background(MaterialTheme.colorScheme.background),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                // Main Stats
+                // ── Hero Revenue Card ──────────────────────────────────────
                 item {
-                    RevenueCard(totalRevenue, orders.size)
+                    HeroRevenueCard(
+                        totalRevenue = totalRevenue,
+                        totalOrders = orders.size,
+                        currencyFmt = currencyFmt
+                    )
                 }
 
-                // Revenue Trend
+                // ── Stat Chips Row ─────────────────────────────────────────
                 item {
-                    Text(
-                        stringResource(id = R.string.revenue_trend_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    RevenueBarChart(dailyRevenue)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        StatChipCard(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(id = R.string.delivered_status),
+                            value = deliveredOrdersCount.toString(),
+                            icon = Icons.Default.CheckCircle,
+                            iconColor = GreenSuccess,
+                            bgColor = GreenSuccess.copy(alpha = 0.08f)
+                        )
+                        StatChipCard(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(id = R.string.pending_status_legend),
+                            value = pendingCount.toString(),
+                            icon = Icons.Default.Pending,
+                            iconColor = AmberWarn,
+                            bgColor = AmberWarn.copy(alpha = 0.08f)
+                        )
+                        StatChipCard(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(id = R.string.cancelled_status),
+                            value = cancelledOrdersCount.toString(),
+                            icon = Icons.Default.Cancel,
+                            iconColor = RedCancel,
+                            bgColor = RedCancel.copy(alpha = 0.08f)
+                        )
+                    }
                 }
 
-                // Order Distribution
+                // ── Revenue Trend Bar Chart ────────────────────────────────
                 item {
-                    Text(
-                        stringResource(id = R.string.order_distribution_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                    SectionTitle(
+                        title = stringResource(id = R.string.revenue_trend_title),
+                        icon = Icons.AutoMirrored.Filled.TrendingUp,
+                        tint = PurpleAccent
                     )
-                    Spacer(Modifier.height(12.dp))
-                    OrderDistributionChart(
-                        delivered = delivedOrdersCount,
+                    Spacer(Modifier.height(10.dp))
+                    PremiumBarChart(data = dailyRevenue, currencyFmt = currencyFmt)
+                }
+
+                // ── Order Distribution ──────────────────────────────────────
+                item {
+                    SectionTitle(
+                        title = stringResource(id = R.string.order_distribution_title),
+                        icon = Icons.Default.PieChart,
+                        tint = BlueCard
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    PremiumOrderDistribution(
+                        delivered = deliveredOrdersCount,
                         cancelled = cancelledOrdersCount,
-                        other = orders.size - delivedOrdersCount - cancelledOrdersCount
+                        other = pendingCount
                     )
                 }
 
-                // Best Sellers
+                // ── Top Sellers ─────────────────────────────────────────────
                 item {
-                    Text(
-                        stringResource(id = R.string.top_selling_products_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                    SectionTitle(
+                        title = stringResource(id = R.string.top_selling_products_title),
+                        icon = Icons.Default.Leaderboard,
+                        tint = AmberWarn
                     )
+                    Spacer(Modifier.height(4.dp))
                 }
 
                 if (topProducts.isEmpty()) {
                     item {
-                        Text(stringResource(id = R.string.no_sales_data), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                stringResource(id = R.string.no_sales_data),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 } else {
-                    items(
-                        items = topProducts,
-                        key = { it.id }
-                    ) { stat: ProductStat ->
-                        TopProductItem(stat)
+                    itemsIndexed(topProducts) { index, stat ->
+                        PremiumTopProductItem(rank = index + 1, stat = stat, currencyFmt = currencyFmt)
                     }
                 }
+
+                item { Spacer(Modifier.height(32.dp)) }
             }
         }
     }
 }
 
+// ── Hero Revenue Card ────────────────────────────────────────────────────────
 @Composable
-fun RevenueCard(total: Double, totalOrders: Int) {
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-        shape = RoundedCornerShape(24.dp)
+fun HeroRevenueCard(totalRevenue: Double, totalOrders: Int, currencyFmt: NumberFormat) {
+    val gradient = Brush.linearGradient(
+        colors = listOf(Color(0xFF6A11CB), Color(0xFF2575FC)),
+        start = Offset(0f, 0f), end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+    )
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 12.dp, shape = RoundedCornerShape(28.dp))
+            .clip(RoundedCornerShape(28.dp))
+            .background(gradient)
+            .padding(24.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(24.dp)
-        ) {
+        // Decorative circle
+        Box(
+            modifier = Modifier
+                .size(120.dp)
+                .align(Alignment.TopEnd)
+                .offset(x = 30.dp, y = (-30).dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.08f))
+        )
+        Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.MonetizationOn, null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                Spacer(Modifier.width(8.dp))
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color.White.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.MonetizationOn, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                }
+                Spacer(Modifier.width(10.dp))
                 Text(
                     stringResource(id = R.string.total_revenue_label),
+                    color = Color.White.copy(alpha = 0.85f),
                     style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    fontWeight = FontWeight.Medium
                 )
             }
+            Spacer(Modifier.height(12.dp))
             Text(
-                text = currencyFormat.format(total),
-                style = MaterialTheme.typography.headlineLarge,
+                text = currencyFmt.format(totalRevenue),
+                style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = Color.White,
+                fontSize = 28.sp
             )
-            Spacer(Modifier.height(16.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f))
+            Spacer(Modifier.height(20.dp))
+            HorizontalDivider(color = Color.White.copy(alpha = 0.15f))
             Spacer(Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                StatSubItem(stringResource(id = R.string.orders), totalOrders.toString(), Icons.Default.Inventory2)
-                StatSubItem(stringResource(id = R.string.avg_value_label), if (totalOrders > 0) currencyFormat.format(total / totalOrders) else "$0", Icons.AutoMirrored.Filled.TrendingUp)
+                HeroStatItem(
+                    label = stringResource(id = R.string.orders),
+                    value = totalOrders.toString(),
+                    icon = Icons.Default.Inventory2
+                )
+                HeroStatItem(
+                    label = stringResource(id = R.string.avg_value_label),
+                    value = if (totalOrders > 0) currencyFmt.format(totalRevenue / totalOrders) else "0đ",
+                    icon = Icons.AutoMirrored.Filled.TrendingUp
+                )
             }
         }
     }
 }
 
 @Composable
-fun StatSubItem(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+fun HeroStatItem(label: String, value: String, icon: ImageVector) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             modifier = Modifier
                 .size(32.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f)),
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.White.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+            Icon(icon, null, tint = Color.White, modifier = Modifier.size(16.dp))
         }
         Spacer(Modifier.width(8.dp))
         Column {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
-            Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            Text(label, color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelSmall)
+            Text(value, color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
 
+// ── Stat Chip Card ────────────────────────────────────────────────────────────
 @Composable
-fun RevenueBarChart(data: List<Pair<String, Double>>) {
-    val maxRevenue = data.maxOfOrNull { it.second } ?: 1.0
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
+fun StatChipCard(
+    modifier: Modifier = Modifier,
+    label: String,
+    value: String,
+    icon: ImageVector,
+    iconColor: Color,
+    bgColor: Color
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(18.dp),
+        elevation = CardDefaults.cardElevation(0.dp),
+        colors = CardDefaults.cardColors(containerColor = bgColor)
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(icon, null, tint = iconColor, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.height(6.dp))
+            Text(value, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = iconColor)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = iconColor.copy(alpha = 0.75f), maxLines = 1)
+        }
+    }
+}
+
+// ── Section Title ─────────────────────────────────────────────────────────────
+@Composable
+fun SectionTitle(title: String, icon: ImageVector, tint: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(tint.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, null, tint = tint, modifier = Modifier.size(18.dp))
+        }
+        Spacer(Modifier.width(10.dp))
+        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+    }
+}
+
+// ── Premium Bar Chart ─────────────────────────────────────────────────────────
+@Composable
+fun PremiumBarChart(data: List<Pair<String, Double>>, currencyFmt: NumberFormat) {
+    val maxRevenue = data.maxOfOrNull { it.second }?.takeIf { it > 0 } ?: 1.0
+    val hasAnyData = data.any { it.second > 0 }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-                .height(120.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            data.forEach { (date, value) ->
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight((value / maxRevenue).toFloat().coerceIn(0.05f, 1f))
-                            .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                            .background(MaterialTheme.colorScheme.primary)
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(110.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                data.forEach { (date, value) ->
+                    val fraction = if (hasAnyData && value > 0) (value / maxRevenue).toFloat().coerceIn(0.06f, 1f) else 0f
+                    val animFraction by animateFloatAsState(
+                        targetValue = fraction,
+                        animationSpec = tween(900),
+                        label = "bar_$date"
                     )
-                    Spacer(Modifier.height(4.dp))
-                    Text(date, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                    val isMaxBar = value == data.maxOfOrNull { it.second } && value > 0
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Bottom
+                    ) {
+                        // Tooltip chỉ hiện ở cột cao nhất
+                        if (isMaxBar) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.primary,
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = if (value >= 1_000_000) "${(value / 1_000_000).toInt()}M"
+                                           else if (value >= 1_000) "${(value / 1_000).toInt()}K"
+                                           else value.toInt().toString(),
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 9.sp
+                                )
+                            }
+                            Spacer(Modifier.height(4.dp))
+                        } else {
+                            Spacer(Modifier.height(20.dp))
+                        }
+
+                        // Bar (cột hẹp 18dp)
+                        if (value > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .width(18.dp)
+                                    .fillMaxHeight(animFraction)
+                                    .clip(RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
+                                    .background(
+                                        if (isMaxBar)
+                                            Brush.verticalGradient(listOf(
+                                                MaterialTheme.colorScheme.primary,
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+                                            ))
+                                        else
+                                            Brush.verticalGradient(listOf(
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                            ))
+                                    )
+                            )
+                        } else {
+                            // Dot nhỏ cho ngày 0
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.outlineVariant)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(6.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            Spacer(Modifier.height(8.dp))
+
+            // Date labels
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                data.forEach { (date, _) ->
+                    Text(
+                        text = date,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 9.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
                 }
             }
         }
     }
 }
 
+// ── Premium Order Distribution ────────────────────────────────────────────────
 @Composable
-fun OrderDistributionChart(delivered: Int, cancelled: Int, other: Int) {
+fun PremiumOrderDistribution(delivered: Int, cancelled: Int, other: Int) {
     val total = (delivered + cancelled + other).toFloat().coerceAtLeast(1f)
-    val deliveredWeight = delivered / total
-    val cancelledWeight = cancelled / total
-    val otherWeight = other / total
+    val deliveredW = delivered / total
+    val otherW = other / total
+    val cancelledW = cancelled / total
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.padding(20.dp)) {
+            // Stacked bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(24.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .height(18.dp)
+                    .clip(RoundedCornerShape(9.dp))
             ) {
-                if (deliveredWeight > 0) Box(Modifier.fillMaxHeight().weight(deliveredWeight).background(Color(0xFF4CAF50)))
-                if (otherWeight > 0) Box(Modifier.fillMaxHeight().weight(otherWeight).background(Color(0xFFFFB300)))
-                if (cancelledWeight > 0) Box(Modifier.fillMaxHeight().weight(cancelledWeight).background(Color(0xFFF44336)))
+                if (deliveredW > 0) Box(Modifier.fillMaxHeight().weight(deliveredW).background(GreenSuccess))
+                if (otherW > 0) Box(Modifier.fillMaxHeight().weight(otherW).background(AmberWarn))
+                if (cancelledW > 0) Box(Modifier.fillMaxHeight().weight(cancelledW).background(RedCancel))
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                LegendItem(stringResource(id = R.string.delivered_status), Color(0xFF4CAF50))
-                LegendItem(stringResource(id = R.string.pending_status_legend), Color(0xFFFFB300))
-                LegendItem(stringResource(id = R.string.cancelled_status), Color(0xFFF44336))
+            // Legend with counts
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                DistributionLegend(stringResource(id = R.string.delivered_status), delivered, total.toInt(), GreenSuccess)
+                DistributionLegend(stringResource(id = R.string.pending_status_legend), other, total.toInt(), AmberWarn)
+                DistributionLegend(stringResource(id = R.string.cancelled_status), cancelled, total.toInt(), RedCancel)
             }
         }
     }
 }
 
 @Composable
-fun LegendItem(label: String, color: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(10.dp).clip(CircleShape).background(color))
-        Spacer(Modifier.width(4.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+fun DistributionLegend(label: String, count: Int, total: Int, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(color.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = if (total > 0) "${(count * 100f / total).toInt()}%" else "0%",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 12.sp,
+                color = color
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(count.toString(), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = color)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
     }
 }
 
+// ── Premium Top Product Item ───────────────────────────────────────────────────
+private val rankColors = listOf(
+    Color(0xFFFFD700), // 🥇 Gold
+    Color(0xFFC0C0C0), // 🥈 Silver
+    Color(0xFFCD7F32), // 🥉 Bronze
+    Color(0xFF90A4AE),
+    Color(0xFF90A4AE)
+)
+
 @Composable
-fun TopProductItem(stat: ProductStat) {
+fun PremiumTopProductItem(rank: Int, stat: ProductStat, currencyFmt: NumberFormat) {
     val context = LocalContext.current
     var productName by remember { mutableStateOf("") }
     if (productName.isEmpty()) productName = stringResource(id = R.string.loading_label)
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
+    val rankColor = rankColors.getOrElse(rank - 1) { Color.Gray }
 
     LaunchedEffect(stat.id) {
         Firebase.firestore.collection("data").document("stock").collection("products")
-            .document(stat.id).get().addOnSuccessListener {
-                productName = it.getString("title") ?: context.getString(R.string.unknown_product)
-            }
+            .document(stat.id).get()
+            .addOnSuccessListener { productName = it.getString("title") ?: context.getString(R.string.unknown_product) }
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(0.dp), // Loai bo shadow xam
+        colors = CardDefaults.cardColors(
+            containerColor = if (rank == 1)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+            else
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        )
     ) {
-        Box(
+        Row(
             modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.secondaryContainer),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
-        }
+            // Rank badge
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(rankColor.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "#$rank",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 13.sp,
+                    color = rankColor
+                )
+            }
 
-        Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(12.dp))
 
-        Column(Modifier.weight(1f)) {
-            Text(productName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(stringResource(id = R.string.items_sold_label, stat.count), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+            // Product icon
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.secondaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.ShoppingBag, null,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.size(22.dp))
+            }
 
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                currencyFormat.format(stat.revenue),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.primary
-            )
+            Spacer(Modifier.width(12.dp))
+
+            Column(Modifier.weight(1f)) {
+                Text(
+                    productName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    stringResource(id = R.string.items_sold_label, stat.count),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    currencyFmt.format(stat.revenue),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+//                if (rank == 1) {
+//                    Text("🏆 Best", style = MaterialTheme.typography.labelSmall, color = Color(0xFFFFD700), fontWeight = FontWeight.Bold)
+//                }
+            }
         }
     }
 }
