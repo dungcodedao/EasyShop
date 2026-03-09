@@ -1,6 +1,7 @@
 package com.example.easyshop.screen
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -31,6 +32,11 @@ import androidx.navigation.NavController
 import com.example.easyshop.AppUtil
 import com.example.easyshop.R
 import com.example.easyshop.viewmodel.AuthViewModel
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -137,6 +143,29 @@ fun LoginScreen(
             }
 
             Spacer(Modifier.height(32.dp))
+            
+            // Forgot Password Link
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(
+                    onClick = {
+                        if (email.isBlank()) {
+                            AppUtil.showToast(context, "Vui lòng nhập email để lấy lại mật khẩu")
+                        } else {
+                            authViewModel.resetPassword(email) { success, error ->
+                                if (success) AppUtil.showToast(context, "Đã gửi mail đặt lại mật khẩu")
+                                else AppUtil.showToast(context, error ?: "Lỗi gửi mail")
+                            }
+                        }
+                    }
+                ) {
+                    Text("Quên mật khẩu?", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
 
             // Login Button
             Button(
@@ -171,7 +200,79 @@ fun LoginScreen(
                 }
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(24.dp))
+
+            // Divider
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
+                Text(" Hoặc đăng nhập bằng ", modifier = Modifier.padding(horizontal = 8.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            // Google Login Button (Modern Style)
+            val scope = rememberCoroutineScope()
+            val credentialManager = CredentialManager.create(context)
+            
+            OutlinedButton(
+                onClick = {
+                    scope.launch {
+                        try {
+                            val googleIdOption = GetGoogleIdOption.Builder()
+                                .setFilterByAuthorizedAccounts(false)
+                                .setServerClientId("896897641883-mmo5cr61ksvndrq61g6j8bgenltkfm12.apps.googleusercontent.com")
+                                .build()
+
+                            val request = GetCredentialRequest.Builder()
+                                .addCredentialOption(googleIdOption)
+                                .build()
+
+                            val result = credentialManager.getCredential(
+                                context = context,
+                                request = request
+                            )
+
+                            val credential = result.credential
+                            if (credential is GoogleIdTokenCredential) {
+                                val googleIdToken = credential.idToken
+                                isLoading = true
+                                authViewModel.signInWithGoogle(googleIdToken) { success, error, role ->
+                                    isLoading = false
+                                    if (success) {
+                                        val destination = if (role == "admin") "admin-dashboard" else "home"
+                                        AppUtil.showToast(context, "Đăng nhập Google thành công!")
+                                        navController.navigate(destination) {
+                                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                            launchSingleTop = true
+                                        }
+                                    } else {
+                                        AppUtil.showToast(context, error ?: "Lỗi xác thực Firebase")
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            AppUtil.showToast(context, "Hủy đăng nhập hoặc lỗi: ${e.message}")
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_google), 
+                        contentDescription = null, 
+                        modifier = Modifier.size(24.dp),
+                        tint = Color.Unspecified
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text("Tiếp tục với Google", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
 
             Row(
                 horizontalArrangement = Arrangement.Center,

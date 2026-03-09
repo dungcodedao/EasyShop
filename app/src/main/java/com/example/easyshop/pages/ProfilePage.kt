@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,29 +19,30 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -54,23 +56,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.easyshop.AppUtil
 import com.example.easyshop.GlobalNavigation
 import com.example.easyshop.R
-import com.example.easyshop.R.drawable
-import com.example.easyshop.R.string
 import com.example.easyshop.model.UserModel
 import com.example.easyshop.sale.AvatarPickerDialog
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfilePage(modifier: Modifier = Modifier) {
     val userModel = remember { mutableStateOf(UserModel()) }
@@ -79,32 +82,8 @@ fun ProfilePage(modifier: Modifier = Modifier) {
     var nameInput by remember { mutableStateOf("") }
     var showAvatarDialog by remember { mutableStateOf(false) }
     var showEditNameDialog by remember { mutableStateOf(false) }
-    var selectedAvatar by remember { mutableStateOf(drawable.profile_nam) }
+    var selectedAvatar by remember { mutableStateOf(R.drawable.profile_nam) }
     val context = LocalContext.current
-
-    fun saveAddress() {
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        if (addressInput.isNotEmpty() && currentUser != null) {
-            Firebase.firestore.collection("users").document(currentUser.uid)
-                .update("address", addressInput)
-                .addOnSuccessListener { AppUtil.showToast(context, "Đã lưu địa chỉ!") }
-                .addOnFailureListener { AppUtil.showToast(context, "Lỗi khi lưu") }
-        }
-    }
-
-    fun savePhone() {
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        val cleanedPhone = phoneInput.trim()
-        if (cleanedPhone.isNotEmpty() && currentUser != null) {
-            Firebase.firestore.collection("users").document(currentUser.uid)
-                .update("phone", cleanedPhone)
-                .addOnSuccessListener {
-                    userModel.value = userModel.value.copy(phone = cleanedPhone)
-                    AppUtil.showToast(context, "Đã lưu số điện thoại!")
-                }
-                .addOnFailureListener { AppUtil.showToast(context, "Lỗi khi lưu") }
-        }
-    }
 
     fun saveName() {
         val currentUser = FirebaseAuth.getInstance().currentUser
@@ -146,6 +125,48 @@ fun ProfilePage(modifier: Modifier = Modifier) {
             .addOnFailureListener { e -> AppUtil.showToast(context, "Error: ${e.message}") }
     }
 
+    // --- Address Management Logic ---
+    var showAddressDialog by remember { mutableStateOf(false) }
+    var showAddressListSheet by remember { mutableStateOf(false) }
+    val addressSheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var editingAddress by remember { mutableStateOf<com.example.easyshop.model.AddressModel?>(null) }
+
+    fun deleteAddress(addressId: String) {
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+        val newList = userModel.value.addressList.filter { it.id != addressId }
+        Firebase.firestore.collection("users").document(currentUser.uid)
+            .update("addressList", newList)
+            .addOnSuccessListener { 
+                userModel.value = userModel.value.copy(addressList = newList)
+                AppUtil.showToast(context, "Đã xóa địa chỉ")
+            }
+    }
+
+    fun saveAddressList(newAddress: com.example.easyshop.model.AddressModel) {
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+        val currentList = userModel.value.addressList.toMutableList()
+        val index = currentList.indexOfFirst { it.id == newAddress.id }
+        
+        if (newAddress.isDefault) {
+            currentList.replaceAll { it.copy(isDefault = false) }
+        }
+
+        if (index != -1) currentList[index] = newAddress
+        else currentList.add(newAddress)
+
+        if (currentList.size == 1) {
+            currentList[0] = currentList[0].copy(isDefault = true)
+        }
+
+        Firebase.firestore.collection("users").document(currentUser.uid)
+            .update("addressList", currentList)
+            .addOnSuccessListener {
+                userModel.value = userModel.value.copy(addressList = currentList)
+                AppUtil.showToast(context, "Đã lưu địa chỉ")
+                showAddressDialog = false
+            }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -158,7 +179,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(stringResource(string.profile), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.profile), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -171,7 +192,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
         ) {
             Spacer(Modifier.height(16.dp))
 
-            // Avatar with gradient border
+            // Avatar 
             Box(
                 modifier = Modifier
                     .size(110.dp)
@@ -209,51 +230,43 @@ fun ProfilePage(modifier: Modifier = Modifier) {
 
             Spacer(Modifier.height(28.dp))
 
-            // Info Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.cardElevation(2.dp)
+            // --- Primary Address Summary (TikTok Style) ---
+            val defaultAddr = userModel.value.addressList.find { it.isDefault } ?: userModel.value.addressList.firstOrNull()
+            
+            Surface(
+                modifier = Modifier.fillMaxWidth().clickable { showAddressListSheet = true },
+                color = Color.Transparent
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Số điện thoại
-                    OutlinedTextField(
-                        value = phoneInput,
-                        onValueChange = { phoneInput = it },
-                        label = { Text("Số điện thoại") },
-                        placeholder = { Text("0901 234 567") },
-                        leadingIcon = { Icon(Icons.Default.Phone, null, tint = MaterialTheme.colorScheme.primary) },
-                        trailingIcon = {
-                            IconButton(onClick = { savePhone() }) {
-                                Icon(Icons.Default.Check, "Lưu SĐT", tint = MaterialTheme.colorScheme.primary)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Phone,
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(onNext = { savePhone() }),
-                        singleLine = true
+                Row(modifier = Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.Top) {
+                    Icon(
+                        Icons.Default.LocationOn,
+                        null,
+                        modifier = Modifier.size(20.dp).padding(top = 2.dp),
+                        tint = Color.Black.copy(alpha = 0.8f)
                     )
-
-                    // Địa chỉ
-                    OutlinedTextField(
-                        value = addressInput,
-                        onValueChange = { addressInput = it },
-                        label = { Text(stringResource(string.address)) },
-                        leadingIcon = { Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.primary) },
-                        trailingIcon = {
-                            IconButton(onClick = { saveAddress() }) {
-                                Icon(Icons.Default.Check, "Lưu địa chỉ", tint = MaterialTheme.colorScheme.primary)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { saveAddress() })
-                    )
+                    Spacer(Modifier.width(10.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = if (defaultAddr != null) "${defaultAddr.fullName} (+84)${defaultAddr.phone.removePrefix("0")}" else "Chưa có địa chỉ",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Spacer(Modifier.weight(1f))
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                        }
+                        if (defaultAddr != null) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = defaultAddr.detailedAddress,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Black.copy(alpha = 0.8f),
+                                lineHeight = 20.sp
+                            )
+                        } else {
+                            Text("Chạm để thêm địa chỉ giao hàng", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        }
+                    }
                 }
             }
 
@@ -264,7 +277,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                 Column {
                     // Cart
                     ListItem(
-                        headlineContent = { Text(stringResource(string.cart_items), fontWeight = FontWeight.Medium) },
+                        headlineContent = { Text(stringResource(R.string.cart_items), fontWeight = FontWeight.Medium) },
                         supportingContent = { Text("${userModel.value.cartItems.values.sum()} items") },
                         leadingContent = {
                             Box(
@@ -281,7 +294,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
 
                     // Orders
                     ListItem(
-                        headlineContent = { Text(stringResource(string.my_orders), fontWeight = FontWeight.Medium) },
+                        headlineContent = { Text(stringResource(R.string.my_orders), fontWeight = FontWeight.Medium) },
                         leadingContent = {
                             Box(
                                 Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
@@ -309,7 +322,7 @@ fun ProfilePage(modifier: Modifier = Modifier) {
             ) {
                 Icon(Icons.AutoMirrored.Filled.ExitToApp, null)
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(string.sign_out), fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.sign_out), fontWeight = FontWeight.Bold)
             }
 
             Spacer(Modifier.height(24.dp))
@@ -324,7 +337,6 @@ fun ProfilePage(modifier: Modifier = Modifier) {
             onAvatarSelected = { resId ->
                 selectedAvatar = resId
                 showAvatarDialog = false
-                // Lưu tên drawable vào Firestore
                 val avatarName = when (resId) {
                     R.drawable.profile_nam2 -> "profile_nam2"
                     R.drawable.profile_nu   -> "profile_nu"
@@ -358,5 +370,145 @@ fun ProfilePage(modifier: Modifier = Modifier) {
             dismissButton = { TextButton(onClick = { showEditNameDialog = false }) { Text("Cancel") } },
             shape = RoundedCornerShape(24.dp)
         )
+    }
+
+    // --- Address Edit Dialog ---
+    if (showAddressDialog) {
+        var label by remember { mutableStateOf(editingAddress?.label ?: "Nhà riêng") }
+        var name by remember { mutableStateOf(editingAddress?.fullName ?: userModel.value.name) }
+        var phone by remember { mutableStateOf(editingAddress?.phone ?: userModel.value.phone) }
+        var details by remember { mutableStateOf(editingAddress?.detailedAddress ?: "") }
+        var isDefault by remember { mutableStateOf(editingAddress?.isDefault ?: false) }
+
+        AlertDialog(
+            onDismissRequest = { showAddressDialog = false },
+            title = { Text(if (editingAddress == null) "Thêm địa chỉ mới" else "Sửa địa chỉ") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("Nhà riêng", "Văn phòng").forEach { l ->
+                            FilterChip(
+                                selected = label == l,
+                                onClick = { label = l },
+                                label = { Text(l) }
+                            )
+                        }
+                    }
+                    OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Họ tên người nhận") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Số điện thoại") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = details, onValueChange = { details = it }, label = { Text("Địa chỉ chi tiết") }, modifier = Modifier.fillMaxWidth(), minLines = 2)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = isDefault, onCheckedChange = { isDefault = it })
+                        Text("Đặt làm địa chỉ mặc định")
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    saveAddressList(com.example.easyshop.model.AddressModel(
+                        id = editingAddress?.id ?: java.util.UUID.randomUUID().toString(),
+                        label = label,
+                        fullName = name,
+                        phone = phone,
+                        detailedAddress = details,
+                        isDefault = isDefault
+                    ))
+                }) { Text("Lưu") }
+            },
+            dismissButton = { TextButton(onClick = { showAddressDialog = false }) { Text("Hủy") } }
+        )
+    }
+
+    // --- TikTok style Address List Sheet ---
+    if (showAddressListSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showAddressListSheet = false },
+            sheetState = addressSheetState,
+            dragHandle = { BottomSheetDefaults.DragHandle() },
+            containerColor = Color.White,
+            modifier = Modifier.fillMaxHeight()
+        ) {
+            Column(modifier = Modifier.fillMaxSize().padding(16.dp).padding(bottom = 32.dp)) {
+                Text("Địa chỉ của bạn", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(20.dp))
+
+                // "Thêm địa chỉ" Row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { editingAddress = null; showAddressDialog = true }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Add, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Text("Thêm địa chỉ", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color.Gray)
+                }
+
+                HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+
+                // List of Addresses
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    userModel.value.addressList.sortedByDescending { it.isDefault }.forEachIndexed { index, addr ->
+                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(addr.fullName, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
+                                    Text("(+84)${addr.phone.removePrefix("0")}", style = MaterialTheme.typography.bodyMedium, color = Color.Black.copy(alpha = 0.7f))
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        addr.detailedAddress,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.DarkGray,
+                                        lineHeight = 18.sp
+                                    )
+                                    if (addr.isDefault) {
+                                        Spacer(Modifier.height(6.dp))
+                                        Surface(
+                                            color = Color(0xFFFF4867).copy(alpha = 0.1f),
+                                            shape = RoundedCornerShape(2.dp),
+                                            border = androidx.compose.foundation.BorderStroke(0.5.dp, Color(0xFFFF4867))
+                                        ) {
+                                            Text(
+                                                "Mặc định",
+                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = Color(0xFFFF4867),
+                                                fontSize = 10.sp
+                                            )
+                                        }
+                                    }
+                                }
+                                
+                                Text(
+                                    "Chỉnh sửa",
+                                    modifier = Modifier.clickable { editingAddress = addr; showAddressDialog = true },
+                                    color = Color(0xFFFF4867),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                        HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+                    }
+                    
+                    if (userModel.value.addressList.isNotEmpty()) {
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            "Đã cập nhật danh sách khu vực. Chỉnh sửa địa chỉ của bạn để giao hàng chính xác.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().background(Color.LightGray.copy(alpha = 0.1f)).padding(10.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 }

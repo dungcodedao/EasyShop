@@ -1,30 +1,66 @@
 package com.example.easyshop.pages
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.easyshop.R
+import androidx.compose.ui.unit.sp
 import com.example.easyshop.AppUtil
 import com.example.easyshop.GlobalNavigation
-import com.example.easyshop.sale.PromoCodeInput
+import com.example.easyshop.R
+import com.example.easyshop.model.AddressModel
 import com.example.easyshop.model.ProductModel
 import com.example.easyshop.model.UserModel
+import com.example.easyshop.sale.PromoCodeInput
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,6 +71,11 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
     val subTotal = remember { mutableFloatStateOf(0f) }
     val discount = remember { mutableFloatStateOf(0f) }
     val total = remember { mutableFloatStateOf(0f) }
+    
+    // Quản lý địa chỉ chọn lọc
+    var selectedAddress by remember { mutableStateOf<AddressModel?>(null) }
+    var showAddressSheet by remember { mutableStateOf(false) }
+    val addressSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     fun calculateAndAssign() {
         subTotal.floatValue = 0f
@@ -54,6 +95,10 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                 if (it.isSuccessful) {
                     it.result.toObject(UserModel::class.java)?.let { result ->
                         userModel.value = result
+                        // Tự động chọn địa chỉ mặc định
+                        selectedAddress = result.addressList.find { addr -> addr.isDefault } 
+                                         ?: result.addressList.firstOrNull()
+                        
                         if (userModel.value.cartItems.isNotEmpty()) {
                             Firebase.firestore.collection("data").document("stock").collection("products")
                                 .whereIn("id", userModel.value.cartItems.keys.toList())
@@ -95,57 +140,57 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Delivery Address
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.cardElevation(2.dp)
+            // TikTok-style Delivery Address Selector
+            Surface(
+                modifier = Modifier.fillMaxWidth().clickable { showAddressSheet = true },
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f))
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(id = R.string.delivery_address), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                    }
-                    Spacer(Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.LocationOn,
+                        null,
+                        tint = Color.Black.copy(alpha = 0.7f),
+                        modifier = Modifier.size(24.dp).align(Alignment.Top)
+                    )
+                    
+                    Spacer(Modifier.width(12.dp))
 
-                    // Tên
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(userModel.value.name, style = MaterialTheme.typography.bodyLarge)
-                    }
-
-                    Spacer(Modifier.height(6.dp))
-
-                    // Số điện thoại
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Phone, null,
-                            tint = if (userModel.value.phone.isEmpty()) MaterialTheme.colorScheme.error
-                                   else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        if (userModel.value.phone.isEmpty()) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        if (selectedAddress != null) {
                             Text(
-                                "⚠️ Chưa có số điện thoại — vui lòng cập nhật trong Trang cá nhân",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error
+                                text = "${selectedAddress!!.fullName} (+84)${selectedAddress!!.phone.removePrefix("0")}",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = selectedAddress!!.detailedAddress,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Black.copy(alpha = 0.8f),
+                                lineHeight = 20.sp
                             )
                         } else {
-                            Text(userModel.value.phone, style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                "⚠️ Chưa có địa chỉ giao hàng. Nhấn để chọn!",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
 
-                    Spacer(Modifier.height(6.dp))
-
-                    // Địa chỉ
-                    Text(
-                        userModel.value.address,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 28.dp)
+                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
@@ -154,7 +199,8 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.cardElevation(2.dp)
+                elevation = CardDefaults.cardElevation(2.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(stringResource(id = R.string.order_summary), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
@@ -198,6 +244,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
             Button(
                 onClick = { GlobalNavigation.navController.navigate("payment/${total.floatValue}") },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
+                enabled = selectedAddress != null,
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Text(
@@ -205,6 +252,99 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
+            }
+        }
+    }
+
+    // TikTok-style Address Selector Sheet
+    if (showAddressSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showAddressSheet = false },
+            sheetState = addressSheetState,
+            dragHandle = { BottomSheetDefaults.DragHandle() },
+            containerColor = Color.White,
+            modifier = Modifier.fillMaxHeight()
+        ) {
+            Column(modifier = Modifier.fillMaxSize().padding(16.dp).padding(bottom = 32.dp)) {
+                Text("Địa chỉ của bạn", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(20.dp))
+                
+                if (userModel.value.addressList.isEmpty()) {
+                    Text("Chưa có địa chỉ nào. Hãy vào Profile để thêm.")
+                } else {
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        userModel.value.addressList.sortedByDescending { it.isDefault }.forEachIndexed { index, addr ->
+                            val isSelected = selectedAddress?.id == addr.id
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { 
+                                        selectedAddress = addr
+                                        showAddressSheet = false 
+                                    }
+                                    .padding(vertical = 12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Icon(
+                                        Icons.Default.LocationOn,
+                                        null,
+                                        tint = if (isSelected) Color(0xFFFF4867) else Color.Gray,
+                                        modifier = Modifier.size(20.dp).padding(top = 2.dp)
+                                    )
+                                    Spacer(Modifier.width(12.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "${addr.fullName} (+84)${addr.phone.removePrefix("0")}",
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = if (isSelected) Color(0xFFFF4867) else Color.Black
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            text = addr.detailedAddress,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = if (isSelected) Color(0xFFFF4867).copy(alpha = 0.8f) else Color.Black.copy(alpha = 0.7f),
+                                            lineHeight = 20.sp
+                                        )
+                                        if (addr.isDefault) {
+                                            Spacer(Modifier.height(6.dp))
+                                            Surface(
+                                                color = Color(0xFFFF4867).copy(alpha = 0.1f),
+                                                shape = RoundedCornerShape(2.dp),
+                                                border = androidx.compose.foundation.BorderStroke(0.5.dp, Color(0xFFFF4867))
+                                            ) {
+                                                Text(
+                                                    "Mặc định",
+                                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = Color(0xFFFF4867),
+                                                    fontSize = 10.sp
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+                        }
+                    }
+                }
+                
+                Spacer(Modifier.height(24.dp))
+                OutlinedButton(
+                    onClick = { 
+                        showAddressSheet = false
+                        // Chuyển hướng đến Profile để quản lý
+                        AppUtil.showToast(Firebase.auth.app.applicationContext, "Vào Profile để thêm/sửa địa chỉ")
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Thay đổi/Quản lý địa chỉ trong Profile")
+                }
             }
         }
     }
