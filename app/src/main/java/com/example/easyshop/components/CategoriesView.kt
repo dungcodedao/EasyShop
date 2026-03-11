@@ -64,7 +64,7 @@ fun CategoriesView(modifier: Modifier = Modifier) {
         }
     } else {
         // Lưới 2 hàng x 3 cột
-        val rows = categoryList.value.chunked(3)
+        val rows = remember(categoryList.value) { categoryList.value.chunked(3) }
         Column(
             modifier = modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp)

@@ -24,6 +24,7 @@ import com.google.firebase.firestore.firestore
 import androidx.navigation.NavController
 import androidx.compose.ui.res.stringResource
 import com.example.easyshop.R
+import com.example.easyshop.model.ProductModel
 
 @Composable
 fun CartPage(
@@ -32,6 +33,7 @@ fun CartPage(
 ) {
     val userModel = remember { mutableStateOf(UserModel()) }
     var isLoading by remember { mutableStateOf(true) }
+    val productsMap = remember { mutableStateOf<Map<String, ProductModel>>(emptyMap()) }
 
     DisposableEffect(Unit) {
         val listener = Firebase.firestore.collection("users")
@@ -39,8 +41,28 @@ fun CartPage(
             .addSnapshotListener { it, _ ->
                 it?.toObject(UserModel::class.java)?.let { user ->
                     userModel.value = user
-                }
-                isLoading = false
+                    
+                    // Batch fetch products details
+                    val productIds = user.cartItems.keys.toList()
+                    if (productIds.isNotEmpty()) {
+                        // Chỉ fetch những product chưa có trong map hoặc fetch lại nếu cần
+                        // Với giỏ hàng thường < 30 món, whereIn là tối ưu nhất
+                        Firebase.firestore.collection("data").document("stock")
+                            .collection("products")
+                            .whereIn(com.google.firebase.firestore.FieldPath.documentId(), productIds)
+                            .get()
+                            .addOnSuccessListener { querySnapshot ->
+                                val newMap = querySnapshot.documents.associate { 
+                                    it.id to (it.toObject(com.example.easyshop.model.ProductModel::class.java) ?: com.example.easyshop.model.ProductModel())
+                                }
+                                productsMap.value = newMap
+                                isLoading = false
+                            }
+                    } else {
+                        productsMap.value = emptyMap()
+                        isLoading = false
+                    }
+                } ?: run { isLoading = false }
             }
         onDispose { listener.remove() }
     }
@@ -67,13 +89,23 @@ fun CartPage(
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else {
-            CartPageContent(modifier = Modifier.weight(1f), model = userModel.value, showTitle = navController == null)
+            CartPageContent(
+                modifier = Modifier.weight(1f), 
+                model = userModel.value, 
+                productsMap = productsMap.value,
+                showTitle = navController == null
+            )
         }
     }
 }
 
 @Composable
-private fun CartPageContent(modifier: Modifier, model: UserModel, showTitle: Boolean) {
+private fun CartPageContent(
+    modifier: Modifier, 
+    model: UserModel, 
+    productsMap: Map<String, com.example.easyshop.model.ProductModel>, 
+    showTitle: Boolean
+) {
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         if (showTitle) {
             Text(
@@ -87,7 +119,7 @@ private fun CartPageContent(modifier: Modifier, model: UserModel, showTitle: Boo
         if (model.cartItems.isEmpty()) {
             EmptyCart()
         } else {
-            CartContent(userModel = model)
+            CartContent(userModel = model, productsMap = productsMap)
         }
     }
 }
@@ -131,13 +163,17 @@ private fun EmptyCart() {
 }
 
 @Composable
-private fun ColumnScope.CartContent(userModel: UserModel) {
+private fun ColumnScope.CartContent(
+    userModel: UserModel, 
+    productsMap: Map<String, com.example.easyshop.model.ProductModel>
+) {
     LazyColumn(
         modifier = Modifier.weight(1f),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(userModel.cartItems.toList(), key = { it.first }) { (productId, qty) ->
-            CartItemView(productId = productId, qty = qty)
+            val product = productsMap[productId] ?: com.example.easyshop.model.ProductModel()
+            CartItemView(product = product, qty = qty)
         }
     }
 

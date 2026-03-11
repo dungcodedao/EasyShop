@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,8 +33,7 @@ fun HeaderView(
     onAvatarClick: () -> Unit = {}
 ) {
     var name by remember { mutableStateOf("") }
-    // Drawable resource ID của avatar, mặc định profile_nam
-    var avatarRes by remember { mutableStateOf(R.drawable.profile_nam) }
+    var avatarUrl by remember { mutableStateOf("") }
 
     LaunchedEffect(key1 = Unit) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@LaunchedEffect
@@ -42,13 +42,7 @@ fun HeaderView(
                 if (task.isSuccessful) {
                     val doc = task.result
                     name = doc.getString("name") ?: ""
-                    // Map tên drawable string → resource ID
-                    avatarRes = when (doc.getString("avatar") ?: "profile_nam") {
-                        "profile_nam2" -> R.drawable.profile_nam2
-                        "profile_nu"   -> R.drawable.profile_nu
-                        "profile_nu2"  -> R.drawable.profile_nu2
-                        else           -> R.drawable.profile_nam
-                    }
+                    avatarUrl = doc.getString("profileImg") ?: ""
                 }
             }
     }
@@ -60,16 +54,34 @@ fun HeaderView(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Avatar — click để vào Profile
-        Image(
-            painter = painterResource(avatarRes),
-            contentDescription = "Ảnh đại diện — nhấn để vào trang cá nhân",
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .clickable(onClick = onAvatarClick)
-                .semantics { contentDescription = "Ảnh đại diện" },
-            contentScale = ContentScale.Crop
-        )
+        if (avatarUrl.isNotEmpty()) {
+            coil.compose.AsyncImage(
+                model = avatarUrl,
+                contentDescription = "Ảnh đại diện",
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onAvatarClick),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            // Default placeholder
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable(onClick = onAvatarClick),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
 
         Spacer(Modifier.width(14.dp))
 

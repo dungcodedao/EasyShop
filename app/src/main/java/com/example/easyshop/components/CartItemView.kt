@@ -22,20 +22,9 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 
 @Composable
-fun CartItemView(modifier: Modifier = Modifier, productId: String, qty: Long) {
-    var product by remember { mutableStateOf(ProductModel()) }
-
-    LaunchedEffect(key1 = Unit) {
-        Firebase.firestore.collection("data")
-            .document("stock").collection("products")
-            .document(productId).get().addOnCompleteListener {
-                if (it.isSuccessful) {
-                    it.result.toObject(ProductModel::class.java)?.let { p -> product = p }
-                }
-            }
-    }
-
+fun CartItemView(modifier: Modifier = Modifier, product: ProductModel, qty: Long) {
     val context = LocalContext.current
+    val productId = product.id // Đảm bảo ProductModel có id field
 
     Card(
         modifier = modifier.fillMaxWidth(),

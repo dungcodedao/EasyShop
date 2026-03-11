@@ -1,6 +1,5 @@
 package com.example.easyshop.pages
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
@@ -57,13 +57,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.easyshop.AppUtil
 import com.example.easyshop.GlobalNavigation
 import com.example.easyshop.R
@@ -80,9 +81,8 @@ fun ProfilePage(modifier: Modifier = Modifier) {
     var addressInput by remember { mutableStateOf("") }
     var phoneInput by remember { mutableStateOf("") }
     var nameInput by remember { mutableStateOf("") }
-    var showAvatarDialog by remember { mutableStateOf(false) }
     var showEditNameDialog by remember { mutableStateOf(false) }
-    var selectedAvatar by remember { mutableStateOf(R.drawable.profile_nam) }
+    var showAvatarDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     fun saveName() {
@@ -112,14 +112,6 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                     addressInput = user.address
                     phoneInput = user.phone
                     nameInput = user.name
-                }
-                // Load avatar đã chọn trước đó
-                val savedAvatar = document.getString("avatar") ?: "profile_nam"
-                selectedAvatar = when (savedAvatar) {
-                    "profile_nam2" -> R.drawable.profile_nam2
-                    "profile_nu"  -> R.drawable.profile_nu
-                    "profile_nu2" -> R.drawable.profile_nu2
-                    else          -> R.drawable.profile_nam
                 }
             }
             .addOnFailureListener { e -> AppUtil.showToast(context, "Error: ${e.message}") }
@@ -201,11 +193,22 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                     .clickable { showAvatarDialog = true },
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(selectedAvatar),
-                    contentDescription = "Avatar",
-                    modifier = Modifier.size(104.dp).clip(CircleShape)
-                )
+                if (userModel.value.profileImg.isNotEmpty()) {
+                    AsyncImage(
+                        model = userModel.value.profileImg,
+                        contentDescription = "Avatar",
+                        modifier = Modifier.size(104.dp).clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    // Placeholder nếu chưa có ảnh
+                    Box(
+                        modifier = Modifier.size(104.dp).background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Person, null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -332,21 +335,18 @@ fun ProfilePage(modifier: Modifier = Modifier) {
     // Avatar Picker Dialog
     if (showAvatarDialog) {
         AvatarPickerDialog(
-            currentAvatar = selectedAvatar,
+            currentAvatarUrl = userModel.value.profileImg,
             onDismiss = { showAvatarDialog = false },
-            onAvatarSelected = { resId ->
-                selectedAvatar = resId
-                showAvatarDialog = false
-                val avatarName = when (resId) {
-                    R.drawable.profile_nam2 -> "profile_nam2"
-                    R.drawable.profile_nu   -> "profile_nu"
-                    R.drawable.profile_nu2  -> "profile_nu2"
-                    else                    -> "profile_nam"
-                }
-                val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@AvatarPickerDialog
-                Firebase.firestore.collection("users").document(uid)
-                    .update("avatar", avatarName)
-                    .addOnSuccessListener { AppUtil.showToast(context, "Avatar updated!") }
+            onAvatarSelected = { newUrl ->
+                val currentUser = FirebaseAuth.getInstance().currentUser ?: return@AvatarPickerDialog
+                Firebase.firestore.collection("users").document(currentUser.uid)
+                    .update("profileImg", newUrl)
+                    .addOnSuccessListener {
+                        userModel.value = userModel.value.copy(profileImg = newUrl)
+                        showAvatarDialog = false
+                        AppUtil.showToast(context, "Đã cập nhật ảnh đại diện")
+                    }
+                    .addOnFailureListener { e -> AppUtil.showToast(context, "Lỗi: ${e.message}") }
             }
         )
     }
