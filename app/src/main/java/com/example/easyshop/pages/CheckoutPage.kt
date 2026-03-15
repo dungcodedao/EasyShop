@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -170,10 +171,12 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = selectedAddress!!.detailedAddress,
+                                text = selectedAddress!!.detailedAddress.trim(),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.Black.copy(alpha = 0.8f),
-                                lineHeight = 20.sp
+                                lineHeight = 20.sp,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
                         } else {
                             Text(
@@ -304,10 +307,12 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                                         )
                                         Spacer(Modifier.height(4.dp))
                                         Text(
-                                            text = addr.detailedAddress,
+                                            text = addr.detailedAddress.trim(),
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = if (isSelected) Color(0xFFFF4867).copy(alpha = 0.8f) else Color.Black.copy(alpha = 0.7f),
-                                            lineHeight = 20.sp
+                                            lineHeight = 20.sp,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                         if (addr.isDefault) {
                                             Spacer(Modifier.height(6.dp))

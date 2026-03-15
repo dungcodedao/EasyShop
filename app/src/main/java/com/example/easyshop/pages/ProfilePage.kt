@@ -261,10 +261,12 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                         if (defaultAddr != null) {
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = defaultAddr.detailedAddress,
+                                text = defaultAddr.detailedAddress.trim(),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.Black.copy(alpha = 0.8f),
-                                lineHeight = 20.sp
+                                lineHeight = 20.sp,
+                                maxLines = 2,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                         } else {
                             Text("Chạm để thêm địa chỉ giao hàng", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
@@ -462,10 +464,12 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                                     Text("(+84)${addr.phone.removePrefix("0")}", style = MaterialTheme.typography.bodyMedium, color = Color.Black.copy(alpha = 0.7f))
                                     Spacer(Modifier.height(4.dp))
                                     Text(
-                                        addr.detailedAddress,
+                                        addr.detailedAddress.trim(),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = Color.DarkGray,
-                                        lineHeight = 18.sp
+                                        lineHeight = 18.sp,
+                                        maxLines = 2,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                     )
                                     if (addr.isDefault) {
                                         Spacer(Modifier.height(6.dp))
