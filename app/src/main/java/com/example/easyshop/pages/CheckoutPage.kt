@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -50,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.easyshop.AppUtil
@@ -136,9 +136,10 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(top = padding.calculateTopPadding()) // ✅ Chỉ lấy top padding
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+//                .padding(horizontal = 16.dp), // Giữ padding ngang
+                .padding(top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // TikTok-style Delivery Address Selector
@@ -348,7 +349,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Thay đổi/Quản lý địa chỉ trong Profile")
+                    Text("Thay đổi/Quản lý địa chỉ")
                 }
             }
         }
