@@ -194,8 +194,14 @@ fun ProfilePage(modifier: Modifier = Modifier) {
                 contentAlignment = Alignment.Center
             ) {
                 if (userModel.value.profileImg.isNotEmpty()) {
+                    val imageRequest = coil.request.ImageRequest.Builder(LocalContext.current)
+                        .data(userModel.value.profileImg)
+                        .crossfade(true)
+                        .size(300)
+                        .build()
+
                     AsyncImage(
-                        model = userModel.value.profileImg,
+                        model = imageRequest,
                         contentDescription = "Avatar",
                         modifier = Modifier.size(104.dp).clip(CircleShape),
                         contentScale = ContentScale.Crop

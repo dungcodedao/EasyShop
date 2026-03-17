@@ -17,8 +17,9 @@ class AIChatViewModel : ViewModel() {
 
     init {
         viewModelScope.launch {
-            // Mỗi khi vào màn hình Chat, dọn sạch lịch sử cũ để tạo phiên mới
-            repository.clearChat()
+            // Khi vào màn hình Chat, thay vì dọn sạch lịch sử,
+            // ta chỉ kiểm tra nếu chưa có tin nhắn nào thì mới hiển thị Lời chào.
+            repository.checkAndShowWelcomeMessage()
         }
     }
 

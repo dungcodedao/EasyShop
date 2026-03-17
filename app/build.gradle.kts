@@ -89,6 +89,7 @@ dependencies {
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.8.0"))
     implementation("com.google.firebase:firebase-storage-ktx")
+    implementation("com.google.firebase:firebase-messaging-ktx")
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
 

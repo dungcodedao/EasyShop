@@ -102,6 +102,10 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 OrdersPage(modifier)
             }
 
+            composable("notifications") {
+                NotificationsPage(navController)
+            }
+
             composable(
                 route = "order-details/{orderId}",
                 arguments = listOf(navArgument("orderId") { type = NavType.StringType })

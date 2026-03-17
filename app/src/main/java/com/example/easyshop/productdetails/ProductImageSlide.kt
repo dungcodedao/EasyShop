@@ -48,8 +48,14 @@ fun ProductImageSlider(
             val pagerState = rememberPagerState(pageCount = { images.size })
 
             HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                val imageRequest = coil.request.ImageRequest.Builder(LocalContext.current)
+                    .data(images[page])
+                    .crossfade(true)
+                    .size(800) // Ảnh chi tiết cần độ nét cao hơn banner/icon
+                    .build()
+
                 AsyncImage(
-                    model = images[page],
+                    model = imageRequest,
                     contentDescription = "Product image",
                     modifier = Modifier.fillMaxSize().padding(16.dp),
                     contentScale = ContentScale.Fit

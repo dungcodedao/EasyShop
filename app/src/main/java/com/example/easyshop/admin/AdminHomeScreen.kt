@@ -19,13 +19,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavController
 import com.example.easyshop.R
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.ui.platform.LocalContext
 import com.example.easyshop.model.ProductModel
+import com.example.easyshop.model.CategoryModel
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import com.example.easyshop.AppUtil
-import com.example.easyshop.model.CategoryModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -193,7 +195,16 @@ private fun AdminProductItem(
         Row(modifier = Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Card(modifier = Modifier.size(80.dp), shape = RoundedCornerShape(12.dp)) {
                 if (product.images.isNotEmpty()) {
-                    AsyncImage(model = product.images.first(), contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(product.images.first())
+                            .size(400)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
                 } else {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.ShoppingCart, null) }
                 }

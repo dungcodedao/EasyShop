@@ -1,26 +1,40 @@
 package com.example.easyshop.components
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.easyshop.R
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -30,19 +44,29 @@ import com.google.firebase.firestore.firestore
 fun HeaderView(
     modifier: Modifier = Modifier,
     onSearchClick: () -> Unit = {},
-    onAvatarClick: () -> Unit = {}
+    onAvatarClick: () -> Unit = {},
+    onNotificationClick: () -> Unit = {}
 ) {
     var name by remember { mutableStateOf("") }
     var avatarUrl by remember { mutableStateOf("") }
 
+    var unreadCount by remember { mutableStateOf(0) }
+
     LaunchedEffect(key1 = Unit) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@LaunchedEffect
         Firebase.firestore.collection("users").document(uid)
-            .get().addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val doc = task.result
-                    name = doc.getString("name") ?: ""
-                    avatarUrl = doc.getString("profileImg") ?: ""
+            .get().addOnSuccessListener { doc ->
+                name = doc.getString("name") ?: ""
+                avatarUrl = doc.getString("profileImg") ?: ""
+            }
+
+        // Theo dõi số lượng thông báo chưa đọc
+        Firebase.firestore.collection("users").document(uid)
+            .collection("notifications")
+            .whereEqualTo("isRead", false)
+            .addSnapshotListener { snapshot, _ ->
+                if (snapshot != null) {
+                    unreadCount = snapshot.documents.size
                 }
             }
     }
@@ -111,6 +135,42 @@ fun HeaderView(
                 contentDescription = "Search",
                 modifier = Modifier.size(22.dp)
             )
+        }
+
+        Spacer(Modifier.width(8.dp))
+
+        // Notification Bell
+        Box(modifier = Modifier.size(44.dp)) {
+            FilledTonalIconButton(
+                onClick = onNotificationClick,
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Icon(
+                    Icons.Default.Notifications,
+                    contentDescription = "Notifications",
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            
+            // Badge (Chỉ hiện khi có tin chưa đọc)
+            if (unreadCount > 0) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 2.dp, end = 2.dp)
+                        .size(16.dp)
+                        .background(androidx.compose.ui.graphics.Color.Red, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (unreadCount > 9) "9+" else unreadCount.toString(),
+                        color = androidx.compose.ui.graphics.Color.White,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
     }
 }

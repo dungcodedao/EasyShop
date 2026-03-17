@@ -75,7 +75,8 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavController) {
             ContentScreen(
                 modifier = Modifier.fillMaxSize(),
                 selectedIndex = selectedIndex,
-                onNavigateToProfile = { selectedIndex = 3 }
+                onNavigateToProfile = { selectedIndex = 3 },
+                onNotificationClick = { navController.navigate("notifications") }
             )
         }
     }
@@ -172,10 +173,19 @@ fun CustomFloatingNavigationBar(
 }
 
 @Composable
-fun ContentScreen(modifier: Modifier = Modifier, selectedIndex: Int, onNavigateToProfile: () -> Unit = {}) {
+fun ContentScreen(
+    modifier: Modifier = Modifier, 
+    selectedIndex: Int, 
+    onNavigateToProfile: () -> Unit = {},
+    onNotificationClick: () -> Unit = {}
+) {
     Box(modifier = modifier) {
         when (selectedIndex) {
-            0 -> HomePage(Modifier.fillMaxSize(), onNavigateToProfile = onNavigateToProfile)
+            0 -> HomePage(
+                modifier = Modifier.fillMaxSize(), 
+                onNavigateToProfile = onNavigateToProfile,
+                onNotificationClick = onNotificationClick
+            )
             1 -> FavoritePage(Modifier.fillMaxSize())
             2 -> CartPage(Modifier.fillMaxSize())
             3 -> ProfilePage(Modifier.fillMaxSize())

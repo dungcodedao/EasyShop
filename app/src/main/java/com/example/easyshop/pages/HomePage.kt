@@ -21,7 +21,8 @@ import com.example.easyshop.components.SearchView
 @Composable
 fun HomePage(
     modifier: Modifier = Modifier,
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToProfile: () -> Unit = {},
+    onNotificationClick: () -> Unit = {}
 ) {
     var isSearching by remember { mutableStateOf(false) }
 
@@ -50,7 +51,8 @@ fun HomePage(
 
                 HeaderView(
                     onSearchClick = { isSearching = true },
-                    onAvatarClick = onNavigateToProfile
+                    onAvatarClick = onNavigateToProfile,
+                    onNotificationClick = onNotificationClick
                 )
 
                 Spacer(Modifier.height(20.dp))

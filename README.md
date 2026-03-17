@@ -12,6 +12,10 @@
     - Hỗ trợ tư vấn sản phẩm thông minh dựa trên ngữ cảnh cuộc hội thoại.
     - **Multi-turn Memory:** Ghi nhớ nội dung đã trao đổi để tư vấn chính xác hơn.
     - **Smart Search:** Tự động đề xuất sản phẩm liên quan từ dữ liệu Firestore dựa trên từ khóa câu hỏi.
+    - **Tư vấn mua hàng:** Giải đáp thắc mắc về sản phẩm, so sánh giá, gợi ý món phù hợp với nhu cầu.
+    - **Hỗ trợ đơn hàng:** Hướng dẫn quy trình đặt hàng, thanh toán và theo dõi đơn hàng.
+    - **Lịch sử chat:** Lưu toàn bộ cuộc hội thoại trên Firestore, đồng bộ thời gian thực trên mọi thiết bị.
+    - **Xóa & Làm mới:** Người dùng có thể xóa lịch sử và bắt đầu hội thoại mới bất cứ lúc nào.
 - **Quản lý mua sắm:** Giỏ hàng tiện lợi, tính toán đơn hàng thời gian thực và áp dụng mã giảm giá.
 - **Theo dõi đơn hàng:** Xem lịch sử mua hàng và chi tiết các sản phẩm đã đặt.
 - **Cá nhân hóa:** Quản lý hồ sơ, chọn ảnh đại diện đồng bộ hệ thống và danh sách yêu thích.

@@ -22,5 +22,6 @@ data class UserModel(
     val address: String = "", 
     val addressList: List<AddressModel> = emptyList(),
     val role: String = "user",
-    val profileImg: String = ""
+    val profileImg: String = "",
+    val fcmToken: String = ""     // Thêm để lưu Device Token nhận Push Notifications
 )

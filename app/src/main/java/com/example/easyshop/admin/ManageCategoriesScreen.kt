@@ -21,6 +21,8 @@ import com.example.easyshop.R
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.ui.platform.LocalContext
 import com.example.easyshop.model.CategoryModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -190,7 +192,12 @@ fun CategoryItem(category: CategoryModel, productCount: Int, onEdit: () -> Unit,
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             AsyncImage(
-                model = category.imageUrl, contentDescription = null,
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(category.imageUrl)
+                    .size(200)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
                 modifier = Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
             )
             Spacer(Modifier.width(16.dp))

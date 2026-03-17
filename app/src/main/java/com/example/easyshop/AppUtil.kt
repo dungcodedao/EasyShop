@@ -110,6 +110,17 @@ object AppUtil {
                     .set(order)
                     .addOnSuccessListener {
                         userDoc.update("cartItems", FieldValue.delete())
+                        
+                        // ✅ Tạo thông báo in-app báo đặt lệnh thành công
+                        val notif = com.example.easyshop.model.NotificationModel(
+                            userId = currentUser.uid,
+                            title = "Đặt hàng thành công",
+                            body = "Đơn hàng #${orderId.take(6).uppercase()} đã được ghi nhận. Phương thức: $paymentMethod.",
+                            type = "ORDER_UPDATE",
+                            orderId = orderId
+                        )
+                        Firebase.firestore.collection("users").document(currentUser.uid)
+                            .collection("notifications").add(notif)
                     }
             }
         }

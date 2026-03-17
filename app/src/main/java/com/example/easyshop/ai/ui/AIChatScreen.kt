@@ -9,15 +9,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -27,6 +31,8 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.FiberManualRecord
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -57,8 +63,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -157,10 +166,16 @@ fun AIChatScreen(
                 modifier = Modifier.navigationBarsPadding()
             ) {
                 Column {
-                    error?.let {
-                        ErrorMessage(it) { viewModel.clearError() }
+                    if (error != null) {
+                        ErrorMessage(error!!) { viewModel.clearError() }
                     }
-                    
+
+                    if (messages.isEmpty() && !isLoading) {
+                        SuggestionChips(onSuggestionClick = { suggestion ->
+                            viewModel.sendMessage(suggestion)
+                        })
+                    }
+
                     ChatInput(
                         value = inputText,
                         onValueChange = { inputText = it },
@@ -238,12 +253,11 @@ fun ChatBubble(content: String, isUser: Boolean, timestamp: Timestamp?) {
                 .shadow(2.dp, shape)
                 .background(bubbleBrush, shape)
                 .clip(shape)
+                .padding(horizontal = 16.dp, vertical = 10.dp)
         ) {
-            Text(
+            MarkdownText(
                 text = content,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                color = if (isUser) Color.White else onSurfaceVariantColor,
-                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp)
+                textColor = if (isUser) Color.White else onSurfaceVariantColor
             )
         }
         
@@ -368,6 +382,113 @@ fun ErrorMessage(message: String, onDismiss: () -> Unit) {
             IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
                 Text("✕", color = MaterialTheme.colorScheme.onErrorContainer)
             }
+        }
+    }
+}
+
+@Composable
+fun MarkdownText(text: String, textColor: Color) {
+    val lines = text.split("\n")
+    Column {
+        lines.forEach { line ->
+            val annotatedString = buildAnnotatedString {
+                val trimmedLine = line.trimStart()
+                var processedLine = trimmedLine
+                
+                // 1. Chuyển đổi dấu (*) hoặc (-) đầu dòng thành bullet bullet (•)
+                if (processedLine.startsWith("* ") || processedLine.startsWith("- ")) {
+                    append("•  ")
+                    processedLine = processedLine.substring(2)
+                }
+
+                // 2. Tìm ID Sản phẩm trong ngoặc vuông và loại bỏ đi để text không bị xấu
+                val productIdRegex = Regex("\\[(.*?)\\]")
+                processedLine = processedLine.replace(productIdRegex, "")
+
+                // 3. Tìm và bôi đậm những chữ bị kẹp trong **chữ**
+                val boldRegex = Regex("\\*\\*(.*?)\\*\\*")
+                var currentIndex = 0
+                var matchResult = boldRegex.find(processedLine, currentIndex)
+                
+                while (matchResult != null) {
+                    // Thêm đoạn text thường trước chỗ in đậm
+                    append(processedLine.substring(currentIndex, matchResult.range.first))
+                    
+                    // Thêm đoạn chữ in đậm (bỏ 2 dấu ** đi)
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append(matchResult.groupValues[1])
+                    }
+                    
+                    currentIndex = matchResult.range.last + 1
+                    matchResult = boldRegex.find(processedLine, currentIndex)
+                }
+                
+                // Thêm nốt phần text còn lại
+                if (currentIndex < processedLine.length) {
+                    append(processedLine.substring(currentIndex))
+                }
+            }
+
+            Text(
+                text = annotatedString,
+                color = textColor,
+                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
+                modifier = Modifier.padding(vertical = 1.dp)
+            )
+            
+            // 👉 Render nút xem sản phẩm (nếu tìm thấy ID bị kẹp)
+            val idMatch = Regex("\\[(.*?)\\]").find(line)
+            if (idMatch != null) {
+                var productId = idMatch.groupValues[1].trim()
+                productId = productId.replace("PID_", "")
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { com.example.easyshop.GlobalNavigation.navController.navigate("product-details/$productId") },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.primary
+                    ),
+                    elevation = androidx.compose.material3.ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                ) {
+                    Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Xem sản phẩm này", fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun SuggestionChips(onSuggestionClick: (String) -> Unit) {
+    val suggestions = listOf(
+        "Bạn có thể giúp gì cho tôi?",
+        "Giá iPhone hiện tại bao nhiêu?",
+        "Sản phẩm nào đang giảm giá?",
+        "Gợi ý laptop văn phòng mỏng nhẹ",
+        "Chính sách bảo hành tại Shop"
+    )
+
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(suggestions) { suggestion ->
+            AssistChip(
+                onClick = { onSuggestionClick(suggestion) },
+                label = { Text(suggestion, style = MaterialTheme.typography.labelMedium) },
+                colors = AssistChipDefaults.assistChipColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                    labelColor = MaterialTheme.colorScheme.primary
+                ),
+                shape = RoundedCornerShape(12.dp)
+            )
         }
     }
 }

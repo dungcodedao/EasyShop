@@ -36,9 +36,15 @@ fun CartItemView(modifier: Modifier = Modifier, product: ProductModel, qty: Long
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val imageRequest = coil.request.ImageRequest.Builder(LocalContext.current)
+                .data(product.images.firstOrNull())
+                .crossfade(true)
+                .size(300)
+                .build()
+
             // Product Image
             AsyncImage(
-                model = product.images.firstOrNull(),
+                model = imageRequest,
                 contentDescription = product.title,
                 modifier = Modifier
                     .size(80.dp)

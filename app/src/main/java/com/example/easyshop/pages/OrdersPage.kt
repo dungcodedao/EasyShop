@@ -161,8 +161,18 @@ fun OrdersPage(modifier: Modifier = Modifier) {
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(items = filteredList, key = { it.id }) {
-                        OrderView(it)
+                    items(items = filteredList, key = { it.id }) { order ->
+                        OrderView(
+                            orderItems = order,
+                            onDeleteClick = if (selectedTab == 1) { 
+                                {
+                                    // Xóa Document thay vì chỉ ẩn đi (để đảm bảo db nhẹ nhàng)
+                                    Firebase.firestore.collection("orders").document(order.id).delete()
+                                    // Xóa UI state
+                                    orderList.value = orderList.value.filter { it.id != order.id }
+                                }
+                            } else null
+                        )
                     }
                 }
             }

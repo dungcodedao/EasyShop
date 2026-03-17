@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.easyshop.GlobalNavigation.navController
 import com.example.easyshop.R
+import com.example.easyshop.model.NotificationModel
 import com.example.easyshop.model.OrderModel
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
@@ -116,6 +117,28 @@ fun OrdersManagementScreen(
         filteredOrders = if (selectedFilter == "ALL") orders else orders.filter { it.status == selectedFilter }
     }
 
+    // Tự sinh bảng thông báo gửi về cho máy của khách hàng (in-app notification)
+    fun createNotificationForUser(order: OrderModel, newStatus: String) {
+        val message = when (newStatus) {
+            "Processing" -> "Đơn hàng #${order.id.take(6).uppercase()} của bạn đã được xác nhận và đang xử lý."
+            "Shipped" -> "Đơn hàng #${order.id.take(6).uppercase()} đã được gửi cho đơn vị vận chuyển."
+            "Delivered" -> "Đơn hàng #${order.id.take(6).uppercase()} đã giao thành công. Chúc bạn mua sắm vui vẻ!"
+            "Cancelled" -> "Đơn hàng #${order.id.take(6).uppercase()} đã bị hủy."
+            else -> "Đơn hàng #${order.id.take(6).uppercase()} vừa cập nhật trạng thái: $newStatus"
+        }
+
+        val notif = NotificationModel(
+            userId = order.userId,
+            title = "Cập nhật đơn hàng",
+            body = message,
+            type = "ORDER_UPDATE",
+            orderId = order.id
+        )
+
+        Firebase.firestore.collection("users").document(order.userId)
+            .collection("notifications").add(notif)
+    }
+
     // Update order status
     fun updateOrderStatus(order: OrderModel, newStatus: String) {
         scope.launch {
@@ -124,6 +147,10 @@ fun OrdersManagementScreen(
                     .document(order.id)
                     .update("status", newStatus)
                     .await()
+                
+                // Gửi thông báo kèm trạng thái mới cho người dùng
+                createNotificationForUser(order, newStatus)
+
                 loadOrders()
             } catch (e: Exception) {
                 e.printStackTrace()

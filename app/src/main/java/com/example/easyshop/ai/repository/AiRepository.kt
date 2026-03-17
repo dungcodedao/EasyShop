@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
+import com.example.easyshop.model.ProductModel
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -41,12 +42,32 @@ class AiRepository {
             .collection("messages")
             .orderBy("timestamp", Query.Direction.ASCENDING)
             .addSnapshotListener { snapshot, _ ->
-                val messages = snapshot?.documents?.mapNotNull { doc ->
+        val messages = snapshot?.documents?.mapNotNull { doc ->
                     doc.toObject(ChatMessage::class.java)?.copy(id = doc.id)
                 } ?: emptyList()
                 trySend(messages)
             }
         awaitClose { listener.remove() }
+    }
+
+    // Tự động kéo toàn bộ danh sách sản phẩm từ DB lên để nhét vào não AI
+    private suspend fun fetchAllProductsForAi(): String {
+        return try {
+            val docs = db.collection("data").document("stock").collection("products").get().await()
+            val productList = docs.mapNotNull { doc -> 
+                doc.toObject(ProductModel::class.java)?.apply { id = doc.id } 
+            }
+            
+            // Xây dựng một chuỗi danh mục dễ hiểu cho AI
+            val sb = StringBuilder()
+            sb.append("Danh sách sản phẩm hiện có:\n")
+            productList.forEach { p ->
+                sb.append("- Tên: ${p.title}. PID: [${p.id}]. Giá: ${p.price}. Còn hàng: ${p.inStock}.\n")
+            }
+            sb.toString()
+        } catch (e: Exception) {
+            "Không thể lấy danh sách sản phẩm lúc này."
+        }
     }
 
     suspend fun sendMessage(userMessage: String, history: List<ChatMessage>): Result<String> {
@@ -64,7 +85,8 @@ class AiRepository {
             ).await()
 
             // Gọi Gemini API qua OkHttp kèm theo lịch sử để AI có "trí nhớ"
-            val aiReply = callGeminiApi(userMessage, history)
+            val productsContext = fetchAllProductsForAi()
+            val aiReply = callGeminiApi(userMessage, history, productsContext)
 
             // Lưu phản hồi AI
             chatDocRef.collection("messages").add(
@@ -83,11 +105,12 @@ class AiRepository {
         }
     }
 
-    private suspend fun callGeminiApi(currentMessage: String, history: List<ChatMessage>): String = withContext(Dispatchers.IO) {
+    private suspend fun callGeminiApi(currentMessage: String, history: List<ChatMessage>, productsContext: String): String = withContext(Dispatchers.IO) {
         // Thêm hướng dẫn để AI trả lời ngắn gọn, súc tích
         val systemInstruction = "Bạn là trợ lý AI chuyên nghiệp của cửa hàng EasyShop. " +
-                "Hãy trả lời ngắn gọn, súc tích, thân thiện. " +
-                "Tránh viết quá dài dòng trừ khi khách hàng yêu cầu chi tiết."
+                "Hãy trả lời thân thiện, nhiệt tình. BẠN CHỈ ĐƯỢC PHÉP GIỚI THIỆU CÁC SẢN PHẨM CÓ TRONG DANH SÁCH SAU ĐÂY:\n$productsContext\n\n" +
+                "NẾU KHÁCH TÌM SẢN PHẨM MÀ KHÔNG CÓ TRONG DANH SÁCH, hãy báo hết hàng hoặc không có chức năng đó. Tránh viết quá dài. " +
+                "NẾU BẠN GỢI Ý MỘT SẢN PHẨM, HÃY KÈM THEO CHÍNH XÁC ID CỦA SẢN PHẨM ĐÓ TRONG DẤU NGOẶC VUÔNG, TUYỆT ĐỐI KHÔNG THÊM BẤT KỲ CHỮ NÀO KHÁC VÀO TRONG NGOẶC. VÍ DỤ NẾU SẢN PHẨM CÓ PID: [12345] THÌ BẠN VIẾT: Điện thoại X [12345]. Các text tư vấn khác cứ viết bình thường."
 
         val body = JSONObject().apply {
             put("system_instruction", JSONObject().apply {
