@@ -1,9 +1,10 @@
 package com.example.easyshop.pages
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,7 +54,7 @@ import com.google.firebase.firestore.firestore
 fun CartPage(
     modifier: Modifier = Modifier,
     navController: NavController? = null
-) { 
+) {
     val userModel = remember { mutableStateOf(UserModel()) }
     var isLoading by remember { mutableStateOf(true) }
     val productsMap = remember { mutableStateOf<Map<String, ProductModel>>(emptyMap()) }
@@ -62,19 +65,20 @@ fun CartPage(
             .addSnapshotListener { it, _ ->
                 it?.toObject(UserModel::class.java)?.let { user ->
                     userModel.value = user
-                    
-                    // Batch fetch products details
+
                     val productIds = user.cartItems.keys.toList()
                     if (productIds.isNotEmpty()) {
-                        // Chỉ fetch những product chưa có trong map hoặc fetch lại nếu cần
-                        // Với giỏ hàng thường < 30 món, whereIn là tối ưu nhất
                         Firebase.firestore.collection("data").document("stock")
                             .collection("products")
-                            .whereIn(com.google.firebase.firestore.FieldPath.documentId(), productIds)
+                            .whereIn(
+                                com.google.firebase.firestore.FieldPath.documentId(),
+                                productIds
+                            )
                             .get()
                             .addOnSuccessListener { querySnapshot ->
-                                val newMap = querySnapshot.documents.associate { 
-                                    it.id to (it.toObject(com.example.easyshop.model.ProductModel::class.java) ?: com.example.easyshop.model.ProductModel())
+                                val newMap = querySnapshot.documents.associate {
+                                    it.id to (it.toObject(ProductModel::class.java)
+                                        ?: ProductModel())
                                 }
                                 productsMap.value = newMap
                                 isLoading = false
@@ -88,20 +92,44 @@ fun CartPage(
         onDispose { listener.remove() }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
-        if (navController != null) {
-            Surface(tonalElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(40.dp)) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", Modifier.size(22.dp))
+    Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        // Toolbar gọn gàng nhưng vẫn có độ cao chuẩn và viền (Khôi phục)
+        Surface(
+            tonalElevation = 2.dp,
+            shadowElevation = 2.dp,
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (navController != null && navController.previousBackStackEntry != null) {
+                    IconButton(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            modifier = Modifier.size(22.dp),
+                            tint = MaterialTheme.colorScheme.onSurface 
+                        )
                     }
-                    Text(stringResource(id = R.string.your_cart), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.size(40.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                } else {
+                    Spacer(modifier = Modifier.size(4.dp))
                 }
+                
+                Text(
+                    text = stringResource(id = R.string.your_cart),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
 
@@ -111,36 +139,39 @@ fun CartPage(
             }
         } else {
             CartPageContent(
-                modifier = Modifier.weight(1f), 
-                model = userModel.value, 
+                modifier = Modifier.weight(1f),
+                model = userModel.value,
                 productsMap = productsMap.value,
-                showTitle = navController == null
+                showTitle = false
             )
         }
     }
 }
 
 @Composable
-private fun CartPageContent(
-    modifier: Modifier, 
-    model: UserModel, 
-    productsMap: Map<String, com.example.easyshop.model.ProductModel>, 
+fun CartPageContent(
+    modifier: Modifier,
+    model: UserModel,
+    productsMap: Map<String, ProductModel>,
     showTitle: Boolean
 ) {
-    Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
-        if (showTitle) {
-            Text(
-                text = stringResource(id = R.string.your_cart),
-                style = MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
+    Column(modifier = modifier.fillMaxSize()) {
         if (model.cartItems.isEmpty()) {
+            if (showTitle) {
+                Text(
+                    text = stringResource(id = R.string.your_cart),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
             EmptyCart()
         } else {
-            CartContent(userModel = model, productsMap = productsMap)
+            CartContent(
+                userModel = model,
+                productsMap = productsMap,
+                showTitle = showTitle
+            )
         }
     }
 }
@@ -184,59 +215,72 @@ private fun EmptyCart() {
 }
 
 @Composable
-private fun ColumnScope.CartContent(
-    userModel: UserModel, 
-    productsMap: Map<String, com.example.easyshop.model.ProductModel>
+private fun CartContent(
+    userModel: UserModel,
+    productsMap: Map<String, ProductModel>,
+    showTitle: Boolean = false
 ) {
-    LazyColumn(
-        modifier = Modifier.weight(1f),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(userModel.cartItems.toList(), key = { it.first }) { (productId, qty) ->
-            val product = productsMap[productId] ?: com.example.easyshop.model.ProductModel()
-            CartItemView(product = product, qty = qty)
-        }
-    }
-
-    Spacer(modifier = Modifier.height(16.dp))
-
-    // Total
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    Column(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(
+                start = 16.dp, end = 16.dp, top = 8.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = stringResource(id = R.string.total_items),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = "${userModel.cartItems.values.sumOf { it }}",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
+            items(userModel.cartItems.toList(), key = { it.first }) { (productId, qty) ->
+                val product = productsMap[productId] ?: ProductModel()
+                CartItemView(product = product, qty = qty)
+            }
         }
-    }
 
-    Spacer(modifier = Modifier.height(12.dp))
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                ),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.total_items),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "${userModel.cartItems.values.sumOf { it }}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
 
-    // Checkout
-    Button(
-        onClick = { GlobalNavigation.navController.navigate("checkout") },
-        modifier = Modifier.fillMaxWidth().height(56.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Text(
-            text = stringResource(id = R.string.checkout),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
+            Button(
+                onClick = { GlobalNavigation.navController.navigate("checkout") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.checkout),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+        }
     }
 }

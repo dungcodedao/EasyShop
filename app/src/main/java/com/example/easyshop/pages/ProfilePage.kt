@@ -64,6 +64,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.easyshop.AppUtil
 import com.example.easyshop.GlobalNavigation
@@ -76,7 +77,10 @@ import com.google.firebase.firestore.firestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfilePage(modifier: Modifier = Modifier) {
+fun ProfilePage(
+    modifier: Modifier = Modifier,
+    navController: NavController? = null
+) {
     val userModel = remember { mutableStateOf(UserModel()) }
     var addressInput by remember { mutableStateOf("") }
     var phoneInput by remember { mutableStateOf("") }

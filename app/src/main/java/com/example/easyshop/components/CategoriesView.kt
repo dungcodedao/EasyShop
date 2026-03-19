@@ -94,7 +94,7 @@ fun CategoriesView(modifier: Modifier = Modifier) {
 fun CategoryItem(category: CategoryModel, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier
-            .aspectRatio(1f)
+            .heightIn(min = 110.dp)
             .clickable {
                 GlobalNavigation.navController.navigate("category-products/${category.id}")
             },
@@ -104,15 +104,15 @@ fun CategoryItem(category: CategoryModel, modifier: Modifier = Modifier) {
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             AsyncImage(
                 model = category.imageUrl,
                 contentDescription = category.name,
-                modifier = Modifier.size(80.dp),
+                modifier = Modifier.size(60.dp),
                 contentScale = ContentScale.Fit
             )
 
@@ -120,10 +120,10 @@ fun CategoryItem(category: CategoryModel, modifier: Modifier = Modifier) {
 
             Text(
                 text = category.name,
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
         }
