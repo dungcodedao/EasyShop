@@ -58,7 +58,7 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavController) {
                     contentColor = Color.White,
                     modifier = Modifier
                         .size(60.dp)
-                        .padding(bottom = 16.dp) // Tránh đè lên nav bar floating
+                        .padding(bottom = 16.dp) 
                         .shadow(8.dp, CircleShape)
                 ) {
                     Icon(
@@ -71,14 +71,13 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavController) {
         },
         floatingActionButtonPosition = FabPosition.End
     ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
-            ContentScreen(
-                modifier = Modifier.fillMaxSize(),
-                selectedIndex = selectedIndex,
-                onNavigateToProfile = { selectedIndex = 3 },
-                onNotificationClick = { navController.navigate("notifications") }
-            )
-        }
+        ContentScreen(
+            modifier = Modifier.padding(innerPadding).fillMaxSize(),
+            selectedIndex = selectedIndex,
+            navController = navController,
+            onNavigateToProfile = { selectedIndex = 3 },
+            onNotificationClick = { navController.navigate("notifications") }
+        )
     }
 }
 
@@ -163,7 +162,7 @@ fun CustomFloatingNavigationBar(
                         }
                         
                         if (!isSelected) {
-                            Spacer(modifier = Modifier.height(18.dp)) // Maintain height when label is hidden
+                            Spacer(modifier = Modifier.height(18.dp))
                         }
                     }
                 }
@@ -176,6 +175,7 @@ fun CustomFloatingNavigationBar(
 fun ContentScreen(
     modifier: Modifier = Modifier, 
     selectedIndex: Int, 
+    navController: NavController,
     onNavigateToProfile: () -> Unit = {},
     onNotificationClick: () -> Unit = {}
 ) {
@@ -187,8 +187,8 @@ fun ContentScreen(
                 onNotificationClick = onNotificationClick
             )
             1 -> FavoritePage(Modifier.fillMaxSize())
-            2 -> CartPage(Modifier.fillMaxSize())
-            3 -> ProfilePage(Modifier.fillMaxSize())
+            2 -> CartPage(Modifier.fillMaxSize(), navController = navController)
+            3 -> ProfilePage(Modifier.fillMaxSize(), navController = navController)
         }
     }
 }
