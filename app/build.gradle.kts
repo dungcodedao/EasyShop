@@ -96,7 +96,7 @@ dependencies {
     // UI Components
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("com.tbuonomo:dotsindicator:5.1.0")
-    implementation("com.razorpay:checkout:1.6.40")
+
     implementation(libs.okhttp)
 
     // Google Services

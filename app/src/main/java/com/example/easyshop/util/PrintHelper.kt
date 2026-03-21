@@ -40,7 +40,14 @@ object PrintHelper {
      * Generates HTML Receipt from Order Data
      * This allows us to keep the logic of 'how it looks on paper' separate.
      */
-    fun generateReceiptHtml(orderId: String, amount: String, date: String, itemsHtml: String): String {
+    fun generateReceiptHtml(
+        orderId: String, 
+        total: String, 
+        subtotal: String,
+        discount: String,
+        date: String, 
+        itemsHtml: String
+    ): String {
         return """
             <html>
                 <style>
@@ -51,6 +58,7 @@ object PrintHelper {
                     .table { width: 100%; border-collapse: collapse; margin: 20px 0; }
                     .table th { border-bottom: 1px dashed #ccc; text-align: left; padding: 5px; }
                     .table td { padding: 5px; font-size: 13px; }
+                    .summary-row { font-size: 14px; }
                     .total-row { border-top: 2px dashed #ccc; font-weight: bold; font-size: 18px; }
                     .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #888; }
                 </style>
@@ -76,9 +84,17 @@ object PrintHelper {
                             $itemsHtml
                         </tbody>
                         <tfoot>
+                            <tr class="summary-row">
+                                <td colspan="2">Tạm tính</td>
+                                <td style="text-align:right">$subtotal</td>
+                            </tr>
+                            <tr class="summary-row">
+                                <td colspan="2">Giảm giá</td>
+                                <td style="text-align:right">-$discount</td>
+                            </tr>
                             <tr class="total-row">
                                 <td colspan="2">TỔNG CỘNG</td>
-                                <td style="text-align:right">$amount</td>
+                                <td style="text-align:right">$total</td>
                             </tr>
                         </tfoot>
                     </table>
