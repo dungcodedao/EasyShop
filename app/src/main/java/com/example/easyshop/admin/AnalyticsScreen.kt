@@ -63,6 +63,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -77,6 +78,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlin.math.floor
 
 data class ProductStat(val id: String, val count: Int, val revenue: Double)
 
@@ -100,6 +102,7 @@ fun AnalyticsScreen(
     var cancelledOrdersCount by remember { mutableIntStateOf(0) }
     var topProducts by remember { mutableStateOf<List<ProductStat>>(emptyList()) }
     var dailyRevenue by remember { mutableStateOf<List<Pair<String, Double>>>(emptyList()) }
+    var lastUpdatedAt by remember { mutableStateOf<Date?>(null) }
 
     val firestore = Firebase.firestore
 
@@ -144,6 +147,7 @@ fun AnalyticsScreen(
                 label to (dailyMap[label] ?: 0.0)
             }
             dailyRevenue = last7Days
+            lastUpdatedAt = Date()
 
             isLoading = false
         } catch (e: Exception) { isLoading = false }
@@ -189,6 +193,16 @@ fun AnalyticsScreen(
                         totalRevenue = totalRevenue,
                         totalOrders = orders.size,
                         currencyFmt = currencyFmt
+                    )
+                }
+
+                item {
+                    Text(
+                        text = lastUpdatedAt?.let {
+                            "Cập nhật lúc ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(it)}"
+                        } ?: "Cập nhật lúc --",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -429,6 +443,7 @@ fun SectionTitle(title: String, icon: ImageVector, tint: Color) {
 fun PremiumBarChart(data: List<Pair<String, Double>>, currencyFmt: NumberFormat) {
     val maxRevenue = data.maxOfOrNull { it.second }?.takeIf { it > 0 } ?: 1.0
     val hasAnyData = data.any { it.second > 0 }
+    val midRevenue = maxRevenue / 2
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -437,10 +452,19 @@ fun PremiumBarChart(data: List<Pair<String, Double>>, currencyFmt: NumberFormat)
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)) {
+            if (hasAnyData) {
+                Text(
+                    text = "Mốc: ${compactCurrency(midRevenue)} - ${currencyFmt.format(maxRevenue)}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(110.dp),
+                    .height(120.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Bottom
             ) {
@@ -465,9 +489,7 @@ fun PremiumBarChart(data: List<Pair<String, Double>>, currencyFmt: NumberFormat)
                                 shape = RoundedCornerShape(6.dp)
                             ) {
                                 Text(
-                                    text = if (value >= 1_000_000) "${(value / 1_000_000).toInt()}M"
-                                           else if (value >= 1_000) "${(value / 1_000).toInt()}K"
-                                           else value.toInt().toString(),
+                                    text = compactCurrency(value),
                                     modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = Color.White,
@@ -526,7 +548,7 @@ fun PremiumBarChart(data: List<Pair<String, Double>>, currencyFmt: NumberFormat)
                         style = MaterialTheme.typography.labelSmall,
                         fontSize = 9.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        textAlign = TextAlign.Center
                     )
                 }
             }
@@ -535,12 +557,44 @@ fun PremiumBarChart(data: List<Pair<String, Double>>, currencyFmt: NumberFormat)
 }
 
 // ── Premium Order Distribution ────────────────────────────────────────────────
+private fun compactCurrency(value: Double): String {
+    return when {
+        value >= 1_000_000_000 -> "${(value / 1_000_000_000).toInt()}B"
+        value >= 1_000_000 -> "${(value / 1_000_000).toInt()}M"
+        value >= 1_000 -> "${(value / 1_000).toInt()}K"
+        else -> value.toInt().toString()
+    }
+}
+
+private fun normalizeToHundred(counts: List<Int>): List<Int> {
+    val total = counts.sum()
+    if (total <= 0) return List(counts.size) { 0 }
+
+    val raw = counts.map { it * 100.0 / total }
+    val base = raw.map { floor(it).toInt() }.toMutableList()
+    var remainder = 100 - base.sum()
+
+    if (remainder > 0) {
+        val fractions = raw.mapIndexed { idx, v -> idx to (v - floor(v)) }
+            .sortedByDescending { it.second }
+        var cursor = 0
+        while (remainder > 0 && fractions.isNotEmpty()) {
+            val idx = fractions[cursor % fractions.size].first
+            base[idx] += 1
+            remainder--
+            cursor++
+        }
+    }
+    return base
+}
+
 @Composable
 fun PremiumOrderDistribution(delivered: Int, cancelled: Int, other: Int) {
     val total = (delivered + cancelled + other).toFloat().coerceAtLeast(1f)
     val deliveredW = delivered / total
     val otherW = other / total
     val cancelledW = cancelled / total
+    val percents = normalizeToHundred(listOf(delivered, other, cancelled))
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -568,16 +622,16 @@ fun PremiumOrderDistribution(delivered: Int, cancelled: Int, other: Int) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
-                DistributionLegend(stringResource(id = R.string.delivered_status), delivered, total.toInt(), GreenSuccess)
-                DistributionLegend(stringResource(id = R.string.pending_status_legend), other, total.toInt(), AmberWarn)
-                DistributionLegend(stringResource(id = R.string.cancelled_status), cancelled, total.toInt(), RedCancel)
+                DistributionLegend(stringResource(id = R.string.delivered_status), delivered, percents[0], GreenSuccess)
+                DistributionLegend(stringResource(id = R.string.pending_status_legend), other, percents[1], AmberWarn)
+                DistributionLegend(stringResource(id = R.string.cancelled_status), cancelled, percents[2], RedCancel)
             }
         }
     }
 }
 
 @Composable
-fun DistributionLegend(label: String, count: Int, total: Int, color: Color) {
+fun DistributionLegend(label: String, count: Int, percent: Int, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
@@ -587,7 +641,7 @@ fun DistributionLegend(label: String, count: Int, total: Int, color: Color) {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = if (total > 0) "${(count * 100f / total).toInt()}%" else "0%",
+                text = "$percent%",
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 12.sp,
                 color = color
@@ -676,7 +730,7 @@ fun PremiumTopProductItem(rank: Int, stat: ProductStat, currencyFmt: NumberForma
                     productName,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
@@ -686,12 +740,17 @@ fun PremiumTopProductItem(rank: Int, stat: ProductStat, currencyFmt: NumberForma
                 )
             }
 
-            Column(horizontalAlignment = Alignment.End) {
+            Column(
+                modifier = Modifier.width(120.dp),
+                horizontalAlignment = Alignment.End
+            ) {
                 Text(
                     currencyFmt.format(stat.revenue),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.End,
+                    maxLines = 1
                 )
 //                if (rank == 1) {
 //                    Text("🏆 Best", style = MaterialTheme.typography.labelSmall, color = Color(0xFFFFD700), fontWeight = FontWeight.Bold)

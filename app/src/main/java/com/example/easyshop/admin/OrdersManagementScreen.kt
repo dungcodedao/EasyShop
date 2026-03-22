@@ -25,12 +25,16 @@ import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -39,6 +43,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,6 +53,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -66,11 +73,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.easyshop.AppUtil
 import com.example.easyshop.GlobalNavigation.navController
 import com.example.easyshop.R
 import com.example.easyshop.model.NotificationModel
 import com.example.easyshop.model.OrderModel
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -100,7 +110,11 @@ fun OrdersManagementScreen(
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     orders = task.result.documents.mapNotNull { doc ->
-                        doc.toObject(OrderModel::class.java)?.copy(id = doc.id)
+                        if (doc.getBoolean("archived") == true) {
+                            null
+                        } else {
+                            doc.toObject(OrderModel::class.java)?.copy(id = doc.id)
+                        }
                     }.sortedByDescending { it.date }
                     filteredOrders = if (selectedFilter == "ALL") orders else orders.filter { it.status == selectedFilter }
                 }
@@ -171,6 +185,57 @@ fun OrdersManagementScreen(
                 loadOrders()
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+    }
+
+    fun archiveOrder(order: OrderModel) {
+        scope.launch {
+            try {
+                val adminUid = FirebaseAuth.getInstance().currentUser?.uid ?: "unknown"
+                Firebase.firestore.collection("orders")
+                    .document(order.id)
+                    .update(
+                        mapOf(
+                            "archived" to true,
+                            "archivedAt" to FieldValue.serverTimestamp(),
+                            "archivedBy" to adminUid
+                        )
+                    )
+                    .await()
+                AppUtil.showSuccess("Đã lưu trữ đơn #${order.id.take(8).uppercase()}")
+                loadOrders()
+            } catch (e: Exception) {
+                AppUtil.showError("Lưu trữ thất bại", e.message)
+            }
+        }
+    }
+
+    fun deleteOrderPermanently(order: OrderModel) {
+        scope.launch {
+            try {
+                val adminUid = FirebaseAuth.getInstance().currentUser?.uid ?: "unknown"
+                val auditData = hashMapOf(
+                    "order" to order,
+                    "deletedBy" to adminUid,
+                    "deletedAt" to FieldValue.serverTimestamp(),
+                    "source" to "admin_orders_management"
+                )
+
+                Firebase.firestore.collection("deleted_orders")
+                    .document(order.id)
+                    .set(auditData)
+                    .await()
+
+                Firebase.firestore.collection("orders")
+                    .document(order.id)
+                    .delete()
+                    .await()
+
+                AppUtil.showSuccess("Đã xóa vĩnh viễn đơn #${order.id.take(8).uppercase()}")
+                loadOrders()
+            } catch (e: Exception) {
+                AppUtil.showError("Xóa vĩnh viễn thất bại", e.message)
             }
         }
     }
@@ -276,7 +341,9 @@ fun OrdersManagementScreen(
                             OrderCard(
                                 order = order,
                                 onUpdateStatus = { newStatus -> updateOrderStatus(order, newStatus) },
-                                onViewDetails = { showOrderDetails = order }
+                                onViewDetails = { showOrderDetails = order },
+                                onArchive = { archiveOrder(order) },
+                                onDeletePermanently = { deleteOrderPermanently(order) }
                             )
                         }
                     }
@@ -302,11 +369,17 @@ fun OrdersManagementScreen(
 fun OrderCard(
     order: OrderModel,
     onUpdateStatus: (String) -> Unit,
-    onViewDetails: () -> Unit
+    onViewDetails: () -> Unit,
+    onArchive: () -> Unit,
+    onDeletePermanently: () -> Unit
 ) {
     val context = LocalContext.current
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
+    var showMenu by remember { mutableStateOf(false) }
+    var showArchiveConfirm by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    val canManageFinalized = order.status == "DELIVERED" || order.status == "CANCELLED"
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -335,7 +408,45 @@ fun OrderCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                OrderStatusBadge(status = order.status)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OrderStatusBadge(status = order.status)
+                    if (canManageFinalized) {
+                        Box {
+                            IconButton(
+                                onClick = { showMenu = true }
+                            ) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                            }
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Lưu trữ") },
+                                    leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) },
+                                    onClick = {
+                                        showMenu = false
+                                        showArchiveConfirm = true
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Xóa vĩnh viễn", color = MaterialTheme.colorScheme.error) },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.DeleteForever,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    },
+                                    onClick = {
+                                        showMenu = false
+                                        showDeleteConfirm = true
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             HorizontalDivider()
@@ -416,6 +527,54 @@ fun OrderCard(
                 }
             }
         }
+    }
+
+    if (showArchiveConfirm) {
+        AlertDialog(
+            onDismissRequest = { showArchiveConfirm = false },
+            title = { Text("Lưu trữ đơn hàng?") },
+            text = { Text("Đơn #${order.id.take(8).uppercase()} sẽ bị ẩn khỏi danh sách quản lý chính.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showArchiveConfirm = false
+                        onArchive()
+                    }
+                ) {
+                    Text("Lưu trữ")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showArchiveConfirm = false }) {
+                    Text("Hủy")
+                }
+            }
+        )
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Xóa vĩnh viễn đơn hàng?") },
+            text = {
+                Text("Đơn #${order.id.take(8).uppercase()} sẽ bị xóa khỏi orders. Hành động này không thể hoàn tác.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDeletePermanently()
+                    }
+                ) {
+                    Text("Xóa vĩnh viễn", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Hủy")
+                }
+            }
+        )
     }
 }
 

@@ -189,13 +189,22 @@ fun AdminDashboardScreen(
                     columns = GridCells.Fixed(2),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(800.dp),
+                        .height(640.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     userScrollEnabled = false
                 ) {
                     items(menuItems) { item ->
-                        AdminMenuCard(item = item, onClick = { navController.navigate(item.route) })
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            AdminMenuCard(
+                                item = item,
+                                onClick = { navController.navigate(item.route) },
+                                modifier = Modifier.fillMaxWidth(0.92f)
+                            )
+                        }
                     }
                 }
             }
@@ -213,11 +222,14 @@ private fun StatChip(emoji: String, value: String, label: String) {
 }
 
 @Composable
-fun AdminMenuCard(item: AdminMenuItem, onClick: () -> Unit) {
+fun AdminMenuCard(
+    item: AdminMenuItem,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
+        modifier = modifier
+            .aspectRatio(1.35f)
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -241,20 +253,25 @@ fun AdminMenuCard(item: AdminMenuItem, onClick: () -> Unit) {
             }
 
             Column(
-                modifier = Modifier.fillMaxSize().padding(20.dp),
+                modifier = Modifier.fillMaxSize().padding(14.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
                 Box(
                     modifier = Modifier
-                        .size(56.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(item.color.copy(alpha = 0.12f)),
+                        .size(58.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(item.color.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(item.icon, null, tint = item.color, modifier = Modifier.size(28.dp))
+                    Icon(
+                        item.icon,
+                        null,
+                        tint = item.color,
+                        modifier = Modifier.size(30.dp)
+                    )
                 }
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(10.dp))
                 Text(
                     text = item.title,
                     style = MaterialTheme.typography.titleMedium,
