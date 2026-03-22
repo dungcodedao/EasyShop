@@ -182,7 +182,7 @@ fun ProfilePage(
 
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -324,9 +324,16 @@ fun ProfilePage(
                 }
             }
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(16.dp))
+        }
 
-            // Sign Out
+        // Ticked to Bottom: Sign Out Button
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(horizontal = 20.dp, vertical = 24.dp)
+        ) {
             Button(
                 onClick = {
                     FirebaseAuth.getInstance().signOut()
@@ -340,8 +347,6 @@ fun ProfilePage(
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.sign_out), fontWeight = FontWeight.Bold)
             }
-
-            Spacer(Modifier.height(24.dp))
         }
     }
 
