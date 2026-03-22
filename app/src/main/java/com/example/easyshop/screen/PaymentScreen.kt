@@ -34,7 +34,10 @@ import kotlinx.coroutines.launch
 fun PaymentScreen(
     modifier: Modifier = Modifier,
     navController: NavController,
-    totalAmount: Double = 0.0
+    totalAmount: Double = 0.0,
+    subtotal: Double = 0.0,
+    discount: Double = 0.0,
+    promoCode: String = ""
 ) {
     var selectedPaymentMethod by remember { mutableStateOf("") }
     var cardNumber by remember { mutableStateOf("") }
@@ -242,29 +245,7 @@ fun PaymentScreen(
                 }
             }
 
-            // Razorpay Info
-            if (selectedPaymentMethod == "Razorpay") {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(8.dp)) {
-                        Text(
-                            text = "💳 Real Payment Gateway",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = stringResource(R.string.redirect_notice),
-                            fontSize = 14.sp,
-                            lineHeight = 20.sp
-                        )
-                    }
-                }
-            }
+
 
             Spacer(Modifier.height(32.dp))
 
@@ -278,7 +259,8 @@ fun PaymentScreen(
                         delay(1500)
                         isProcessing = false
                         val orderId = "ORD" + java.util.UUID.randomUUID().toString().replace("-", "").take(8).uppercase()
-                        AppUtil.clearCartAndAddToOrder(totalAmount, "MoMo QR", orderId)
+                        val finalPromo = if (promoCode == "NONE") "" else promoCode
+                        AppUtil.clearCartAndAddToOrder(totalAmount, subtotal, discount, finalPromo, "MoMo QR", orderId)
                         navController.navigate("receipt/${totalAmount.toFloat()}/$orderId") {
                             popUpTo("payment") { inclusive = true }
                         }
@@ -295,7 +277,8 @@ fun PaymentScreen(
 
                                 if (isSuccess) {
                                     val orderId = "ORD" + java.util.UUID.randomUUID().toString().replace("-", "").take(8).uppercase()
-                                    AppUtil.clearCartAndAddToOrder(totalAmount, selectedPaymentMethod, orderId)
+                                    val finalPromo = if (promoCode == "NONE") "" else promoCode
+                                    AppUtil.clearCartAndAddToOrder(totalAmount, subtotal, discount, finalPromo, selectedPaymentMethod, orderId)
                                     navController.navigate("receipt/${totalAmount.toFloat()}/$orderId") {
                                         popUpTo("payment") { inclusive = true }
                                     }
@@ -304,10 +287,6 @@ fun PaymentScreen(
                                 }
                             }
                         }
-                        "Razorpay" -> {
-                            // Razorpay Real Payment
-                            AppUtil.startPayment(context, totalAmount.toFloat(), useMockPayment = false)
-                        }
                         else -> {
                             // PayPal, Cash on Delivery
                             scope.launch {
@@ -315,7 +294,8 @@ fun PaymentScreen(
                                 delay(2000)
                                 isProcessing = false
                                 val orderId = "ORD" + java.util.UUID.randomUUID().toString().replace("-", "").take(8).uppercase()
-                                AppUtil.clearCartAndAddToOrder(totalAmount, selectedPaymentMethod, orderId)
+                                val finalPromo = if (promoCode == "NONE") "" else promoCode
+                                AppUtil.clearCartAndAddToOrder(totalAmount, subtotal, discount, finalPromo, selectedPaymentMethod, orderId)
                                 navController.navigate("receipt/${totalAmount.toFloat()}/$orderId") {
                                     popUpTo("payment") { inclusive = true }
                                 }
@@ -347,10 +327,7 @@ fun PaymentScreen(
 
             // Security Notice
             Text(
-                text = if (selectedPaymentMethod == "Razorpay")
-                    stringResource(R.string.secure_notice_real)
-                else
-                    stringResource(R.string.secure_notice_mock),
+                text = stringResource(R.string.secure_notice_mock),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth()
@@ -368,7 +345,6 @@ private fun PaymentMethodSelector(
     val methods = listOf(
         "MoMo QR" to "🟣",
         "Credit Card" to "💳",
-        "Razorpay" to "🚀",
         "PayPal" to "🅿️",
         "Cash on Delivery" to "💵"
     )
@@ -549,7 +525,7 @@ private fun isFormValid(
                     expiryDate.length == 5 &&
                     cvv.length == 3
         }
-        "Razorpay", "PayPal", "Cash on Delivery", "MoMo QR" -> true
+        "PayPal", "Cash on Delivery", "MoMo QR" -> true
         else -> false
     }
 }

@@ -180,11 +180,37 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
                         Column(modifier = Modifier.padding(20.dp)) {
                             Text(stringResource(id = R.string.summary), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                             Spacer(Modifier.height(12.dp))
+                            
+                            // Subtotal Row
                             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-                                Text(stringResource(id = R.string.total_amount), style = MaterialTheme.typography.bodyLarge)
+                                Text(stringResource(id = R.string.subtotal), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(AppUtil.formatPrice(order!!.subtotal.let { if (it > 0) it else order!!.total }), style = MaterialTheme.typography.bodyMedium)
+                            }
+                            
+                            // Discount Row (if any)
+                            if (order!!.discount > 0) {
+                                Spacer(Modifier.height(8.dp))
+                                Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+                                    Column {
+                                        Text(stringResource(id = R.string.discount), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+                                        if (order!!.promoCode.isNotEmpty()) {
+                                            Text("(${order!!.promoCode})", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                                        }
+                                    }
+                                    Text("- ${AppUtil.formatPrice(order!!.discount)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                            
+                            Spacer(Modifier.height(12.dp))
+                            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                            Spacer(Modifier.height(12.dp))
+
+                            // Total Row
+                            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
+                                Text(stringResource(id = R.string.total_amount), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 Text(
                                     AppUtil.formatPrice(order!!.total),
-                                    style = MaterialTheme.typography.titleLarge,
+                                    style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = MaterialTheme.colorScheme.primary
                                 )

@@ -68,7 +68,10 @@ fun BannerView(modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxWidth()
             ) { pageIndex ->
                 AsyncImage(
-                    model = bannerList[pageIndex],
+                    model = coil.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
+                        .data(bannerList[pageIndex])
+                        .crossfade(true)
+                        .build(),
                     contentDescription = "Banner",
                     modifier = Modifier
                         .fillMaxWidth()

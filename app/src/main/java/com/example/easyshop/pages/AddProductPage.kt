@@ -127,7 +127,7 @@ fun AddProductPage(
                 imageUrls = listOf("")
 
             } catch (e: Exception) {
-                errorMessage = "Error: ${e.message}"
+                errorMessage = "Lỗi: ${e.message}"
             } finally {
                 isLoading = false
             }

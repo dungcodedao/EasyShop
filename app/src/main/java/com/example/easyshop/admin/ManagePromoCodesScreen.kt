@@ -1,6 +1,6 @@
 package com.example.easyshop.admin
 
-import android.widget.Toast
+import com.example.easyshop.AppUtil
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -107,7 +107,7 @@ fun ManagePromoCodesScreen(
                                 firestore.collection("promoCodes").document(promo.code).delete()
                                     .addOnSuccessListener {
                                         loadPromoCodes()
-                                        Toast.makeText(context, context.getString(R.string.deleted_promo_msg, promo.code), Toast.LENGTH_SHORT).show()
+                                        AppUtil.showSuccess(context.getString(R.string.deleted_promo_msg, promo.code))
                                     }
                             }
                         )
@@ -124,10 +124,10 @@ fun ManagePromoCodesScreen(
                 firestore.collection("promoCodes").document(newPromo.code).set(newPromo)
                     .addOnSuccessListener {
                         showAddDialog = false; loadPromoCodes()
-                        Toast.makeText(context, context.getString(R.string.added_promo_msg, newPromo.code), Toast.LENGTH_SHORT).show()
+                        AppUtil.showSuccess(context.getString(R.string.added_promo_msg, newPromo.code))
                     }
                     .addOnFailureListener {
-                        Toast.makeText(context, context.getString(R.string.error_adding_promo), Toast.LENGTH_SHORT).show()
+                        AppUtil.showError(context.getString(R.string.error_adding_promo))
                     }
             }
         )
@@ -154,10 +154,10 @@ fun ManagePromoCodesScreen(
                     .addOnSuccessListener {
                         editingPromo = null
                         loadPromoCodes()
-                        Toast.makeText(context, "Cập nhật mã ${promo.code} thành công!", Toast.LENGTH_SHORT).show()
+                        AppUtil.showSuccess("Cập nhật mã ${promo.code} thành công!")
                     }
                     .addOnFailureListener {
-                        Toast.makeText(context, "Lỗi khi cập nhật", Toast.LENGTH_SHORT).show()
+                        AppUtil.showError("Lỗi khi cập nhật")
                     }
             }
         )

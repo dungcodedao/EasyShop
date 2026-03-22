@@ -71,6 +71,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
     val productList = remember { mutableStateListOf<ProductModel>() }
     val subTotal = remember { mutableFloatStateOf(0f) }
     val discount = remember { mutableFloatStateOf(0f) }
+    val promoCodeUsed = remember { mutableStateOf("") } // Lưu mã code
     val total = remember { mutableFloatStateOf(0f) }
     
     // Quản lý địa chỉ chọn lọc
@@ -215,7 +216,10 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
 
                     PromoCodeInput(
                         subtotal = subTotal.floatValue,
-                        onDiscountApplied = { discount.floatValue = it }
+                        onDiscountApplied = { amount, code -> 
+                            discount.floatValue = amount
+                            promoCodeUsed.value = code
+                        }
                     )
 
                     Spacer(Modifier.height(12.dp))
@@ -246,7 +250,10 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
 
             // Pay Button
             Button(
-                onClick = { GlobalNavigation.navController.navigate("payment/${total.floatValue}") },
+                onClick = { 
+                    val pCode = promoCodeUsed.value.ifEmpty { "NONE" }
+                    GlobalNavigation.navController.navigate("payment/${total.floatValue}/${subTotal.floatValue}/${discount.floatValue}/$pCode") 
+                },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 enabled = selectedAddress != null,
                 shape = RoundedCornerShape(16.dp)

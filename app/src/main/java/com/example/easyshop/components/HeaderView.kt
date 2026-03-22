@@ -61,8 +61,9 @@ fun HeaderView(
             }
 
         // Theo dõi số lượng thông báo chưa đọc
-        Firebase.firestore.collection("users").document(uid)
-            .collection("notifications")
+        Firebase.firestore.collection("notifications")
+            .whereEqualTo("recipientRole", "user")
+            .whereEqualTo("userId", uid)
             .whereEqualTo("isRead", false)
             .addSnapshotListener { snapshot, _ ->
                 if (snapshot != null) {
@@ -80,7 +81,10 @@ fun HeaderView(
         // Avatar — click để vào Profile
         if (avatarUrl.isNotEmpty()) {
             coil.compose.AsyncImage(
-                model = avatarUrl,
+                model = coil.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
+                    .data(avatarUrl)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = "Ảnh đại diện",
                 modifier = Modifier
                     .size(48.dp)

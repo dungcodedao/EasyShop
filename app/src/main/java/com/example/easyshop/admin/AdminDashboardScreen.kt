@@ -41,6 +41,7 @@ fun AdminDashboardScreen(
     var pendingOrders by remember { mutableStateOf(0) }
     var totalUsers by remember { mutableStateOf(0) }
     var totalCategories by remember { mutableStateOf(0) }
+    var unreadNotifCount by remember { mutableIntStateOf(0) }
 
     val firestore = Firebase.firestore
     val currentUser = FirebaseAuth.getInstance().currentUser
@@ -63,6 +64,14 @@ fun AdminDashboardScreen(
             }
         firestore.collection("data").document("stock").collection("categories").get()
             .addOnSuccessListener { totalCategories = it.size() }
+
+        // Realtime lắng nghe thông báo chưa đọc của admin
+        firestore.collection("notifications")
+            .whereEqualTo("recipientRole", "admin")
+            .whereEqualTo("isRead", false)
+            .addSnapshotListener { snap, _ ->
+                unreadNotifCount = snap?.size() ?: 0
+            }
     }
 
     val menuItems = listOf(
@@ -94,14 +103,31 @@ fun AdminDashboardScreen(
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
-                    FilledTonalIconButton(
-                        onClick = {
-                            FirebaseAuth.getInstance().signOut()
-                            navController.navigate("auth") { popUpTo("admin-dashboard") { inclusive = true } }
-                        },
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ExitToApp, stringResource(id = R.string.logout))
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        // 🔔 Nút chuông thông báo
+                        BadgedBox(
+                            badge = {
+                                if (unreadNotifCount > 0) {
+                                    Badge { Text(if (unreadNotifCount > 99) "99+" else unreadNotifCount.toString()) }
+                                }
+                            }
+                        ) {
+                            FilledTonalIconButton(
+                                onClick = { navController.navigate("admin-notifications") },
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Default.Notifications, contentDescription = "Thông báo")
+                            }
+                        }
+                        FilledTonalIconButton(
+                            onClick = {
+                                FirebaseAuth.getInstance().signOut()
+                                navController.navigate("auth") { popUpTo("admin-dashboard") { inclusive = true } }
+                            },
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ExitToApp, stringResource(id = R.string.logout))
+                        }
                     }
                 }
             }

@@ -82,9 +82,12 @@ fun AvatarPickerDialog(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)
                     ) {
-                        items(avatarUrls) { url ->
+                        items(avatarUrls, key = { it }) { url ->
                             AsyncImage(
-                                model = url,
+                                model = coil.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
+                                    .data(url)
+                                    .crossfade(true)
+                                    .build(),
                                 contentDescription = "Avatar",
                                 modifier = Modifier
                                     .size(100.dp)

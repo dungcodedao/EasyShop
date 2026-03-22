@@ -134,7 +134,9 @@ fun ReceiptScreen(
 
                             val html = PrintHelper.generateReceiptHtml(
                                 orderId = currentOrder.id,
-                                amount = AppUtil.formatPrice(currentOrder.total),
+                                total = AppUtil.formatPrice(currentOrder.total),
+                                subtotal = AppUtil.formatPrice(currentOrder.subtotal),
+                                discount = AppUtil.formatPrice(currentOrder.discount),
                                 date = AppUtil.formatData(currentOrder.date),
                                 itemsHtml = itemsHtml
                             )
@@ -279,9 +281,20 @@ fun ReceiptScreen(
                         Spacer(Modifier.height(20.dp))
 
                         // Summary
-                        SummaryRow("Tạm tính", AppUtil.formatPrice(amount))
+                        SummaryRow("Tạm tính", AppUtil.formatPrice(orderData?.subtotal ?: amount))
                         SummaryRow("Phí vận chuyển", "Miễn phí")
-                        SummaryRow("Giảm giá Promo", "- ${AppUtil.formatPrice(0.0)}")
+                        if ((orderData?.discount ?: 0.0) > 0) {
+                            SummaryRow("Giảm giá Promo", "- ${AppUtil.formatPrice(orderData?.discount ?: 0.0)}")
+                            if (orderData?.promoCode?.isNotEmpty() == true) {
+                                Text(
+                                    "Mã áp dụng: ${orderData?.promoCode}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textAlign = TextAlign.End
+                                )
+                            }
+                        }
                         
                         Spacer(Modifier.height(12.dp))
                         
@@ -292,7 +305,7 @@ fun ReceiptScreen(
                         ) {
                             Text("TỔNG CỘNG", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
                             Text(
-                                AppUtil.formatPrice(amount),
+                                AppUtil.formatPrice(orderData?.total ?: amount),
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Black,
                                 color = MaterialTheme.colorScheme.primary

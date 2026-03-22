@@ -1,11 +1,9 @@
 package com.example.easyshop
 
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
-import android.widget.Toast
 import androidx.core.content.edit
-import com.example.easyshop.model.OrderItem
+import com.example.easyshop.components.SnackbarController
 import com.example.easyshop.model.OrderModel
 import com.example.easyshop.model.UserModel
 import com.google.firebase.Firebase
@@ -13,16 +11,19 @@ import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
-import com.razorpay.Checkout
-import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.UUID
 
 object AppUtil {
-    fun showToast(context : Context, massage : String){
-        Toast.makeText(context, massage, Toast.LENGTH_LONG).show()
+    fun showToast(context: Context, message: String) {
+        SnackbarController.info(message)
     }
+
+    fun showSuccess(message: String, subtext: String? = null) = SnackbarController.success(message, subtext)
+    fun showError(message: String, subtext: String? = null) = SnackbarController.error(message, subtext)
+    fun showInfo(message: String, subtext: String? = null) = SnackbarController.info(message, subtext)
+    fun showWarning(message: String, subtext: String? = null) = SnackbarController.warning(message, subtext)
 
     fun addItemToCart(context: Context, productId :String){
         val currentUser = FirebaseAuth.getInstance().currentUser ?: return
@@ -40,9 +41,9 @@ object AppUtil {
                 userDoc.update(updateCart)
                     .addOnCompleteListener {
                         if(it.isSuccessful) {
-                            showToast(context, "Đã thêm vào giỏ hàng")
+                            showSuccess("Đã thêm vào giỏ hàng", "Sản phẩm đã sẵn sàng thanh toán")
                         } else {
-                            showToast(context, "Không thể thêm vào giỏ hàng")
+                            showError("Thất bại", "Không thể thêm vào giỏ hàng")
                         }
                     }
             }
@@ -78,7 +79,14 @@ object AppUtil {
         }
     }
 
-    fun clearCartAndAddToOrder(totalAmount: Double = 0.0, paymentMethod: String = "COD", customOrderId: String? = null) {
+    fun clearCartAndAddToOrder(
+        totalAmount: Double = 0.0,
+        subtotal: Double = 0.0,
+        discount: Double = 0.0,
+        promoCode: String = "",
+        paymentMethod: String = "COD",
+        customOrderId: String? = null
+    ) {
         val currentUser = FirebaseAuth.getInstance().currentUser ?: return
         val userDoc = Firebase.firestore.collection("users").document(currentUser.uid)
 
@@ -99,6 +107,9 @@ object AppUtil {
                     userPhone = user?.phone ?: "",
                     date = Timestamp.now(),
                     items = cartItems,
+                    subtotal = subtotal,
+                    discount = discount,
+                    promoCode = promoCode,
                     total = totalAmount,
                     status = "ORDERED",
                     address = user?.address ?: "Chưa có địa chỉ",
@@ -110,59 +121,40 @@ object AppUtil {
                     .set(order)
                     .addOnSuccessListener {
                         userDoc.update("cartItems", FieldValue.delete())
-                        
-                        // ✅ Tạo thông báo in-app báo đặt lệnh thành công
-                        val notif = com.example.easyshop.model.NotificationModel(
-                            userId = currentUser.uid,
-                            title = "Đặt hàng thành công",
-                            body = "Đơn hàng #${orderId.take(6).uppercase()} đã được ghi nhận. Phương thức: $paymentMethod.",
-                            type = "ORDER_UPDATE",
-                            orderId = orderId
+
+                        val db = Firebase.firestore
+                        val itemCount = cartItems.values.sum()
+
+                        // ✅ 1. Thông báo cho USER: đặt hàng thành công
+                        val userNotif = hashMapOf(
+                            "userId" to currentUser.uid,
+                            "title" to "Đặt hàng thành công ✅",
+                            "body" to "Đơn #${orderId.take(8).uppercase()} ($itemCount sản phẩm) đã được ghi nhận. Phương thức: $paymentMethod.",
+                            "type" to "ORDER_STATUS",
+                            "orderId" to orderId,
+                            "isRead" to false,
+                            "recipientRole" to "user",
+                            "createdAt" to Timestamp.now()
                         )
-                        Firebase.firestore.collection("users").document(currentUser.uid)
-                            .collection("notifications").add(notif)
+                        db.collection("notifications").add(userNotif)
+
+                        // 🔔 2. Thông báo cho ADMIN: có đơn mới
+                        val adminNotif = hashMapOf(
+                            "userId" to "admin",
+                            "title" to "Đơn hàng mới #${orderId.take(8).uppercase()}",
+                            "body" to "Khách ${user?.name ?: "Ẩn danh"} vừa đặt $itemCount sản phẩm · ${formatCurrency(totalAmount)}",
+                            "type" to "NEW_ORDER",
+                            "orderId" to orderId,
+                            "isRead" to false,
+                            "recipientRole" to "admin",
+                            "createdAt" to Timestamp.now()
+                        )
+                        db.collection("notifications").add(adminNotif)
                     }
             }
         }
     }
 
-    fun getTaxPercentage() : Float{
-        return 13.0f
-    }
-
-    //add payment methods
-    fun razorpayApiKey() : String {
-        return "rzp_test_5WgA34F9ljiXAX"
-    }
-
-    fun startPayment(context: Context, amount: Float, useMockPayment: Boolean = false) {
-        if (useMockPayment) {
-            startMockPayment(
-                context = context,
-                amount = amount,
-                onSuccess = {
-                    clearCartAndAddToOrder(amount.toDouble(), "Mock Payment")
-                    showSuccessDialog(context)
-                },
-                onFailure = {
-                    showToast(context, "Thanh toán thất bại")
-                }
-            )
-        } else {
-            // Razorpay
-            GlobalNavigation.pendingOrderTotal = amount.toDouble()
-            val checkout = Checkout()
-            checkout.setKeyID(razorpayApiKey())
-
-            val options = JSONObject()
-            options.put("name", "EasyShop")
-            options.put("description", "")
-            options.put("amount", amount * 100)
-            options.put("currency", "USD")
-
-            checkout.open(context as Activity, options)
-        }
-    }
 
 
     private fun showSuccessDialog(context: Context) {
@@ -193,12 +185,13 @@ object AppUtil {
             }
             val formatter = java.text.NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
             val formatted = formatter.format(p)
-            // Thay đổi ký hiệu từ '₫' hoặc 'VND' sang 'đ' cho gọn
             formatted.replace("₫", "đ").replace("VND", "đ").trim()
         } catch (e: Exception) {
             price.toString() + "đ"
         }
     }
+
+    fun formatCurrency(amount: Double): String = formatPrice(amount)
 
     private const val PREF_NAME = "favorite_pref"
     private const val KEY_FAVORITES = "favorites_list"
@@ -207,10 +200,10 @@ object AppUtil {
         val list = getFavoriteList(context).toMutableSet()
         if(list.contains(productId)){
             list.remove(productId)
-            showToast(context, "Item removed from Favorite")
+            showWarning("Đã bỏ thích", "Sản phẩm đã được gỡ khỏi danh sách")
         } else {
             list.add(productId)
-            showToast(context, "Item added to Favorite")
+            showSuccess("Đã thêm yêu thích", "Bạn có thể xem lại trong mục Yêu thích")
         }
 
         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)

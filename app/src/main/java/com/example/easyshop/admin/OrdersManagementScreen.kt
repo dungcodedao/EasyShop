@@ -117,26 +117,43 @@ fun OrdersManagementScreen(
         filteredOrders = if (selectedFilter == "ALL") orders else orders.filter { it.status == selectedFilter }
     }
 
-    // Tự sinh bảng thông báo gửi về cho máy của khách hàng (in-app notification)
+    // Tự sinh thông báo gửi cho khách hàng khi admin cập nhật trạng thái
     fun createNotificationForUser(order: OrderModel, newStatus: String) {
-        val message = when (newStatus) {
-            "Processing" -> "Đơn hàng #${order.id.take(6).uppercase()} của bạn đã được xác nhận và đang xử lý."
-            "Shipped" -> "Đơn hàng #${order.id.take(6).uppercase()} đã được gửi cho đơn vị vận chuyển."
-            "Delivered" -> "Đơn hàng #${order.id.take(6).uppercase()} đã giao thành công. Chúc bạn mua sắm vui vẻ!"
-            "Cancelled" -> "Đơn hàng #${order.id.take(6).uppercase()} đã bị hủy."
-            else -> "Đơn hàng #${order.id.take(6).uppercase()} vừa cập nhật trạng thái: $newStatus"
+        val (title, body, type) = when (newStatus) {
+            "SHIPPING"  -> Triple(
+                "Đơn hàng đang vận chuyển 🚚",
+                "Đơn #${order.id.take(8).uppercase()} đang trên đường giao đến bạn.",
+                "SHIPPING"
+            )
+            "DELIVERED" -> Triple(
+                "Đơn hàng đã giao thành công ✅",
+                "Đơn #${order.id.take(8).uppercase()} đã giao thành công. Chúc bạn mua sắm vui vẻ!",
+                "DELIVERED"
+            )
+            "CANCELLED" -> Triple(
+                "Đơn hàng đã bị hủy ❌",
+                "Đơn #${order.id.take(8).uppercase()} đã bị hủy. Liên hệ hỗ trợ nếu cần.",
+                "CANCELLED"
+            )
+            else -> Triple(
+                "Cập nhật đơn hàng",
+                "Đơn #${order.id.take(8).uppercase()} vừa cập nhật trạng thái: $newStatus",
+                "ORDER_STATUS"
+            )
         }
 
-        val notif = NotificationModel(
-            userId = order.userId,
-            title = "Cập nhật đơn hàng",
-            body = message,
-            type = "ORDER_UPDATE",
-            orderId = order.id
+        val notif = hashMapOf(
+            "userId" to order.userId,
+            "title" to title,
+            "body" to body,
+            "type" to type,
+            "orderId" to order.id,
+            "isRead" to false,
+            "recipientRole" to "user",
+            "createdAt" to com.google.firebase.Timestamp.now()
         )
 
-        Firebase.firestore.collection("users").document(order.userId)
-            .collection("notifications").add(notif)
+        Firebase.firestore.collection("notifications").add(notif)
     }
 
     // Update order status

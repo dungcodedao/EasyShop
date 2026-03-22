@@ -1,6 +1,13 @@
 package com.example.easyshop
 
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavType
@@ -10,15 +17,30 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.easyshop.admin.AdminDashboardScreen
 import com.example.easyshop.admin.AdminHomeScreen
+import com.example.easyshop.admin.AdminNotificationScreen
 import com.example.easyshop.admin.AnalyticsScreen
 import com.example.easyshop.admin.ManageCategoriesScreen
 import com.example.easyshop.admin.ManagePromoCodesScreen
 import com.example.easyshop.admin.ManageUsersScreen
 import com.example.easyshop.admin.OrdersManagementScreen
-import com.example.easyshop.model.UserModel
-import com.example.easyshop.pages.*
-import com.example.easyshop.screen.*
 import com.example.easyshop.ai.ui.AIChatScreen
+import com.example.easyshop.components.AppSnackbarHost
+import com.example.easyshop.model.UserModel
+import com.example.easyshop.pages.AddProductPage
+import com.example.easyshop.pages.CartPage
+import com.example.easyshop.pages.CategoryProductsPage
+import com.example.easyshop.pages.CheckoutPage
+import com.example.easyshop.pages.EditProductPage
+import com.example.easyshop.pages.NotificationsPage
+import com.example.easyshop.pages.OrderDetailsPage
+import com.example.easyshop.pages.OrdersPage
+import com.example.easyshop.pages.ProductDetailsPage
+import com.example.easyshop.screen.AuthScreen
+import com.example.easyshop.screen.HomeScreen
+import com.example.easyshop.screen.LoginScreen
+import com.example.easyshop.screen.PaymentScreen
+import com.example.easyshop.screen.ReceiptScreen
+import com.example.easyshop.screen.SignupScreen
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
@@ -60,14 +82,14 @@ fun AppNavigation(modifier: Modifier = Modifier) {
     }
 
     if (!isCheckingRole) {
-        NavHost(navController = navController, startDestination = startDestination) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            NavHost(navController = navController, startDestination = startDestination) {
 
+                composable("auth") {
+                    AuthScreen(modifier, navController)
+                }
 
-            composable("auth") {
-                AuthScreen(modifier, navController)
-            }
-
-            composable("login") {
+                composable("login") {
                 LoginScreen(modifier, navController)
             }
 
@@ -115,19 +137,26 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             }
 
             composable(
-                route = "payment/{totalAmount}",
+                route = "payment/{totalAmount}/{subtotal}/{discount}/{promoCode}",
                 arguments = listOf(
-                    navArgument("totalAmount") {
-                        type = NavType.FloatType
-                        defaultValue = 0.0f
-                    }
+                    navArgument("totalAmount") { type = NavType.FloatType },
+                    navArgument("subtotal") { type = NavType.FloatType },
+                    navArgument("discount") { type = NavType.FloatType },
+                    navArgument("promoCode") { type = NavType.StringType }
                 )
             ) { backStackEntry ->
                 val totalAmount = backStackEntry.arguments?.getFloat("totalAmount") ?: 0.0f
+                val subtotal = backStackEntry.arguments?.getFloat("subtotal") ?: 0.0f
+                val discount = backStackEntry.arguments?.getFloat("discount") ?: 0.0f
+                val promoCode = backStackEntry.arguments?.getString("promoCode") ?: ""
+                
                 PaymentScreen(
                     modifier = modifier,
                     navController = navController,
-                    totalAmount = totalAmount.toDouble()
+                    totalAmount = totalAmount.toDouble(),
+                    subtotal = subtotal.toDouble(),
+                    discount = discount.toDouble(),
+                    promoCode = promoCode
                 )
             }
 
@@ -135,6 +164,11 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             // Admin Dashboard - Main screen
             composable("admin-dashboard") {
                 AdminDashboardScreen(navController = navController)
+            }
+
+            // Admin Notifications
+            composable("admin-notifications") {
+                AdminNotificationScreen(navController = navController)
             }
 
             // Manage Products - List all products
@@ -200,6 +234,10 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 ReceiptScreen(navController, amount.toDouble(), orderId)
             }
 
+        }
+
+            // 🔔 Thông báo trượt từ trên xuống (Top Notification iOS Style)
+            AppSnackbarHost()
         }
     }
 }

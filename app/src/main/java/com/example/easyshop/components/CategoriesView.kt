@@ -110,7 +110,10 @@ fun CategoryItem(category: CategoryModel, modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.Center
         ) {
             AsyncImage(
-                model = category.imageUrl,
+                model = coil.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
+                    .data(category.imageUrl)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = category.name,
                 modifier = Modifier.size(60.dp),
                 contentScale = ContentScale.Fit

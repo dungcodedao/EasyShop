@@ -140,7 +140,7 @@ fun EditProductPage(
                 showSuccessDialog = true
 
             } catch (e: Exception) {
-                errorMessage = "Error: ${e.message}"
+                errorMessage = "Lỗi: ${e.message}"
             } finally {
                 isLoading = false
             }

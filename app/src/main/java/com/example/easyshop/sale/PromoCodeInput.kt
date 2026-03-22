@@ -21,7 +21,7 @@ import com.google.firebase.firestore.firestore
 @Composable
 fun PromoCodeInput(
     subtotal: Float,
-    onDiscountApplied: (Float) -> Unit,
+    onDiscountApplied: (Float, String) -> Unit, // Bây giờ trả về cả số tiền và mã code
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -50,9 +50,9 @@ fun PromoCodeInput(
         if (calculation > subtotal) subtotal else calculation
     } ?: 0f
 
-    // Update parent component when discount changes
-    LaunchedEffect(discountAmount) {
-        onDiscountApplied(discountAmount)
+    // Update parent component when discount or promo changes
+    LaunchedEffect(discountAmount, appliedPromo) {
+        onDiscountApplied(discountAmount, appliedPromo?.code ?: "")
     }
 
     Column(modifier = modifier) {

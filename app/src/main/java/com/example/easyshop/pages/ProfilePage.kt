@@ -97,9 +97,10 @@ fun ProfilePage(
                 .update("name", cleanedName)
                 .addOnSuccessListener {
                     userModel.value = userModel.value.copy(name = cleanedName)
-                    AppUtil.showToast(context, "Name updated!")
+                    AppUtil.showToast(context, "Đã cập nhật tên!")
+                    showEditNameDialog = false
                 }
-                .addOnFailureListener { AppUtil.showToast(context, "Failed to update") }
+                .addOnFailureListener { AppUtil.showToast(context, "Lỗi khi cập nhật tên") }
         }
     }
 
@@ -118,7 +119,7 @@ fun ProfilePage(
                     nameInput = user.name
                 }
             }
-            .addOnFailureListener { e -> AppUtil.showToast(context, "Error: ${e.message}") }
+            .addOnFailureListener { e -> AppUtil.showToast(context, "Lỗi: ${e.message}") }
     }
 
     // --- Address Management Logic ---
