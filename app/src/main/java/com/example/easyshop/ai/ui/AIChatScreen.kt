@@ -1,6 +1,7 @@
 package com.example.easyshop.ai.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,8 +21,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -32,13 +31,14 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -55,7 +55,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,6 +76,11 @@ import com.google.firebase.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+private val ChatGradientTop = Color(0xFFF4F7FF)
+private val ChatGradientBottom = Color(0xFFE9F1FF)
+private val ChatAccentStart = Color(0xFF4F46E5)
+private val ChatAccentEnd = Color(0xFF0EA5E9)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AIChatScreen(
@@ -88,7 +92,6 @@ fun AIChatScreen(
     val error by viewModel.error.collectAsState()
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
@@ -97,83 +100,23 @@ fun AIChatScreen(
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Default.AutoAwesome,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                "Trợ lý AI Pro",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    Icons.Default.FiberManualRecord,
-                                    contentDescription = null,
-                                    tint = Color(0xFF4CAF50),
-                                    modifier = Modifier.size(8.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    "Đang trực tuyến",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.clearChat() }) {
-                        Icon(
-                            Icons.Default.DeleteSweep,
-                            contentDescription = "Xoá cuộc trò chuyện",
-                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface
-                ),
-                modifier = Modifier.shadow(4.dp)
+            ChatTopBar(
+                onBack = { navController.popBackStack() },
+                onClear = { viewModel.clearChat() }
             )
         },
         bottomBar = {
             Surface(
-                tonalElevation = 8.dp,
-                shadowElevation = 8.dp,
+                tonalElevation = 10.dp,
+                shadowElevation = 10.dp,
+                color = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.navigationBarsPadding()
             ) {
                 Column {
                     if (error != null) {
                         ErrorMessage(error!!) { viewModel.clearError() }
-                    }
-
-                    if (messages.isEmpty() && !isLoading) {
-                        SuggestionChips(onSuggestionClick = { suggestion ->
-                            viewModel.sendMessage(suggestion)
-                        })
                     }
 
                     ChatInput(
@@ -194,15 +137,28 @@ fun AIChatScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(ChatGradientTop, ChatGradientBottom)
+                    )
+                )
                 .padding(padding)
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.95f))
         ) {
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                if (messages.isEmpty() && !isLoading) {
+                    item { WelcomeHintCard() }
+                    item {
+                        SuggestionChips(onSuggestionClick = { suggestion ->
+                            viewModel.sendMessage(suggestion)
+                        })
+                    }
+                }
+
                 items(messages) { message ->
                     ChatBubble(
                         content = message.content,
@@ -210,64 +166,171 @@ fun AIChatScreen(
                         timestamp = message.timestamp
                     )
                 }
+
                 if (isLoading) {
-                    item {
-                        TypingIndicator()
-                    }
+                    item { TypingIndicator() }
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatBubble(content: String, isUser: Boolean, timestamp: Timestamp?) {
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val secondaryColor = MaterialTheme.colorScheme.secondary
-    val surfaceVariantColor = MaterialTheme.colorScheme.surfaceVariant
-    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
+private fun ChatTopBar(
+    onBack: () -> Unit,
+    onClear: () -> Unit
+) {
+    Surface(
+        shadowElevation = 8.dp,
+        tonalElevation = 2.dp,
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        TopAppBar(
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(Brush.linearGradient(listOf(ChatAccentStart, ChatAccentEnd))),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            "Tro ly AI",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.FiberManualRecord,
+                                contentDescription = null,
+                                tint = Color(0xFF22C55E),
+                                modifier = Modifier.size(8.dp)
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                "Dang online",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            },
+            navigationIcon = {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                }
+            },
+            actions = {
+                IconButton(onClick = onClear) {
+                    Icon(
+                        Icons.Default.DeleteSweep,
+                        contentDescription = "Clear chat",
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                    )
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.Transparent,
+                scrolledContainerColor = Color.Transparent
+            )
+        )
+    }
+}
 
-    val bubbleBrush = remember(isUser, primaryColor, secondaryColor, surfaceVariantColor) {
-        if (isUser) {
-            Brush.linearGradient(colors = listOf(primaryColor, secondaryColor))
-        } else {
-            Brush.linearGradient(colors = listOf(surfaceVariantColor, surfaceVariantColor))
+@Composable
+private fun WelcomeHintCard() {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Text(
+                text = "Tu van nhanh theo nhu cau",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "Mo ta ngan sach, muc dich su dung, hoac yeu cau cau hinh. Minh se de xuat 2-3 lua chon phu hop.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                lineHeight = 18.sp
+            )
         }
     }
+}
+
+@Composable
+fun ChatBubble(content: String, isUser: Boolean, timestamp: Timestamp?) {
+    val userBrush = Brush.linearGradient(colors = listOf(ChatAccentStart, ChatAccentEnd))
+    val aiBackground = MaterialTheme.colorScheme.surface
+    val aiBorder = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
+    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     val alignment = if (isUser) Alignment.End else Alignment.Start
     val shape = RoundedCornerShape(
         topStart = 18.dp,
         topEnd = 18.dp,
-        bottomStart = if (isUser) 18.dp else 4.dp,
-        bottomEnd = if (isUser) 4.dp else 18.dp
+        bottomStart = if (isUser) 18.dp else 8.dp,
+        bottomEnd = if (isUser) 8.dp else 18.dp
     )
 
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = alignment
     ) {
+        if (!isUser) {
+            Text(
+                text = "AI Copilot",
+                style = MaterialTheme.typography.labelSmall,
+                color = onSurfaceVariantColor,
+                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+            )
+        }
+
         Box(
             modifier = Modifier
-                .widthIn(max = 300.dp)
-                .shadow(2.dp, shape)
-                .background(bubbleBrush, shape)
+                .widthIn(max = 330.dp)
+                .shadow(if (isUser) 3.dp else 1.dp, shape)
                 .clip(shape)
-                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .then(
+                    if (isUser) {
+                        Modifier.background(userBrush)
+                    } else {
+                        Modifier
+                            .background(aiBackground)
+                            .border(1.dp, aiBorder, shape)
+                    }
+                )
+                .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
             MarkdownText(
                 text = content,
-                textColor = if (isUser) Color.White else onSurfaceVariantColor
+                textColor = if (isUser) Color.White else MaterialTheme.colorScheme.onSurface
             )
         }
-        
+
         timestamp?.let {
             val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(it.toDate())
             Text(
                 text = time,
                 modifier = Modifier.padding(top = 4.dp, start = 4.dp, end = 4.dp),
                 style = MaterialTheme.typography.labelSmall,
-                color = onSurfaceVariantColor.copy(alpha = 0.6f)
+                color = onSurfaceVariantColor.copy(alpha = 0.7f)
             )
         }
     }
@@ -280,58 +343,58 @@ fun ChatInput(
     isLoading: Boolean,
     onSend: () -> Unit
 ) {
+    val canSend = value.isNotBlank() && !isLoading
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier
-                .weight(1f)
-                .clip(RoundedCornerShape(28.dp)),
-            placeholder = { Text("Nhắn tin cho Trợ lý AI...") },
+            modifier = Modifier.weight(1f),
+            placeholder = { Text("Nhap tin nhan...") },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surface,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
             ),
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(24.dp),
             maxLines = 4,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
             keyboardActions = KeyboardActions(onSend = { onSend() })
         )
-        
-        Spacer(modifier = Modifier.width(8.dp))
-        
-        FloatingActionButton(
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        Button(
             onClick = onSend,
-            containerColor = if (value.isNotBlank() && !isLoading) 
-                MaterialTheme.colorScheme.primary 
-            else 
-                MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = if (value.isNotBlank() && !isLoading) 
-                Color.White 
-            else 
-                MaterialTheme.colorScheme.onSurfaceVariant,
+            enabled = canSend,
             shape = CircleShape,
             modifier = Modifier.size(48.dp),
-            elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp)
+            contentPadding = PaddingValues(0.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (canSend) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = if (canSend) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = if (canSend) 3.dp else 0.dp)
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(18.dp),
                     strokeWidth = 2.dp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
                 Icon(
                     Icons.AutoMirrored.Filled.Send,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
+                    contentDescription = "Send",
+                    modifier = Modifier.size(19.dp)
                 )
             }
         }
@@ -341,18 +404,23 @@ fun ChatInput(
 @Composable
 fun TypingIndicator() {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Start
     ) {
         Surface(
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            shape = RoundedCornerShape(18.dp)
+            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(16.dp),
+            tonalElevation = 1.dp,
+            shadowElevation = 1.dp,
+            modifier = Modifier.border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
+                shape = RoundedCornerShape(16.dp)
+            )
         ) {
             Text(
-                "Đang trả lời...",
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                "AI dang tu van...",
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -365,12 +433,12 @@ fun ErrorMessage(message: String, onDismiss: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(horizontal = 14.dp, vertical = 8.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -380,7 +448,7 @@ fun ErrorMessage(message: String, onDismiss: () -> Unit) {
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
             IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
-                Text("✕", color = MaterialTheme.colorScheme.onErrorContainer)
+                Text("x", color = MaterialTheme.colorScheme.onErrorContainer)
             }
         }
     }
@@ -388,75 +456,98 @@ fun ErrorMessage(message: String, onDismiss: () -> Unit) {
 
 @Composable
 fun MarkdownText(text: String, textColor: Color) {
-    val lines = text.split("\n")
-    Column {
-        lines.forEach { line ->
-            val annotatedString = buildAnnotatedString {
-                val trimmedLine = line.trimStart()
-                var processedLine = trimmedLine
-                
-                // 1. Chuyển đổi dấu (*) hoặc (-) đầu dòng thành bullet bullet (•)
-                if (processedLine.startsWith("* ") || processedLine.startsWith("- ")) {
-                    append("•  ")
-                    processedLine = processedLine.substring(2)
+    val productIds = remember(text) {
+        Regex("\\[(.*?)]")
+            .findAll(text)
+            .map { it.groupValues[1].trim().replace("PID_", "") }
+            .filter { it.isNotBlank() }
+            .distinct()
+            .toList()
+    }
+
+    val sanitizedLines = remember(text) {
+        text.split("\n")
+            .map { line ->
+                var output = line.trim()
+                output = output.replace(Regex("\\[(.*?)]"), "").trim()
+                if (output.startsWith("* ") || output.startsWith("- ")) {
+                    output = "- ${output.substring(2).trimStart()}"
                 }
+                output
+            }
+            .filter { it.isNotBlank() }
+    }
 
-                // 2. Tìm ID Sản phẩm trong ngoặc vuông và loại bỏ đi để text không bị xấu
-                val productIdRegex = Regex("\\[(.*?)\\]")
-                processedLine = processedLine.replace(productIdRegex, "")
-
-                // 3. Tìm và bôi đậm những chữ bị kẹp trong **chữ**
+    Column {
+        sanitizedLines.forEach { line ->
+            val annotatedString = buildAnnotatedString {
                 val boldRegex = Regex("\\*\\*(.*?)\\*\\*")
                 var currentIndex = 0
-                var matchResult = boldRegex.find(processedLine, currentIndex)
-                
+                var matchResult = boldRegex.find(line, currentIndex)
+
                 while (matchResult != null) {
-                    // Thêm đoạn text thường trước chỗ in đậm
-                    append(processedLine.substring(currentIndex, matchResult.range.first))
-                    
-                    // Thêm đoạn chữ in đậm (bỏ 2 dấu ** đi)
+                    append(line.substring(currentIndex, matchResult.range.first))
                     withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                         append(matchResult.groupValues[1])
                     }
-                    
                     currentIndex = matchResult.range.last + 1
-                    matchResult = boldRegex.find(processedLine, currentIndex)
+                    matchResult = boldRegex.find(line, currentIndex)
                 }
-                
-                // Thêm nốt phần text còn lại
-                if (currentIndex < processedLine.length) {
-                    append(processedLine.substring(currentIndex))
+
+                if (currentIndex < line.length) {
+                    append(line.substring(currentIndex))
                 }
             }
 
             Text(
                 text = annotatedString,
                 color = textColor,
-                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
+                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 21.sp),
                 modifier = Modifier.padding(vertical = 1.dp)
             )
-            
-            // 👉 Render nút xem sản phẩm (nếu tìm thấy ID bị kẹp)
-            val idMatch = Regex("\\[(.*?)\\]").find(line)
-            if (idMatch != null) {
-                var productId = idMatch.groupValues[1].trim()
-                productId = productId.replace("PID_", "")
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = { com.example.easyshop.GlobalNavigation.navController.navigate("product-details/$productId") },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.primary
-                    ),
-                    elevation = androidx.compose.material3.ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-                ) {
-                    Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Xem sản phẩm này", fontWeight = FontWeight.Bold)
+        }
+
+        if (productIds.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(end = 4.dp)
+            ) {
+                items(productIds.take(3)) { productId ->
+                    AssistChip(
+                        onClick = {
+                            com.example.easyshop.GlobalNavigation.navController.navigate("product-details/$productId")
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.ShoppingCart,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = "Xem san pham",
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
+                            labelColor = MaterialTheme.colorScheme.primary,
+                            leadingIconContentColor = MaterialTheme.colorScheme.primary
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
+            }
+
+            if (productIds.size > 3) {
+                Text(
+                    text = "+${productIds.size - 3} san pham khac",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                    modifier = Modifier.padding(top = 4.dp, start = 2.dp)
+                )
             }
         }
     }
@@ -465,30 +556,46 @@ fun MarkdownText(text: String, textColor: Color) {
 @Composable
 fun SuggestionChips(onSuggestionClick: (String) -> Unit) {
     val suggestions = listOf(
-        "Bạn có thể giúp gì cho tôi?",
-        "Giá iPhone hiện tại bao nhiêu?",
-        "Sản phẩm nào đang giảm giá?",
-        "Gợi ý laptop văn phòng mỏng nhẹ",
-        "Chính sách bảo hành tại Shop"
+        "Tu van laptop hoc tap tam 15 trieu",
+        "So sanh 2 mau gaming PC",
+        "May nao dang co deal tot",
+        "Goi y cau hinh cho do hoa",
+        "Nen mua iPhone nao hien tai"
     )
 
-    LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(suggestions) { suggestion ->
-            AssistChip(
-                onClick = { onSuggestionClick(suggestion) },
-                label = { Text(suggestion, style = MaterialTheme.typography.labelMedium) },
-                colors = AssistChipDefaults.assistChipColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                    labelColor = MaterialTheme.colorScheme.primary
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
+    Column {
+        Text(
+            text = "Goi y nhanh",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 2.dp, bottom = 8.dp)
+        )
+
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(end = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(suggestions) { suggestion ->
+                AssistChip(
+                    onClick = { onSuggestionClick(suggestion) },
+                    label = { Text(suggestion, style = MaterialTheme.typography.labelMedium) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                        labelColor = MaterialTheme.colorScheme.primary,
+                        leadingIconContentColor = MaterialTheme.colorScheme.primary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                )
+            }
         }
     }
 }
