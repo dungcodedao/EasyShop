@@ -25,6 +25,7 @@ import com.example.easyshop.admin.ManageUsersScreen
 import com.example.easyshop.admin.OrdersManagementScreen
 import com.example.easyshop.ai.ui.AIChatScreen
 import com.example.easyshop.components.AppSnackbarHost
+import com.example.easyshop.components.NotifBannerOverlay
 import com.example.easyshop.model.UserModel
 import com.example.easyshop.pages.AddProductPage
 import com.example.easyshop.pages.CartPage
@@ -236,7 +237,9 @@ fun AppNavigation(modifier: Modifier = Modifier) {
 
         }
 
-            // 🔔 Thông báo trượt từ trên xuống (Top Notification iOS Style)
+            // 🔔 In-app notification banner (kiểu Shopee/MoMo) — hiện trên mọi màn hình
+            NotifBannerOverlay()
+            // 🔔 Snackbar thông báo hành động
             AppSnackbarHost()
         }
     }

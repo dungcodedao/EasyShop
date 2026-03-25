@@ -34,6 +34,7 @@ import com.google.firebase.firestore.Query
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.delay
 
 // ─── Hàm tiện ích: format thời gian tương đối ────────────────────────────────
 private fun formatRelativeTime(timestamp: Timestamp): String {
@@ -116,6 +117,15 @@ fun NotificationsPage(navController: NavController) {
         }
     }
 
+    // Auto-clear: khi danh sách load xong và có tin chưa đọc → tự đánh dấu sau 1.5s
+    LaunchedEffect(notifications) {
+        val hasUnread = notifications.any { !it.isRead }
+        if (hasUnread && !isLoading) {
+            delay(1500)
+            markAllAsRead()
+        }
+    }
+
     Scaffold(
         topBar = {
             Surface(tonalElevation = 2.dp) {
@@ -149,6 +159,8 @@ fun NotificationsPage(navController: NavController) {
                                 notifications.forEach {
                                     db.collection("notifications").document(it.id).delete()
                                 }
+                                notifications = emptyList() // Update UI ngay lập tức
+                                com.example.easyshop.AppUtil.showSuccess("Đã xóa tất cả thông báo")
                             }) {
                                 Icon(Icons.Default.DeleteSweep, contentDescription = "Xóa tất cả", tint = Color.Red.copy(alpha=0.7f))
                             }
@@ -190,7 +202,10 @@ fun NotificationsPage(navController: NavController) {
                                     }
                                 },
                                 onDelete = {
-                                    db.collection("notifications").document(notif.id).delete()
+                                    db.collection("notifications").document(notif.id).delete().addOnSuccessListener {
+                                        com.example.easyshop.AppUtil.showSuccess("Đã xóa thông báo thành công")
+                                    }
+                                    notifications = notifications.filter { it.id != notif.id } // Update UI ngay lập tức
                                 }
                             )
                             HorizontalDivider(

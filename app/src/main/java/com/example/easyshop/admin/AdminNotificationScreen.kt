@@ -200,6 +200,8 @@ fun AdminNotificationScreen(navController: NavController) {
                                     db.collection("notifications").document(it.id).delete()
                                         .addOnFailureListener { e -> com.example.easyshop.AppUtil.showError("Lỗi xóa: ${e.message}") }
                                 }
+                                notifications = emptyList() // Update UI ngay lập tức
+                                com.example.easyshop.AppUtil.showSuccess("Đã xóa tất cả thông báo")
                             }) {
                                 Icon(Icons.Default.DeleteSweep, contentDescription = "Xóa tất cả", tint = Color.Red.copy(alpha=0.7f))
                             }
@@ -249,7 +251,11 @@ fun AdminNotificationScreen(navController: NavController) {
                                 },
                                 onDelete = {
                                     db.collection("notifications").document(notif.id).delete()
+                                        .addOnSuccessListener {
+                                            com.example.easyshop.AppUtil.showSuccess("Đã xóa thông báo thành công")
+                                        }
                                         .addOnFailureListener { e -> com.example.easyshop.AppUtil.showError("Lỗi xóa: ${e.message}") }
+                                    notifications = notifications.filter { it.id != notif.id } // Update UI ngay lập tức
                                 }
                             )
                             HorizontalDivider(
