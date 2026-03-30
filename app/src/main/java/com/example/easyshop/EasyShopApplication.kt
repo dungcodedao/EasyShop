@@ -1,0 +1,100 @@
+package com.example.easyshop
+
+import android.app.Application
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.disk.DiskCache
+import coil.memory.MemoryCache
+import coil.request.CachePolicy
+import com.example.easyshop.components.NotifBannerController
+import com.example.easyshop.services.NotificationHelper
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
+
+class EasyShopApplication : Application(), ImageLoaderFactory {
+
+    private var notifListener: ListenerRegistration? = null
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // Tạo Notification Channels (bắt buộc Android 8+)
+        NotificationHelper.createChannels(this)
+
+        // Lắng nghe Auth state để start/stop Firestore listener
+        FirebaseAuth.getInstance().addAuthStateListener { auth ->
+            val uid = auth.currentUser?.uid
+            if (uid != null) {
+                startNotificationListener(uid)
+            } else {
+                stopNotificationListener()
+            }
+        }
+    }
+
+    /**
+     * Lắng nghe collection "notifications" của user hiện tại.
+     * Khi có document mới với isRead = false → bắn system notification.
+     *
+     * Dùng Set để track những ID đã hiện thông báo, tránh spam khi
+     * Firestore gửi lại snapshot cũ mỗi lần mở app.
+     */
+    private val shownNotifIds = mutableSetOf<String>()
+
+    private fun startNotificationListener(uid: String) {
+        stopNotificationListener()
+        shownNotifIds.clear()
+
+        val db = FirebaseFirestore.getInstance()
+
+        // --- Listener cho USER ---
+        notifListener = db.collection("notifications")
+            .whereEqualTo("recipientRole", "user")
+            .whereEqualTo("userId", uid)
+            .whereEqualTo("isRead", false)
+            .addSnapshotListener { snapshot, _ ->
+                snapshot?.documentChanges?.forEach { change ->
+                    val docId = change.document.id
+                    // Chỉ hiện với document THÊM MỚI chưa từng show
+                    if (change.type == com.google.firebase.firestore.DocumentChange.Type.ADDED
+                        && docId !in shownNotifIds
+                    ) {
+                        shownNotifIds.add(docId)
+                        val title = change.document.getString("title") ?: "EasyShop"
+                        val body  = change.document.getString("body")  ?: ""
+                        val type  = change.document.getString("type")  ?: "SYSTEM"
+                        // 1️⃣ Banner trượt xuống trong app (kiểu Shopee/MoMo)
+                        NotifBannerController.show(title, body, type)
+                        // 2️⃣ System notification ngoài màn hình (khi app ở nền)
+                        NotificationHelper.show(this, title, body, type)
+                    }
+                }
+            }
+    }
+
+    private fun stopNotificationListener() {
+        notifListener?.remove()
+        notifListener = null
+    }
+
+    // ── Coil ImageLoader (cấu hình cache toàn cục) ──────────────────────────
+    override fun newImageLoader(): ImageLoader {
+        return ImageLoader.Builder(this)
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .memoryCache {
+                MemoryCache.Builder(this)
+                    .maxSizePercent(0.25)
+                    .build()
+            }
+            .diskCachePolicy(CachePolicy.ENABLED)
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(cacheDir.resolve("image_cache"))
+                    .maxSizeBytes(100L * 1024 * 1024) // 100 MB
+                    .build()
+            }
+            .crossfade(true)
+            .build()
+    }
+}
