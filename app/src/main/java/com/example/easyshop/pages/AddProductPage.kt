@@ -1,35 +1,97 @@
 package com.example.easyshop.pages
 
+import android.net.Uri
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
-import androidx.compose.runtime.*
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.easyshop.AppUtil
 import com.example.easyshop.R
 import com.example.easyshop.model.CategoryModel
+import com.example.easyshop.repository.ProductRepository
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
+
+sealed class ProductMediaItem {
+    data class LocalUri(val uri: Uri) : ProductMediaItem()
+    data class RemoteUrl(val url: String) : ProductMediaItem()
+    
+    fun getPreviewModel(): Any = when (this) {
+        is LocalUri -> uri
+        is RemoteUrl -> url
+    }
+}
 
 @Composable
 fun AddProductPage(
@@ -48,10 +110,15 @@ fun AddProductPage(
     var specifications by remember { mutableStateOf(listOf<Pair<String, String>>()) }
     var showAddSpecDialog by remember { mutableStateOf(false) }
 
-    // Image URLs
-    var imageUrls by remember { mutableStateOf(listOf("")) }
+    // Unified Media List (Max 5)
+    var mediaItems by remember { mutableStateOf(listOf<ProductMediaItem>()) }
+    var showAddOptions by remember { mutableStateOf(false) }
+    var showUrlDialog by remember { mutableStateOf(false) }
+    var urlInput by remember { mutableStateOf("") }
+    val sheetState = rememberModalBottomSheetState()
 
     var isLoading by remember { mutableStateOf(false) }
+    var uploadProgress by remember { mutableStateOf("") }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var categoryExpanded by remember { mutableStateOf(false) }
@@ -59,6 +126,20 @@ fun AddProductPage(
 
     val scope = rememberCoroutineScope()
     val firestore = Firebase.firestore
+    val productRepository = remember { ProductRepository(context) }
+
+    // Image Picker Launcher
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            val remainingSlots = 5 - mediaItems.size
+            val newItems = uris.map { ProductMediaItem.LocalUri(it) }
+            mediaItems = (mediaItems + newItems).take(
+                mediaItems.size + remainingSlots.coerceAtLeast(0)
+            )
+        }
+    }
 
     // Load categories
     LaunchedEffect(key1 = Unit) {
@@ -70,7 +151,7 @@ fun AddProductPage(
             }
     }
 
-    // Save product to Firestore
+    // Save product to Firestore (with Cloudinary upload support)
     fun saveProduct() {
         if (title.isBlank() || category.isBlank() || price.isBlank()) {
             errorMessage = context.getString(R.string.please_fill_all_fields)
@@ -82,14 +163,38 @@ fun AddProductPage(
             errorMessage = null
 
             try {
-                // 1. Filter manual URLs
-                val finalImageUrls = imageUrls.filter { it.isNotBlank() }
+                val finalImageUrls = mutableListOf<String>()
 
-                if (finalImageUrls.isEmpty()) {
-                    errorMessage = "Vui lòng thêm ít nhất 1 hình ảnh"
+                // 1. Phân loại media
+                val localUris = mediaItems.filterIsInstance<ProductMediaItem.LocalUri>().map { it.uri }
+                val remoteUrls = mediaItems.filterIsInstance<ProductMediaItem.RemoteUrl>().map { it.url }
+
+                // 2. Upload selected images from device to Cloudinary
+                if (localUris.isNotEmpty()) {
+                    localUris.forEachIndexed { index, uri ->
+                        uploadProgress = "Đang upload ảnh ${index + 1}/${localUris.size}..."
+                        productRepository.uploadProductImage(uri).collectLatest { result ->
+                            result.fold(
+                                onSuccess = { url -> finalImageUrls.add(url) },
+                                onFailure = { e -> throw e }
+                            )
+                        }
+                    }
+                }
+
+                // 3. Khôi phục Manual URLs
+                finalImageUrls.addAll(remoteUrls)
+
+                val distinctUrls = finalImageUrls.distinct().take(5)
+
+                if (distinctUrls.isEmpty()) {
+                    errorMessage = "Vui lòng chọn ảnh hoặc nhập URL"
                     isLoading = false
+                    uploadProgress = ""
                     return@launch
                 }
+
+                uploadProgress = "Đang lưu sản phẩm..."
 
                 val otherDetails = specifications
                     .filter { it.first.isNotBlank() && it.second.isNotBlank() }
@@ -105,7 +210,7 @@ fun AddProductPage(
                     "actualPrice" to actualPrice.ifBlank { price },
                     "category" to category,
                     "inStock" to inStock,
-                    "images" to finalImageUrls,
+                    "images" to distinctUrls,
                     "otherDetails" to otherDetails
                 )
 
@@ -124,12 +229,14 @@ fun AddProductPage(
                 actualPrice = ""
                 category = ""
                 specifications = emptyList()
-                imageUrls = listOf("")
+                mediaItems = emptyList()
 
             } catch (e: Exception) {
-                errorMessage = "Lỗi: ${e.message}"
+                Log.e("AddProductPage", "Upload error: ${e.message}", e)
+                errorMessage = "Lỗi upload: ${e.message}"
             } finally {
                 isLoading = false
+                uploadProgress = ""
             }
         }
     }
@@ -173,7 +280,7 @@ fun AddProductPage(
                 .padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Product Images Section
+            // ===== Product Images Section =====
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -194,7 +301,7 @@ fun AddProductPage(
                             stringResource(id = R.string.product_images),
                             style = MaterialTheme.typography.titleMedium
                         )
-                        val totalImages = imageUrls.count { it.isNotBlank() }
+                        val totalImages = mediaItems.size
                         Text(
                             "$totalImages/5",
                             style = MaterialTheme.typography.bodySmall,
@@ -202,62 +309,58 @@ fun AddProductPage(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        "Dán URL hình ảnh",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    imageUrls.forEachIndexed { index, url ->
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            OutlinedTextField(
-                                value = url,
-                                onValueChange = { newUrl ->
-                                    imageUrls = imageUrls.toMutableList().apply {
-                                        this[index] = newUrl
+                    // ===== Unified Media Grid =====
+                    val columns = 3
+                    val rows = (mediaItems.size + 1 + columns - 1) / columns // Number of rows required, +1 for the Add button
+                    
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        for (row in 0 until rows) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                for (col in 0 until columns) {
+                                    val index = row * columns + col
+                                    if (index < mediaItems.size) {
+                                        // Display Media Item
+                                        MediaItemCard(
+                                            item = mediaItems[index],
+                                            onRemove = {
+                                                mediaItems = mediaItems.filterIndexed { i, _ -> i != index }
+                                            },
+                                            modifier = Modifier.weight(1f).aspectRatio(1f)
+                                        )
+                                    } else if (index == mediaItems.size && mediaItems.size < 5) {
+                                        // "Add" slot
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .aspectRatio(1f)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                                .clickable { showAddOptions = true },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Icon(
+                                                    Icons.Default.Add,
+                                                    contentDescription = "Thêm ảnh",
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    "Thêm",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        // Invisible spacer to balance the row
+                                        Spacer(modifier = Modifier.weight(1f).aspectRatio(1f))
                                     }
-                                },
-                                label = { Text("URL hình ảnh ${index + 1}") },
-                                placeholder = { Text("https://example.com/image.jpg") },
-                                modifier = Modifier.weight(1f),
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Link,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            )
-
-                            if (imageUrls.size > 1) {
-                                IconButton(
-                                    onClick = {
-                                        imageUrls = imageUrls.filterIndexed { i, _ -> i != index }
-                                    }
-                                ) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "Remove",
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
                                 }
                             }
-                        }
-                    }
-
-                    if (imageUrls.size < 5) {
-                        OutlinedButton(
-                            onClick = { imageUrls = imageUrls + "" },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Thêm URL")
                         }
                     }
                 }
@@ -471,7 +574,7 @@ fun AddProductPage(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(id = R.string.uploading))
+                    Text(uploadProgress.ifEmpty { stringResource(id = R.string.uploading) })
                 } else {
                     Icon(Icons.Default.Check, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
@@ -551,5 +654,144 @@ fun AddProductPage(
                 }
             }
         )
+    }
+
+    // Modal Bottom Sheet for Image Options
+    if (showAddOptions) {
+        ModalBottomSheet(
+            onDismissRequest = { showAddOptions = false },
+            sheetState = sheetState
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    "Thêm hình ảnh",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                ListItem(
+                    headlineContent = { Text("Thư viện ảnh") },
+                    supportingContent = { Text("Chọn ảnh có sẵn trong máy") },
+                    leadingContent = { 
+                        Icon(
+                            Icons.Default.PhotoLibrary, 
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        ) 
+                    },
+                    modifier = Modifier.clickable {
+                        showAddOptions = false
+                        imagePickerLauncher.launch("image/*")
+                    }
+                )
+                
+                ListItem(
+                    headlineContent = { Text("Nhập link URL") },
+                    supportingContent = { Text("Sử dụng ảnh từ internet") },
+                    leadingContent = { 
+                        Icon(
+                            Icons.Default.Link, 
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary
+                        ) 
+                    },
+                    modifier = Modifier.clickable {
+                        showAddOptions = false
+                        showUrlDialog = true
+                    }
+                )
+                
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+        }
+    }
+
+    // URL Input Dialog
+    if (showUrlDialog) {
+        AlertDialog(
+            onDismissRequest = { showUrlDialog = false },
+            title = { Text("Nhập Link Ảnh") },
+            text = {
+                OutlinedTextField(
+                    value = urlInput,
+                    onValueChange = { urlInput = it },
+                    label = { Text("URL (https://...)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (urlInput.isNotBlank()) {
+                            mediaItems = (mediaItems + ProductMediaItem.RemoteUrl(urlInput)).take(5)
+                            urlInput = ""
+                            showUrlDialog = false
+                        }
+                    }
+                ) { Text("Thêm") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUrlDialog = false }) { Text("Hủy") }
+            }
+        )
+    }
+}
+
+@Composable
+fun MediaItemCard(
+    item: ProductMediaItem,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.LightGray.copy(alpha = 0.3f))
+    ) {
+        AsyncImage(
+            model = item.getPreviewModel(),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+        // Source Badge
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(4.dp)
+                .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
+                .padding(horizontal = 6.dp, vertical = 2.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = if (item is ProductMediaItem.RemoteUrl) Icons.Default.Link else Icons.Default.CloudUpload,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(10.dp)
+                )
+            }
+        }
+        
+        // Remove Button
+        IconButton(
+            onClick = onRemove,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(4.dp)
+                .size(24.dp)
+                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+        ) {
+            Icon(
+                Icons.Default.Close,
+                contentDescription = "Xóa",
+                tint = Color.White,
+                modifier = Modifier.size(14.dp)
+            )
+        }
     }
 }

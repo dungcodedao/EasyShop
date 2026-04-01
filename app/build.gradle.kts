@@ -98,6 +98,9 @@ dependencies {
     implementation("com.tbuonomo:dotsindicator:5.1.0")
 
     implementation(libs.okhttp)
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.logging.interceptor)
 
     // Google Services
     implementation("com.google.android.gms:play-services-maps:19.0.0")
