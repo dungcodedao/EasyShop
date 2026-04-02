@@ -139,7 +139,7 @@
     <string name="reset_filters">Xóa bộ lọc</string>
 
     <!-- Admin -->
-    <string name="admin_dashboard_title">Bảng điều khiển Admin</string>
+    <string name="admin_dashboard_title">Bảng điều khiển</string>
     <string name="logout">Đăng xuất</string>
     <string name="quick_actions">Thao tác nhanh</string>
     <string name="manage_products">Quản lý sản phẩm</string>

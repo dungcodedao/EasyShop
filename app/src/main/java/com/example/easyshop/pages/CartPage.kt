@@ -60,36 +60,42 @@ fun CartPage(
     val productsMap = remember { mutableStateOf<Map<String, ProductModel>>(emptyMap()) }
 
     DisposableEffect(Unit) {
-        val listener = Firebase.firestore.collection("users")
-            .document(FirebaseAuth.getInstance().currentUser?.uid!!)
-            .addSnapshotListener { it, _ ->
-                it?.toObject(UserModel::class.java)?.let { user ->
-                    userModel.value = user
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val listener = if (uid != null) {
+            Firebase.firestore.collection("users")
+                .document(uid)
+                .addSnapshotListener { it, _ ->
+                    it?.toObject(UserModel::class.java)?.let { user ->
+                        userModel.value = user
 
-                    val productIds = user.cartItems.keys.toList()
-                    if (productIds.isNotEmpty()) {
-                        Firebase.firestore.collection("data").document("stock")
-                            .collection("products")
-                            .whereIn(
-                                com.google.firebase.firestore.FieldPath.documentId(),
-                                productIds
-                            )
-                            .get()
-                            .addOnSuccessListener { querySnapshot ->
-                                val newMap = querySnapshot.documents.associate {
-                                    it.id to (it.toObject(ProductModel::class.java)
-                                        ?: ProductModel())
+                        val productIds = user.cartItems.keys.toList()
+                        if (productIds.isNotEmpty()) {
+                            Firebase.firestore.collection("data").document("stock")
+                                .collection("products")
+                                .whereIn(
+                                    com.google.firebase.firestore.FieldPath.documentId(),
+                                    productIds
+                                )
+                                .get()
+                                .addOnSuccessListener { querySnapshot ->
+                                    val newMap = querySnapshot.documents.associate {
+                                        it.id to (it.toObject(ProductModel::class.java)
+                                            ?: ProductModel())
+                                    }
+                                    productsMap.value = newMap
+                                    isLoading = false
                                 }
-                                productsMap.value = newMap
-                                isLoading = false
-                            }
-                    } else {
-                        productsMap.value = emptyMap()
-                        isLoading = false
-                    }
-                } ?: run { isLoading = false }
-            }
-        onDispose { listener.remove() }
+                        } else {
+                            productsMap.value = emptyMap()
+                            isLoading = false
+                        }
+                    } ?: run { isLoading = false }
+                }
+        } else {
+            isLoading = false
+            null
+        }
+        onDispose { listener?.remove() }
     }
 
     Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {

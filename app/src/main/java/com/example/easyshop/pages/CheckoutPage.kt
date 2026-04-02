@@ -84,15 +84,27 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
         productList.forEach {
             if (it.actualPrice.isNotEmpty()) {
                 val qty = userModel.value.cartItems[it.id] ?: 0
-                subTotal.floatValue += it.actualPrice.toFloat() * qty
+                val price = it.actualPrice
+                    .replace(",", "")
+                    .replace(".", "")
+                    .replace("đ", "")
+                    .trim()
+                    .toFloatOrNull() ?: 0f
+                subTotal.floatValue += price * qty
             }
         }
         total.floatValue = (subTotal.floatValue - discount.floatValue).coerceAtLeast(0f)
     }
 
     LaunchedEffect(Unit) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: run {
+            GlobalNavigation.navController.navigate("auth") {
+                popUpTo(0) { inclusive = true }
+            }
+            return@LaunchedEffect
+        }
         Firebase.firestore.collection("users")
-            .document(FirebaseAuth.getInstance().currentUser?.uid!!)
+            .document(uid)
             .get().addOnCompleteListener {
                 if (it.isSuccessful) {
                     it.result.toObject(UserModel::class.java)?.let { result ->
@@ -157,7 +169,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                     Icon(
                         Icons.Default.LocationOn,
                         null,
-                        tint = Color.Black.copy(alpha = 0.7f),
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         modifier = Modifier.size(24.dp).align(Alignment.Top)
                     )
                     
@@ -169,13 +181,13 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                                 text = "${selectedAddress!!.fullName} (+84)${selectedAddress!!.phone.removePrefix("0")}",
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.Black
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 text = selectedAddress!!.detailedAddress.trim(),
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color.Black.copy(alpha = 0.8f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                                 lineHeight = 20.sp,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis

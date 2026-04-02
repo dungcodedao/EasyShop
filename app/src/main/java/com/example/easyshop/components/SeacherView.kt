@@ -144,7 +144,7 @@ fun SearchView(
                         }
                     }
                 } else {
-                    items(filteredProducts) { product ->
+                    items(filteredProducts, key = { it.id }) { product ->
                         ProductItemView(product = product)
                     }
                 }

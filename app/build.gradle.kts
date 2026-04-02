@@ -104,13 +104,13 @@ dependencies {
 
     // Google Services
     implementation("com.google.android.gms:play-services-maps:19.0.0")
-    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("com.google.android.gms:play-services-location:21.0.0")
 
     // Gemini AI (Gọi trực tiếp từ Android)
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 
     // Google Login & Credentials
-    implementation("com.google.android.gms:play-services-auth:21.3.0")
+    implementation("com.google.android.gms:play-services-auth:21.0.0")
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")

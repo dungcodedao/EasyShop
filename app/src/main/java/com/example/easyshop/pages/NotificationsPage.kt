@@ -111,10 +111,13 @@ fun NotificationsPage(navController: NavController) {
 
     // Hàm đánh dấu tất cả đã đọc
     fun markAllAsRead() {
-        notifications.filter { !it.isRead }.forEach { notif ->
-            db.collection("notifications").document(notif.id)
-                .update("isRead", true)
+        val unread = notifications.filter { !it.isRead }
+        if (unread.isEmpty()) return
+        val batch = db.batch()
+        unread.forEach { notif ->
+            batch.update(db.collection("notifications").document(notif.id), "isRead", true)
         }
+        batch.commit()
     }
 
     // Auto-clear: khi danh sách load xong và có tin chưa đọc → tự đánh dấu sau 1.5s
@@ -156,11 +159,14 @@ fun NotificationsPage(navController: NavController) {
                         }
                         if (notifications.isNotEmpty()) {
                             IconButton(onClick = {
+                                val batch = db.batch()
                                 notifications.forEach {
-                                    db.collection("notifications").document(it.id).delete()
+                                    batch.delete(db.collection("notifications").document(it.id))
                                 }
-                                notifications = emptyList() // Update UI ngay lập tức
-                                com.example.easyshop.AppUtil.showSuccess("Đã xóa tất cả thông báo")
+                                batch.commit().addOnSuccessListener {
+                                    notifications = emptyList()
+                                    com.example.easyshop.AppUtil.showSuccess("Đã xóa tất cả thông báo")
+                                }
                             }) {
                                 Icon(Icons.Default.DeleteSweep, contentDescription = "Xóa tất cả", tint = Color.Red.copy(alpha=0.7f))
                             }
