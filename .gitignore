@@ -33,5 +33,13 @@ app/build/outputs/mapping/
 
 # Agent specific files
 .agent/
+planProject/
 .kotlin/
 
+# Temporary and OS files
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+
+node_modules/

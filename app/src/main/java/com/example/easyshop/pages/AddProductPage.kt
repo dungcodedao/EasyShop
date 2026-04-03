@@ -126,18 +126,17 @@ fun AddProductPage(
 
     val scope = rememberCoroutineScope()
     val firestore = Firebase.firestore
-    val productRepository = remember { ProductRepository(context) }
+    val productRepository = remember { ProductRepository.getInstance(context) }
 
     // Image Picker Launcher
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         if (uris.isNotEmpty()) {
-            val remainingSlots = 5 - mediaItems.size
-            val newItems = uris.map { ProductMediaItem.LocalUri(it) }
-            mediaItems = (mediaItems + newItems).take(
-                mediaItems.size + remainingSlots.coerceAtLeast(0)
-            )
+            val remaining = (5 - mediaItems.size).coerceAtLeast(0)
+            if (remaining > 0) {
+                mediaItems = mediaItems + uris.take(remaining).map { ProductMediaItem.LocalUri(it) }
+            }
         }
     }
 

@@ -18,6 +18,7 @@ import androidx.navigation.navArgument
 import com.example.easyshop.admin.AdminDashboardScreen
 import com.example.easyshop.admin.AdminHomeScreen
 import com.example.easyshop.admin.AdminNotificationScreen
+import com.example.easyshop.admin.AdminProfileScreen
 import com.example.easyshop.admin.AnalyticsScreen
 import com.example.easyshop.admin.ManageCategoriesScreen
 import com.example.easyshop.admin.ManagePromoCodesScreen
@@ -36,6 +37,7 @@ import com.example.easyshop.pages.NotificationsPage
 import com.example.easyshop.pages.OrderDetailsPage
 import com.example.easyshop.pages.OrdersPage
 import com.example.easyshop.pages.ProductDetailsPage
+import com.example.easyshop.pages.ProfilePage
 import com.example.easyshop.screen.AuthScreen
 import com.example.easyshop.screen.HomeScreen
 import com.example.easyshop.screen.LoginScreen
@@ -235,9 +237,18 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 ReceiptScreen(navController, amount.toDouble(), orderId)
             }
 
+            // 🛡️ Admin Profile (Trang riêng cho Quản trị viên)
+            composable("admin_profile") {
+                AdminProfileScreen(navController = navController)
+            }
+
+            // User Profile (Giữ lại nếu cần cho luồng khác)
+            composable("profile") {
+                ProfilePage(modifier, navController)
+            }
         }
 
-            // 🔔 In-app notification banner (kiểu Shopee/MoMo) — hiện trên mọi màn hình
+            // 🔔 In-app notification banner (kiểu Shopee/MoMo) —    hiện trên mọi màn hình
             NotifBannerOverlay()
             // 🔔 Snackbar thông báo hành động
             AppSnackbarHost()

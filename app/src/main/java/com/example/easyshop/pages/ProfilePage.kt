@@ -244,87 +244,89 @@ fun ProfilePage(
 
             Spacer(Modifier.height(28.dp))
 
-            // --- Primary Address Summary (TikTok Style) ---
-            val defaultAddr = userModel.value.addressList.find { it.isDefault } ?: userModel.value.addressList.firstOrNull()
-            
-            Surface(
-                modifier = Modifier.fillMaxWidth().clickable { showAddressListSheet = true },
-                color = Color.Transparent
-            ) {
-                Row(modifier = Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.Top) {
-                    Icon(
-                        Icons.Default.LocationOn,
-                        null,
-                        modifier = Modifier.size(20.dp).padding(top = 2.dp),
-                        tint = Color.Black.copy(alpha = 0.8f)
-                    )
-                    Spacer(Modifier.width(10.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = if (defaultAddr != null) "${defaultAddr.fullName} (+84)${defaultAddr.phone.removePrefix("0")}" else "Chưa có địa chỉ",
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Spacer(Modifier.weight(1f))
-                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
-                        }
-                        if (defaultAddr != null) {
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = defaultAddr.detailedAddress.trim(),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.Black.copy(alpha = 0.8f),
-                                lineHeight = 20.sp,
-                                maxLines = 2,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                            )
-                        } else {
-                            Text("Chạm để thêm địa chỉ giao hàng", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            if (userModel.value.role != "admin") {
+                // --- Primary Address Summary (TikTok Style) ---
+                val defaultAddr = userModel.value.addressList.find { it.isDefault } ?: userModel.value.addressList.firstOrNull()
+                
+                Surface(
+                    modifier = Modifier.fillMaxWidth().clickable { showAddressListSheet = true },
+                    color = Color.Transparent
+                ) {
+                    Row(modifier = Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.Top) {
+                        Icon(
+                            Icons.Default.LocationOn,
+                            null,
+                            modifier = Modifier.size(20.dp).padding(top = 2.dp),
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = if (defaultAddr != null) "${defaultAddr.fullName} (+84)${defaultAddr.phone.removePrefix("0")}" else "Chưa có địa chỉ",
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Spacer(Modifier.weight(1f))
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                            }
+                            if (defaultAddr != null) {
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = defaultAddr.detailedAddress.trim(),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                                    lineHeight = 20.sp,
+                                    maxLines = 2,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                            } else {
+                                Text("Chạm để thêm địa chỉ giao hàng", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            }
                         }
                     }
                 }
-            }
 
-            Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(16.dp))
 
-            // Quick links
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), elevation = CardDefaults.cardElevation(2.dp)) {
-                Column {
-                    // Cart
-                    ListItem(
-                        headlineContent = { Text(stringResource(R.string.cart_items), fontWeight = FontWeight.Medium) },
-                        supportingContent = { Text("${userModel.value.cartItems.values.sum()} items") },
-                        leadingContent = {
-                            Box(
-                                Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                                contentAlignment = Alignment.Center
-                            ) { Icon(Icons.Default.ShoppingCart, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp)) }
-                        },
-                        trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
-                        modifier = Modifier.clickable { GlobalNavigation.navController.navigate("cart") }
-                    )
+                // Quick links
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), elevation = CardDefaults.cardElevation(2.dp)) {
+                    Column {
+                        // Cart
+                        ListItem(
+                            headlineContent = { Text(stringResource(R.string.cart_items), fontWeight = FontWeight.Medium) },
+                            supportingContent = { Text("${userModel.value.cartItems.values.sum()} items") },
+                            leadingContent = {
+                                Box(
+                                    Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                                    contentAlignment = Alignment.Center
+                                ) { Icon(Icons.Default.ShoppingCart, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp)) }
+                            },
+                            trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                            modifier = Modifier.clickable { GlobalNavigation.navController.navigate("cart") }
+                        )
 
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
 
-                    // Orders
-                    ListItem(
-                        headlineContent = { Text(stringResource(R.string.my_orders), fontWeight = FontWeight.Medium) },
-                        leadingContent = {
-                            Box(
-                                Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)),
-                                contentAlignment = Alignment.Center
-                            ) { Icon(Icons.AutoMirrored.Filled.List, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(22.dp)) }
-                        },
-                        trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
-                        modifier = Modifier.clickable { GlobalNavigation.navController.navigate("orders") }
-                    )
+                        // Orders
+                        ListItem(
+                            headlineContent = { Text(stringResource(R.string.my_orders), fontWeight = FontWeight.Medium) },
+                            leadingContent = {
+                                Box(
+                                    Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
+                                        .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)),
+                                    contentAlignment = Alignment.Center
+                                ) { Icon(Icons.AutoMirrored.Filled.List, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(22.dp)) }
+                            },
+                            trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                            modifier = Modifier.clickable { GlobalNavigation.navController.navigate("orders") }
+                        )
+                    }
                 }
-            }
 
-            Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(16.dp))
+            }
         }
 
         // Ticked to Bottom: Sign Out Button
@@ -337,7 +339,9 @@ fun ProfilePage(
             Button(
                 onClick = {
                     FirebaseAuth.getInstance().signOut()
-                    GlobalNavigation.navController.apply { popBackStack(); navigate("auth") }
+                    GlobalNavigation.navController.navigate("auth") {
+                        popUpTo(0) { inclusive = true }
+                    }
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
@@ -477,7 +481,7 @@ fun ProfilePage(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(addr.fullName, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
-                                    Text("(+84)${addr.phone.removePrefix("0")}", style = MaterialTheme.typography.bodyMedium, color = Color.Black.copy(alpha = 0.7f))
+                                    Text("(+84)${addr.phone.removePrefix("0")}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                                     Spacer(Modifier.height(4.dp))
                                     Text(
                                         addr.detailedAddress.trim(),
