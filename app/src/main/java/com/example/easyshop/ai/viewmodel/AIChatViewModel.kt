@@ -32,15 +32,26 @@ class AIChatViewModel : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _typingMessage = MutableStateFlow<String?>(null)
+    val typingMessage: StateFlow<String?> = _typingMessage.asStateFlow()
+
     fun sendMessage(message: String) {
         if (message.isBlank()) return
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
-            repository.sendMessage(message, messages.value).onFailure { e ->
+            _typingMessage.value = "" // Start streaming UI
+            
+            try {
+                repository.sendMessageStream(message, messages.value).collect { accumulatedText ->
+                    _typingMessage.value = accumulatedText
+                }
+            } catch (e: Exception) {
                 _error.value = e.message
+            } finally {
+                _typingMessage.value = null // Clear streaming UI, message is now in Firestore
+                _isLoading.value = false
             }
-            _isLoading.value = false
         }
     }
 

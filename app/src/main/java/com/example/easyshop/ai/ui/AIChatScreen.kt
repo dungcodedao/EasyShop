@@ -90,6 +90,7 @@ fun AIChatScreen(
     val messages by viewModel.messages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val typingMessage by viewModel.typingMessage.collectAsState()
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
@@ -167,7 +168,19 @@ fun AIChatScreen(
                     )
                 }
 
-                if (isLoading) {
+                if (typingMessage != null) {
+                    item {
+                        if (typingMessage!!.isEmpty()) {
+                            TypingIndicator()
+                        } else {
+                            ChatBubble(
+                                content = typingMessage!! + " █",
+                                isUser = false,
+                                timestamp = null
+                            )
+                        }
+                    }
+                } else if (isLoading) {
                     item { TypingIndicator() }
                 }
             }
@@ -206,7 +219,7 @@ private fun ChatTopBar(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            "Tro ly AI",
+                            "Trợ lý AI",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -218,7 +231,7 @@ private fun ChatTopBar(
                             )
                             Spacer(modifier = Modifier.width(5.dp))
                             Text(
-                                "Dang online",
+                                "Đang online",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -258,14 +271,14 @@ private fun WelcomeHintCard() {
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Text(
-                text = "Tu van nhanh theo nhu cau",
+                text = "Tư vấn nhanh theo nhu cầu",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "Mo ta ngan sach, muc dich su dung, hoac yeu cau cau hinh. Minh se de xuat 2-3 lua chon phu hop.",
+                text = "Mô tả ngân sách, mục đích sử dụng, hoặc yêu cầu cấu hình. Mình sẽ đề xuất lựa chọn phù hợp.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 18.sp
@@ -355,7 +368,7 @@ fun ChatInput(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.weight(1f),
-            placeholder = { Text("Nhap tin nhan...") },
+            placeholder = { Text("Nhập tin nhắn...") },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surface,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -419,7 +432,7 @@ fun TypingIndicator() {
             )
         ) {
             Text(
-                "AI dang tu van...",
+                "AI đang tư vấn...",
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -527,7 +540,7 @@ fun MarkdownText(text: String, textColor: Color) {
                         },
                         label = {
                             Text(
-                                text = "Xem san pham",
+                                text = "Xem sản phẩm",
                                 fontWeight = FontWeight.SemiBold
                             )
                         },
@@ -543,7 +556,7 @@ fun MarkdownText(text: String, textColor: Color) {
 
             if (productIds.size > 3) {
                 Text(
-                    text = "+${productIds.size - 3} san pham khac",
+                    text = "+${productIds.size - 3} sản phẩm khác",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
                     modifier = Modifier.padding(top = 4.dp, start = 2.dp)
@@ -556,16 +569,16 @@ fun MarkdownText(text: String, textColor: Color) {
 @Composable
 fun SuggestionChips(onSuggestionClick: (String) -> Unit) {
     val suggestions = listOf(
-        "Tu van laptop hoc tap tam 15 trieu",
-        "So sanh 2 mau gaming PC",
-        "May nao dang co deal tot",
-        "Goi y cau hinh cho do hoa",
-        "Nen mua iPhone nao hien tai"
+        "Tư vấn laptop tầm 15 triệu",
+        "So sánh 2 mẫu gaming PC",
+        "Máy nào đang có deal tốt",
+        "Gợi ý cấu hình cho đồ họa",
+        "Nên mua iPhone nào hiện tại"
     )
 
     Column {
         Text(
-            text = "Goi y nhanh",
+            text = "Gợi ý nhanh",
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -5,37 +5,30 @@ import com.example.easyshop.BuildConfig
 import com.example.easyshop.ai.model.ChatMessage
 import com.example.easyshop.model.OrderModel
 import com.example.easyshop.model.ProductModel
+import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.type.BlockThreshold
+import com.google.ai.client.generativeai.type.FinishReason
+import com.google.ai.client.generativeai.type.HarmCategory
+import com.google.ai.client.generativeai.type.SafetySetting
+import com.google.ai.client.generativeai.type.content
+import com.google.ai.client.generativeai.type.generationConfig
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONArray
-import org.json.JSONObject
 import java.text.Normalizer
-import java.util.concurrent.TimeUnit
 
 class AiRepository {
     private val db = Firebase.firestore
     private val auth = Firebase.auth
 
     private val apiKey = BuildConfig.GEMINI_API_KEY
-    private val apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey"
-
-    private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .build()
 
     private var cachedProducts: List<ProductModel> = emptyList()
     private var lastProductsFetchTimeMs: Long = 0L
@@ -92,147 +85,132 @@ class AiRepository {
         }
     }
 
-    suspend fun sendMessage(userMessage: String, history: List<ChatMessage>): Result<String> {
-        val userId = auth.currentUser?.uid ?: return Result.failure(Exception("Chua dang nhap"))
-        return try {
-            val chatDocRef = db.collection("chats").document(userId)
+    fun sendMessageStream(userMessage: String, history: List<ChatMessage>): Flow<String> = flow {
+        val userId = auth.currentUser?.uid ?: throw Exception("Chua dang nhap")
+        val chatDocRef = db.collection("chats").document(userId)
 
-            chatDocRef.collection("messages").add(
-                hashMapOf(
-                    "content" to userMessage,
-                    "isUser" to true,
-                    "timestamp" to FieldValue.serverTimestamp()
-                )
-            ).await()
-
-            val allProducts = fetchAllProducts()
-            val relevantProducts = selectRelevantProducts(userMessage, history, allProducts)
-            val selectedProducts = when {
-                relevantProducts.isNotEmpty() -> relevantProducts.take(14)
-                allProducts.isNotEmpty() -> allProducts
-                    .sortedWith(compareByDescending<ProductModel> { it.inStock }.thenBy { parseCurrencyToLong(it.price) ?: Long.MAX_VALUE })
-                    .take(14)
-                else -> emptyList()
-            }
-
-            val productsById = allProducts.filter { it.id.isNotBlank() }.associateBy { it.id }
-            val userContext = fetchUserContext(userId, productsById)
-            val aiReply = callGeminiApi(
-                currentMessage = userMessage,
-                history = history,
-                productsContext = buildProductsContext(selectedProducts),
-                userContext = buildUserContext(userContext),
-                intent = detectIntent(userMessage)
+        chatDocRef.collection("messages").add(
+            hashMapOf(
+                "content" to userMessage,
+                "isUser" to true,
+                "timestamp" to FieldValue.serverTimestamp()
             )
+        ).await()
 
+        val allProducts = fetchAllProducts()
+        val relevantProducts = selectRelevantProducts(userMessage, history, allProducts)
+        val selectedProducts = when {
+            relevantProducts.isNotEmpty() -> relevantProducts.take(14)
+            allProducts.isNotEmpty() -> allProducts
+                .sortedWith(compareByDescending<ProductModel> { it.inStock }.thenBy { parseCurrencyToLong(it.price) ?: Long.MAX_VALUE })
+                .take(14)
+            else -> emptyList()
+        }
+
+        val productsById = allProducts.filter { it.id.isNotBlank() }.associateBy { it.id }
+        val userContextInfo = fetchUserContext(userId, productsById)
+        
+        val intent = detectIntent(userMessage)
+        val userContextStr = buildUserContext(userContextInfo)
+        val productsContextStr = buildProductsContext(selectedProducts)
+
+        val systemInstructionStr = """
+            BẠN LÀ: AI EasyShop - Chuyên gia tư vấn mua sắm công nghệ cao cấp tại Việt Nam.
+            Ý ĐỊNH NGƯỜI DÙNG: $intent
+
+            PHONG CÁCH PHỤC VỤ (CORE RULES):
+            1) Ngôn ngữ: Tiếng Việt tự nhiên, tinh tế, am hiểu sản phẩm. Tuyệt đối không dùng từ ngữ máy móc hoặc sai chính tả.
+            2) Tránh lặp lại: Không lặp lại câu chào "Chào bạn..." nếu người dùng đang trong luồng hội thoại. Chỉ chào ở tin nhắn đầu tiên.
+            3) Tư vấn chuyên sâu: Khi so sánh, hãy tập trung vào sự khác biệt thực tế về hiệu năng, giá trị sử dụng thay vì chỉ liệt kê thông số.
+            4) Quy tắc ID sản phẩm: Luôn kèm ID chính xác trong ngoặc vuông ngay sau tên sản phẩm nếu có trong ngữ cảnh. Ví dụ: Samsung S25 Ultra [s25u_01].
+            5) Tuyệt đối không bịa đặt: Chỉ tư vấn dựa trên dữ liệu sản phẩm thật bên dưới. Nếu không có máy người dùng hỏi, hãy xin lỗi và gợi ý máy tương đương tốt nhất.
+            6) Trình bày: Sử dụng bullet points (-) để so sánh hoặc liệt kê cho dễ đọc. 
+            7) Luôn kết thúc bằng một câu hỏi gợi mở để hỗ trợ người dùng chốt đơn hoặc tìm hiểu thêm (VD: "Bạn có muốn mình so sánh camera của 2 máy này không?").
+            8) Tự do ngôn luận: Bạn có thể trả lời chi tiết và đầy đủ nhất có thể để làm hài lòng người dùng, không bị giới hạn số dòng.
+
+            NGỮ CẢNH KHÁCH HÀNG:
+            $userContextStr
+
+            DANH MỤC SẢN PHẨM KHẢ DỤNG:
+            $productsContextStr
+        """.trimIndent()
+
+        val generativeModel = GenerativeModel(
+            modelName = "gemini-2.5-flash",
+            apiKey = apiKey,
+            systemInstruction = content { text(systemInstructionStr) },
+            generationConfig = generationConfig {
+                temperature = 0.6f
+                topP = 0.95f
+                topK = 40
+                maxOutputTokens = 1024
+            },
+            safetySettings = listOf(
+                SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.NONE),
+                SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.NONE),
+                SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.NONE),
+                SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.NONE)
+            )
+        )
+
+        val chatContextContents = history.takeLast(14)
+            .filter { msg ->
+                msg.isUser || (msg.content.length > 50 || !msg.content.contains("Xin lỗi"))
+            }
+            .map { msg ->
+                content(if (msg.isUser) "user" else "model") { text(msg.content) }
+            }.toMutableList()
+        
+        chatContextContents.add(content("user") { text(userMessage) })
+
+        var aiReplyAccumulator = ""
+
+        val responseStream = generativeModel.generateContentStream(*chatContextContents.toTypedArray())
+        
+        try {
+            responseStream.collect { chunk ->
+                val finishReason = chunk.candidates.firstOrNull()?.finishReason
+                if (finishReason != null && finishReason != FinishReason.STOP) {
+                    Log.w("AI_DEBUG", "AI dừng sớm vì lý do: $finishReason")
+                }
+
+                val textPart = try { 
+                    chunk.text ?: "" 
+                } catch (e: Exception) { 
+                    if (e.message?.contains("SAFETY", ignoreCase = true) == true) {
+                        throw Exception("Nội dung bị bộ lọc an toàn chặn. Hãy thử diễn đạt khác.")
+                    }
+                    ""
+                }
+                if (textPart.isNotEmpty()) {
+                    aiReplyAccumulator += textPart
+                    emit(aiReplyAccumulator)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("AI_CHAT_ERROR", "Lỗi khi stream: ${e.message}", e)
+            val msg = e.message ?: ""
+            if (msg.contains("MAX_TOKENS", ignoreCase = true)) {
+                if (aiReplyAccumulator.isNotBlank()) {
+                    emit(aiReplyAccumulator + "\n\n*(Hệ thống: Do nội dung quá dài nên mình xin phép ngắt lời tại đây. Bạn muốn mình nói tiếp về phần nào không?)*")
+                } else {
+                    throw Exception("Câu hỏi quá dài khiến mình bị 'quá tải', bạn thử hỏi ngắn gọn hơn nhé!")
+                }
+            } else if (!msg.contains("MAX_TOKENS", ignoreCase = true) || aiReplyAccumulator.isBlank()) {
+                throw e
+            }
+        }
+
+        if (aiReplyAccumulator.isNotBlank()) {
             chatDocRef.collection("messages").add(
                 hashMapOf(
-                    "content" to aiReply,
+                    "content" to aiReplyAccumulator,
                     "isUser" to false,
                     "timestamp" to FieldValue.serverTimestamp()
                 )
             ).await()
             chatDocRef.update("lastActivity", FieldValue.serverTimestamp())
-
-            Result.success(aiReply)
-        } catch (e: Exception) {
-            Log.e("AI_CHAT", "sendMessage failed: ${e.message}")
-            Result.failure(e)
         }
-    }
-
-    private suspend fun callGeminiApi(
-        currentMessage: String,
-        history: List<ChatMessage>,
-        productsContext: String,
-        userContext: String,
-        intent: String
-    ): String = withContext(Dispatchers.IO) {
-        val systemInstruction = """
-            You are EasyShop Copilot, a modern shopping advisor inside a Vietnamese ecommerce app.
-            Current detected intent: $intent
-
-            Hard rules:
-            1) Always reply in natural Vietnamese, concise, practical, and up-to-date in tone.
-            2) Do not use generic old-school sales language. Focus on concrete recommendation logic.
-            3) You must only recommend products from the catalog context below.
-            4) If recommending a product, append its exact id in square brackets, and ONLY the id in the brackets. Example: Ten san pham [abc123]
-            5) Never invent product IDs, prices, stock, specs, promotions, or policies not present in context.
-            6) Prioritize in-stock items. If user asks for unavailable specs, say it clearly and suggest nearest alternatives.
-            7) Personalize using user context (recent orders/cart/preferences) when relevant, but keep privacy-safe wording.
-            8) Default answer structure: quick conclusion, 2-3 fitting options with reason + price, then one short next-step question.
-            9) Keep response around 5-10 short lines unless user requests deeper detail.
-
-            User context:
-            $userContext
-
-            Catalog context:
-            $productsContext
-        """.trimIndent()
-
-        val body = JSONObject().apply {
-            put("system_instruction", JSONObject().apply {
-                put("parts", JSONArray().put(JSONObject().put("text", systemInstruction)))
-            })
-
-            put("generationConfig", JSONObject().apply {
-                put("temperature", 0.55)
-                put("topP", 0.9)
-                put("topK", 40)
-                put("maxOutputTokens", 720)
-            })
-
-            val contentsArray = JSONArray()
-            val recentHistory = history.takeLast(14)
-            recentHistory.forEach { msg ->
-                contentsArray.put(JSONObject().apply {
-                    put("role", if (msg.isUser) "user" else "model")
-                    put("parts", JSONArray().put(JSONObject().put("text", msg.content)))
-                })
-            }
-
-            contentsArray.put(JSONObject().apply {
-                put("role", "user")
-                put("parts", JSONArray().put(JSONObject().put("text", currentMessage)))
-            })
-
-            put("contents", contentsArray)
-        }.toString().toRequestBody("application/json".toMediaType())
-
-        val request = Request.Builder().url(apiUrl).post(body).build()
-        val response = httpClient.newCall(request).execute()
-        val responseStr = response.body?.string() ?: ""
-
-        if (!response.isSuccessful) {
-            val errorMsg = try {
-                JSONObject(responseStr).getJSONObject("error").getString("message")
-            } catch (_: Exception) {
-                "Loi ${response.code}: $responseStr"
-            }
-            throw Exception(errorMsg)
-        }
-
-        val root = JSONObject(responseStr)
-        val candidates = root.optJSONArray("candidates") ?: throw Exception("No candidates from model")
-
-        for (i in 0 until candidates.length()) {
-            val candidate = candidates.optJSONObject(i) ?: continue
-            val parts = candidate.optJSONObject("content")?.optJSONArray("parts") ?: continue
-            val combinedText = buildString {
-                for (j in 0 until parts.length()) {
-                    val text = parts.optJSONObject(j)?.optString("text").orEmpty().trim()
-                    if (text.isNotBlank()) {
-                        if (isNotEmpty()) append("\n")
-                        append(text)
-                    }
-                }
-            }
-            if (combinedText.isNotBlank()) {
-                return@withContext combinedText
-            }
-        }
-
-        throw Exception("Model returned empty text")
     }
 
     suspend fun clearChat() {
@@ -253,7 +231,7 @@ class AiRepository {
             .size()
 
         if (messagesCount == 0) {
-            val welcomeText = "Chao ban! Toi la tro ly AI cua EasyShop. Ban can minh goi y san pham theo nhu cau, ngan sach, hay so sanh nhanh khong?"
+            val welcomeText = "Chào bạn! Tôi là AI EasyShop. Bạn cần mình gợi ý sản phẩm theo nhu cầu, ngân sách, hay so sánh nhanh không?"
             db.collection("chats").document(userId).collection("messages").add(
                 hashMapOf(
                     "content" to welcomeText,
@@ -279,7 +257,7 @@ class AiRepository {
 
     private fun foldText(raw: String): String {
         val normalized = Normalizer.normalize(raw.lowercase(), Normalizer.Form.NFD)
-        return normalized.replace(Regex("\\p{M}+"), " ").replace(Regex("\\s+"), " ").trim()
+        return normalized.replace(Regex("\\p{M}+"), "").replace(Regex("\\s+"), " ").trim()
     }
 
     private fun tokenize(raw: String): List<String> {
@@ -347,7 +325,7 @@ class AiRepository {
 
             queryTokens.forEach { token ->
                 when {
-                    title.contains(token) -> score += 4
+                    title.contains(token) -> score += 10 // Tăng mạnh điểm nếu khớp tên máy
                     category.contains(token) -> score += 3
                     specs.contains(token) -> score += 2
                     description.contains(token) -> score += 1
@@ -387,34 +365,38 @@ class AiRepository {
 
     private fun buildProductsContext(products: List<ProductModel>): String {
         if (products.isEmpty()) {
-            return "Catalog is currently unavailable."
+            return "Danh mục sản phẩm hiện không khả dụng."
         }
 
-        val lines = products.mapIndexed { index, product ->
-            val topSpecs = product.otherDetails.entries
-                .take(3)
-                .joinToString(", ") { "${it.key}: ${it.value}" }
-                .ifBlank { "n/a" }
+        return products.mapIndexed { index, product ->
+            val isMain = index < 3 // Chỉ lấy thông số kỹ thuật đầy đủ cho 3 sản phẩm đầu tiên
+            
+            val price = product.price.ifBlank { "không có" }
+            val category = product.category.ifBlank { "chưa_phân_loại" }
+            
+            if (isMain) {
+                val topSpecs = product.otherDetails.entries
+                    .take(4)
+                    .joinToString(", ") { "${it.key}: ${it.value}" }
+                    .ifBlank { "không có" }
 
-            val price = product.price.ifBlank { "n/a" }
-            val oldPrice = product.actualPrice.takeIf { it.isNotBlank() && it != product.price }
-            val status = if (product.inStock) "in_stock" else "out_of_stock"
-            val category = product.category.ifBlank { "unknown" }
-            val shortDescription = product.description.take(120).replace("\n", " ").ifBlank { "n/a" }
+                val oldPrice = product.actualPrice.takeIf { it.isNotBlank() && it != product.price }
+                val status = if (product.inStock) "còn_hàng" else "hết_hàng"
+                val shortDescription = product.description.take(150).replace("\n", " ").ifBlank { "không có mô tả" }
 
-            buildString {
-                append("${index + 1}. ${product.title}")
-                append(" | id=[${product.id}]")
-                append(" | category=$category")
-                append(" | price=$price")
-                if (!oldPrice.isNullOrBlank()) append(" | old_price=$oldPrice")
-                append(" | status=$status")
-                append(" | specs=$topSpecs")
-                append(" | summary=$shortDescription")
+                buildString {
+                    append("${index + 1}. ${product.title} [${product.id}]")
+                    append(" | giá=$price")
+                    if (!oldPrice.isNullOrBlank()) append(" | giá_cũ=$oldPrice")
+                    append(" | trạng_thái=$status | danh_mục=$category")
+                    append("\n   - Thông số: $topSpecs")
+                    append("\n   - Tóm tắt: $shortDescription...")
+                }
+            } else {
+                // Nén tối đa để tiết kiệm bộ nhớ
+                "${index + 1}. ${product.title} [${product.id}] | giá=$price | danh_mục=$category"
             }
-        }
-
-        return lines.joinToString(separator = "\n")
+        }.joinToString(separator = "\n\n")
     }
 
     private suspend fun fetchUserContext(
@@ -426,12 +408,12 @@ class AiRepository {
         val name = userDoc?.getString("name")
             ?.takeIf { it.isNotBlank() }
             ?: auth.currentUser?.displayName
-            ?: "Khach hang"
+            ?: "Khách hàng"
         val email = userDoc?.getString("email")
             ?.takeIf { it.isNotBlank() }
             ?: auth.currentUser?.email
-            ?: "unknown"
-        val role = userDoc?.getString("role").orEmpty().ifBlank { "user" }
+            ?: "không_rõ"
+        val role = userDoc?.getString("role").orEmpty().ifBlank { "người_dùng" }
 
         val cartItems = readCartItems(userDoc?.get("cartItems"))
         val cartSummary = cartItems.entries
@@ -441,7 +423,7 @@ class AiRepository {
                 val productName = productsById[productId]?.title ?: productId
                 "$productName x$qty"
             }
-            .ifBlank { "empty_cart" }
+            .ifBlank { "giỏ_hàng_trống" }
 
         val orders = runCatching {
             db.collection("orders")
@@ -460,7 +442,7 @@ class AiRepository {
                 val shortId = order.id.take(8).uppercase()
                 "#$shortId:${order.status}:${order.total.toLong()}"
             }
-            .ifBlank { "no_recent_orders" }
+            .ifBlank { "không_có_đơn_hang_gần_đây" }
 
         val deliveredOrders = orders.filter { it.status == "DELIVERED" }
         val avgDeliveredOrderValue = deliveredOrders.map { it.total }.average().takeIf { !it.isNaN() } ?: 0.0
@@ -477,7 +459,7 @@ class AiRepository {
             .sortedByDescending { it.value }
             .take(3)
             .joinToString(", ") { "${it.key}(${it.value})" }
-            .ifBlank { "unknown" }
+            .ifBlank { "chưa_rõ" }
 
         return UserChatContext(
             name = name,
@@ -492,13 +474,13 @@ class AiRepository {
 
     private fun buildUserContext(context: UserChatContext): String {
         return """
-            name=${context.name}
+            tên=${context.name}
             email=${context.email}
-            role=${context.role}
-            cart_top=${context.cartSummary}
-            recent_orders=${context.recentOrdersSummary}
-            favorite_categories=${context.favoriteCategories}
-            avg_delivered_order_vnd=${context.averageDeliveredOrderValue.toLong()}
+            vai_trò=${context.role}
+            giỏ_hàng=${context.cartSummary}
+            đơn_hàng_gần_đây=${context.recentOrdersSummary}
+            danh_mục_yêu_thích=${context.favoriteCategories}
+            giá_trị_đơn_hàng_trung_bình_vnd=${context.averageDeliveredOrderValue.toLong()}
         """.trimIndent()
     }
 
