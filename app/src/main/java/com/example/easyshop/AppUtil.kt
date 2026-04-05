@@ -1,10 +1,13 @@
 package com.example.easyshop
 
-import android.app.AlertDialog
 import android.content.Context
-import androidx.core.content.edit
-import com.example.easyshop.components.SnackbarController
+import android.content.DialogInterface
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import com.example.easyshop.model.OrderModel
+import com.example.easyshop.model.ProductModel
 import com.example.easyshop.model.UserModel
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
@@ -16,218 +19,330 @@ import java.util.Locale
 import java.util.UUID
 
 object AppUtil {
-    fun showToast(context: Context, message: String) {
-        SnackbarController.info(message)
+    private const val PREFS_NAME = "easyshop_prefs"
+    private const val FAVORITES_KEY = "favorite_ids"
+
+    private fun appContext(): Context = FirebaseAuth.getInstance().app.applicationContext
+
+    private fun getFavoriteIds(context: Context): MutableSet<String> {
+        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getStringSet(FAVORITES_KEY, emptySet())
+            ?.toMutableSet()
+            ?: mutableSetOf()
     }
 
-    fun showSuccess(message: String, subtext: String? = null) = SnackbarController.success(message, subtext)
-    fun showError(message: String, subtext: String? = null) = SnackbarController.error(message, subtext)
-    fun showInfo(message: String, subtext: String? = null) = SnackbarController.info(message, subtext)
-    fun showWarning(message: String, subtext: String? = null) = SnackbarController.warning(message, subtext)
+    private fun saveFavoriteIds(context: Context, ids: Set<String>) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putStringSet(FAVORITES_KEY, ids)
+            .apply()
+    }
 
-    fun addItemToCart(context: Context, productId :String){
-        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
-        val userDoc = Firebase.firestore.collection("users")
-            .document(currentUser.uid)
-        userDoc.get().addOnCompleteListener(){
-            if(it.isSuccessful) {
-                @Suppress("UNCHECKED_CAST")
-                val currentCart = it.result.get("cartItems") as? Map<String, Long> ?: emptyMap()
-                val currentQuantity = currentCart[productId]?:0
-                val updateQuantity = currentQuantity + 1;
+    fun showToast(context: Context, message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
 
-                val updateCart = mapOf("cartItems.$productId" to updateQuantity)
+    fun showSuccess(message: String) {
+        showToast(appContext(), message)
+    }
 
-                userDoc.update(updateCart)
-                    .addOnCompleteListener {
-                        if(it.isSuccessful) {
-                            showSuccess("Đã thêm vào giỏ hàng", "Sản phẩm đã sẵn sàng thanh toán")
-                        } else {
-                            showError("Thất bại", "Không thể thêm vào giỏ hàng")
-                        }
-                    }
-            }
+    fun showError(message: String, detail: String? = null) {
+        val finalMessage = if (detail.isNullOrBlank()) message else "$message: $detail"
+        showToast(appContext(), finalMessage)
+    }
+
+    fun isNetworkAvailable(context: Context): Boolean {
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val activeNetwork = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return when {
+            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
+            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
+            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
+            else -> false
         }
     }
 
-    fun removeItemFromCart(context: Context, productId :String, removeAll : Boolean = false){
-        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
-        val userDoc = Firebase.firestore.collection("users")
-            .document(currentUser.uid)
-        userDoc.get().addOnCompleteListener(){
-            if(it.isSuccessful) {
-                @Suppress("UNCHECKED_CAST")
-                val currentCart = it.result.get("cartItems") as? Map<String, Long> ?: emptyMap()
-                val currentQuantity = currentCart[productId]?:0
-                val updateQuantity = currentQuantity - 1;
+    fun checkNetworkAndNotify(context: Context): Boolean {
+        if (!isNetworkAvailable(context)) {
+            showToast(context, "Mất kết nối Internet. Vui lòng kiểm tra lại!")
+            return false
+        }
+        return true
+    }
 
-                val updateCart =
-                    if (updateQuantity <= 0 || removeAll )
-                        mapOf("cartItems.$productId" to FieldValue.delete())
-                    else
-                        mapOf("cartItems.$productId" to updateQuantity)
+    fun formatCurrency(amount: Double): String {
+        return "đ" + String.format("%,.0f", amount)
+    }
 
-                userDoc.update(updateCart)
-                    .addOnCompleteListener {
-                        if(it.isSuccessful) {
-                            showToast(context, "Đã xóa khỏi giỏ hàng")
-                        } else {
-                            showToast(context, "Không thể xóa khỏi giỏ hàng")
+    /**
+     * Hỗ trợ định dạng giá từ nhiều kiểu dữ liệu khác nhau (String, Float, Double)
+     */
+    fun formatPrice(price: Any?): String {
+        val amount = when (price) {
+            is String -> price.replace(",", "").replace("đ", "").trim().toDoubleOrNull() ?: 0.0
+            is Float -> price.toDouble()
+            is Double -> price
+            is Int -> price.toDouble()
+            is Long -> price.toDouble()
+            else -> 0.0
+        }
+        return formatCurrency(amount)
+    }
+
+    fun formatDate(timestamp: Timestamp?): String {
+        if (timestamp == null) return ""
+        val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+        return sdf.format(timestamp.toDate())
+    }
+
+    fun formatData(timestamp: Timestamp?): String = formatDate(timestamp)
+
+    fun checkFavorite(context: Context, productId: String): Boolean {
+        return getFavoriteIds(context).contains(productId)
+    }
+
+    fun addOrRemoveFromFavorite(context: Context, productId: String) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid == null) {
+            showToast(context, "Vui lòng đăng nhập để dùng yêu thích")
+            return
+        }
+
+        val db = Firebase.firestore
+        val favoritesRef = db.collection("users").document(uid).collection("favorites")
+        val favoriteIds = getFavoriteIds(context)
+
+        if (favoriteIds.contains(productId)) {
+            favoritesRef.document(productId)
+                .delete()
+                .addOnSuccessListener {
+                    favoriteIds.remove(productId)
+                    saveFavoriteIds(context, favoriteIds)
+                    showToast(context, "Đã xóa khỏi yêu thích")
+                }
+                .addOnFailureListener {
+                    showToast(context, "Xóa khỏi yêu thích thất bại")
+                }
+        } else {
+            db.collection("data").document("stock")
+                .collection("products")
+                .document(productId)
+                .get()
+                .addOnSuccessListener { snapshot ->
+                    val product = snapshot.toObject(ProductModel::class.java)?.apply {
+                        id = snapshot.id
+                    } ?: ProductModel(id = productId)
+
+                    favoritesRef.document(productId)
+                        .set(product)
+                        .addOnSuccessListener {
+                            favoriteIds.add(productId)
+                            saveFavoriteIds(context, favoriteIds)
+                            showToast(context, "Đã thêm vào yêu thích")
                         }
+                        .addOnFailureListener {
+                            showToast(context, "Thêm vào yêu thích thất bại")
+                        }
+                }
+                .addOnFailureListener {
+                    showToast(context, "Không tìm thấy sản phẩm")
+                }
+        }
+    }
+
+    fun generateOrderNumber(): String {
+        return "ES-" + UUID.randomUUID().toString().substring(0, 8).uppercase()
+    }
+
+    fun addItemToCart(context: Context, productId: String, quantity: Int = 1) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val db = Firebase.firestore
+        
+        db.collection("users").document(uid)
+            .update("cartItems.$productId", FieldValue.increment(quantity.toLong()))
+            .addOnSuccessListener {
+                showToast(context, "Đã thêm vào giỏ hàng")
+            }
+            .addOnFailureListener {
+                // Nếu field cartItems chưa tồn tại hoặc rỗng, khởi tạo map mới
+                val initialCart = mapOf(productId to quantity.toLong())
+                db.collection("users").document(uid)
+                    .update("cartItems", initialCart)
+                    .addOnFailureListener {
+                         showToast(context, "Thêm vào giỏ hàng thất bại")
                     }
+                    .addOnSuccessListener {
+                        showToast(context, "Đã thêm vào giỏ hàng")
+                    }
+            }
+    }
+
+    fun incrementCartItem(productId: String) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        Firebase.firestore.collection("users").document(uid)
+            .update("cartItems.$productId", FieldValue.increment(1))
+    }
+
+    fun decrementCartItem(productId: String) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val db = Firebase.firestore
+        val userRef = db.collection("users").document(uid)
+        
+        db.runTransaction { transaction ->
+            val snapshot = transaction.get(userRef)
+            val cartItems = snapshot.get("cartItems") as? Map<String, Long> ?: emptyMap()
+            val currentQty = cartItems[productId] ?: 0L
+            
+            if (currentQty <= 1L) {
+                transaction.update(userRef, "cartItems.$productId", FieldValue.delete())
+            } else {
+                transaction.update(userRef, "cartItems.$productId", FieldValue.increment(-1))
+            }
+        }.addOnFailureListener { e ->
+             showError("Lỗi cập nhật giỏ hàng", e.message)
+        }
+    }
+
+    fun removeItemFromCart(context: Context, productId: String, removeAll: Boolean = false) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val db = Firebase.firestore
+        
+        if (removeAll) {
+            db.collection("users").document(uid)
+                .update("cartItems.$productId", FieldValue.delete())
+                .addOnSuccessListener {
+                    showToast(context, "Đã xóa khỏi giỏ hàng")
+                }
+        } else {
+            decrementCartItem(productId)
+        }
+    }
+
+    fun placeOrder(
+        context: Context,
+        order: OrderModel,
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        if (!checkNetworkAndNotify(context)) {
+            onFailure("Không có kết nối mạng")
+            return
+        }
+
+        val db = Firebase.firestore
+        val ordersRef = db.collection("orders")
+        
+        ordersRef.document(order.id).set(order)
+            .addOnSuccessListener {
+                updateStockAfterOrder(order)
+                clearCartInFirestore(order.userId)
+                onSuccess()
+            }
+            .addOnFailureListener { e ->
+                onFailure(e.message ?: "Có lỗi xảy ra khi đặt hàng")
+            }
+    }
+
+    private fun updateStockAfterOrder(order: OrderModel) {
+        val db = Firebase.firestore
+        order.items.forEach { (productId, quantity) ->
+            val productRef = db.collection("data").document("stock").collection("products").document(productId)
+            db.runTransaction { transaction ->
+                val snapshot = transaction.get(productRef)
+                val currentStock = snapshot.getLong("stockCount") ?: 0L
+                val newStock = (currentStock - quantity).coerceAtLeast(0)
+                
+                transaction.update(productRef, "stockCount", newStock)
+                
+                // Cập nhật trạng thái inStock nếu hết hàng
+                if (newStock <= 0) {
+                    transaction.update(productRef, "inStock", false)
+                }
             }
         }
     }
 
     fun clearCartAndAddToOrder(
-        totalAmount: Double = 0.0,
-        subtotal: Double = 0.0,
-        discount: Double = 0.0,
-        promoCode: String = "",
-        paymentMethod: String = "COD",
-        customOrderId: String? = null
+        context: Context,
+        total: Double,
+        subtotal: Double,
+        discount: Double,
+        promoCode: String,
+        paymentMethod: String,
+        orderId: String
     ) {
-        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
-        val userDoc = Firebase.firestore.collection("users").document(currentUser.uid)
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val db = Firebase.firestore
+        
+        // 1. Lấy thông tin user để điền vào đơn hàng
+        db.collection("users").document(uid).get().addOnSuccessListener { snapshot ->
+            val user = snapshot.toObject(UserModel::class.java) ?: return@addOnSuccessListener
+            
+            // 2. Tạo đối tượng Order
+            val order = OrderModel(
+                id = orderId,
+                userId = uid,
+                userName = user.name,
+                userEmail = user.email,
+                userPhone = user.phone,
+                items = user.cartItems,
+                subtotal = subtotal,
+                discount = discount,
+                promoCode = promoCode,
+                total = total,
+                status = "ORDERED",
+                address = user.addressList.find { it.isDefault }?.detailedAddress ?: user.addressList.firstOrNull()?.detailedAddress ?: "",
+                paymentMethod = paymentMethod
+            )
 
-        userDoc.get().addOnSuccessListener { document ->
-            if (document.exists()) {
-                val user = document.toObject(UserModel::class.java)
-                val cartItems = user?.cartItems ?: emptyMap()
+            // 3. Đặt hàng
+            placeOrder(context, order, {
+                // Success handled by page
+            }, { 
+                showToast(context, "Lỗi đặt hàng: $it")
+            })
+        }
+    }
 
-                if (cartItems.isEmpty()) return@addOnSuccessListener
+    fun clearCartInFirestore(userId: String) {
+        val db = Firebase.firestore
+        db.collection("users").document(userId)
+            .update("cartItems", emptyMap<String, Long>())
+    }
 
-                val orderId = customOrderId ?: ("ORD" + UUID.randomUUID().toString().replace("-", "").take(10).uppercase())
-
-                val order = OrderModel(
-                    id = orderId,
-                    userId = currentUser.uid,
-                    userName = user?.name ?: "Khách hàng",
-                    userEmail = user?.email ?: "N/A",
-                    userPhone = user?.phone ?: "",
-                    date = Timestamp.now(),
-                    items = cartItems,
-                    subtotal = subtotal,
-                    discount = discount,
-                    promoCode = promoCode,
-                    total = totalAmount,
-                    status = "ORDERED",
-                    address = user?.address ?: "Chưa có địa chỉ",
-                    paymentMethod = paymentMethod
-                )
-
-                Firebase.firestore.collection("orders")
-                    .document(orderId)
-                    .set(order)
-                    .addOnSuccessListener {
-                        userDoc.update("cartItems", FieldValue.delete())
-
-                        val db = Firebase.firestore
-                        val itemCount = cartItems.values.sum()
-
-                        // ✅ 1. Thông báo cho USER: đặt hàng thành công
-                        val userNotif = hashMapOf(
-                            "userId" to currentUser.uid,
-                            "title" to "Đặt hàng thành công ✅",
-                            "body" to "Đơn #${orderId.take(8).uppercase()} ($itemCount sản phẩm) đã được ghi nhận. Phương thức: $paymentMethod.",
-                            "type" to "ORDER_STATUS",
-                            "orderId" to orderId,
-                            "isRead" to false,
-                            "recipientRole" to "user",
-                            "createdAt" to Timestamp.now()
-                        )
-                        db.collection("notifications").add(userNotif)
-
-                        // 🔔 2. Thông báo cho ADMIN: có đơn mới
-                        val adminNotif = hashMapOf(
-                            "userId" to "admin",
-                            "title" to "Đơn hàng mới #${orderId.take(8).uppercase()}",
-                            "body" to "Khách ${user?.name ?: "Ẩn danh"} vừa đặt $itemCount sản phẩm · ${formatCurrency(totalAmount)}",
-                            "type" to "NEW_ORDER",
-                            "orderId" to orderId,
-                            "isRead" to false,
-                            "recipientRole" to "admin",
-                            "createdAt" to Timestamp.now()
-                        )
-                        db.collection("notifications").add(adminNotif)
-                    }
+    fun getOrderHistory(
+        userId: String,
+        onSuccess: (List<OrderModel>) -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        val db = Firebase.firestore
+        db.collection("orders")
+            .whereEqualTo("userId", userId)
+            .orderBy("date", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener { result ->
+                val orders = result.documents.mapNotNull { it.toObject(OrderModel::class.java) }
+                onSuccess(orders)
             }
-        }
-    }
-
-
-
-    private fun showSuccessDialog(context: Context) {
-        val builder = AlertDialog.Builder(context)
-        builder.setTitle("✅ Thanh toán thành công")
-            .setMessage("Đơn hàng của bạn đã được đặt thành công!")
-            .setPositiveButton("OK") { _, _ ->
-                GlobalNavigation.navController.navigate("home") {
-                    popUpTo("checkout") { inclusive = true }
-                }
+            .addOnFailureListener { e ->
+                onFailure(e.message ?: "Không thể lấy lịch sử đơn hàng")
             }
-            .setCancelable(false)
-            .show()
     }
 
-
-    fun formatData(timestamp: Timestamp) : String{
-        val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
-        return sdf.format(timestamp.toDate())
+    fun updateOrderStatus(
+        orderId: String,
+        newStatus: String,
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        val db = Firebase.firestore
+        db.collection("orders").document(orderId)
+            .update("status", newStatus)
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { e -> onFailure(e.message ?: "Cập nhật thất bại") }
     }
-
-    fun formatPrice(price: Any): String {
-        return try {
-            val p = when (price) {
-                is String -> price.replace(",", "").toDoubleOrNull() ?: 0.0
-                is Number -> price.toDouble()
-                else -> 0.0
-            }
-            val formatter = java.text.NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
-            val formatted = formatter.format(p)
-            formatted.replace("₫", "đ").replace("VND", "đ").trim()
-        } catch (e: Exception) {
-            price.toString() + "đ"
-        }
-    }
-
-    fun formatCurrency(amount: Double): String = formatPrice(amount)
-
-    private const val PREF_NAME = "favorite_pref"
-    private const val KEY_FAVORITES = "favorites_list"
-
-    fun addOrRemoveFromFavorite(context: Context, productId: String){
-        val list = getFavoriteList(context).toMutableSet()
-        if(list.contains(productId)){
-            list.remove(productId)
-            showWarning("Đã bỏ thích", "Sản phẩm đã được gỡ khỏi danh sách")
-        } else {
-            list.add(productId)
-            showSuccess("Đã thêm yêu thích", "Bạn có thể xem lại trong mục Yêu thích")
-        }
-
-        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-        prefs.edit{
-            putStringSet(KEY_FAVORITES, list)
-        }
-
-
-    }
-
-    fun checkFavorite(context: Context, productId: String) :Boolean{
-        if(getFavoriteList(context).contains(productId)){
-            return true
-        }
-        return false
-    }
-
-    fun getFavoriteList(context: Context) :Set<String>{
-
-        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-        return prefs.getStringSet(KEY_FAVORITES, emptySet())?: emptySet()
-
-    }
-
 
     fun startMockPayment(
         context: Context,
@@ -239,21 +354,24 @@ object AppUtil {
         builder.setTitle("💳 Thanh toán Demo")
             .setMessage(
                 "Thanh toán thử nghiệm\n" +
-                        "Số tiền: đ${"%.2f".format(amount)}\n\n" +
+                        "Số tiền: ${formatCurrency(amount.toDouble())}\n\n" +
                         "Chọn kết quả:"
             )
-            .setPositiveButton("✅ Thành công") { _, _ ->
-                // Delay để giống thật
+            .setPositiveButton("✅ Thành công") { dialog: DialogInterface, _: Int ->
+                if (!checkNetworkAndNotify(context)) {
+                    dialog.dismiss()
+                    return@setPositiveButton
+                }
+
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                     onSuccess()
                 }, 1500)
             }
-            .setNegativeButton("❌ Thất bại") { _, _ ->
+            .setNegativeButton("❌ Thất bại") { _: DialogInterface, _: Int ->
                 onFailure()
             }
             .setNeutralButton("Hủy", null)
             .setCancelable(true)
             .show()
     }
-
 }

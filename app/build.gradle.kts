@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.example.easyshop"
-    compileSdk = 34
+    compileSdk = 35
 
     buildFeatures {
         compose = true
@@ -26,7 +26,7 @@ android {
     defaultConfig {
         applicationId = "com.example.easyshop"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -114,6 +114,7 @@ dependencies {
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    implementation(libs.androidx.compose.material3)
 
     // Testing
     testImplementation(libs.junit)

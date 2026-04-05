@@ -25,6 +25,7 @@ playServicesMaps = "19.0.0"
 playServicesLocation = "21.3.0"
 retrofit = "2.9.0"
 converterGson = "2.9.0"
+material3 = "1.4.0"
 
 [libraries]
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
@@ -62,6 +63,7 @@ androidx-material-icons-extended = { group = "androidx.compose.material", name =
 androidx-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converterGson" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

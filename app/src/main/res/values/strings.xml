@@ -49,6 +49,7 @@
     <string name="signup_link">Đăng ký</string>
     <string name="login_failed">Đăng nhập thất bại</string>
     <string name="welcome_admin_msg">Chào Admin, đang chuyển đến Bảng điều khiển...</string>
+    <string name="signup_success_msg">Đăng ký thành công!</string>
     <string name="login_success_msg">Đăng nhập thành công!</string>
     <string name="hello_there">Xin chào!</string>
     <string name="create_account_subtitle">Tạo tài khoản mới</string>
@@ -59,6 +60,11 @@
     <string name="create_account_btn">Tạo tài khoản</string>
     <string name="already_have_account">Đã có tài khoản?</string>
     <string name="something_went_wrong">Đã xảy ra lỗi</string>
+    <string name="delete_account">Xóa tài khoản</string>
+    <string name="delete_account_confirm">Xác nhận xóa</string>
+    <string name="delete_account_warning_msg">Mọi thông tin của bạn sẽ bị xóa vĩnh viễn khỏi hệ thống. Bạn có chắc chắn muốn thực hiện?</string>
+    <string name="delete_account_success">Đã xóa tài khoản thành công.</string>
+    <string name="reauth_required_msg">Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để thực hiện xóa tài khoản.</string>
     
     <!-- Product Details -->
     <string name="product_details">Chi tiết sản phẩm</string>
@@ -133,10 +139,18 @@
     <string name="apply">Áp dụng</string>
     <string name="reset">Đặt lại</string>
     <string name="your_favorites">Yêu thích</string>
+    <string name="favorites">Yêu thích</string>
     <string name="no_favorites_yet">Chưa có sản phẩm yêu thích</string>
+    <string name="no_favorites">Chưa có sản phẩm yêu thích</string>
     <string name="all_brands">Tất cả thương hiệu</string>
     <string name="products_count">%d sản phẩm</string>
     <string name="reset_filters">Xóa bộ lọc</string>
+    <string name="lost_internet">Mất kết nối Internet</string>
+    <string name="restored_internet">Đã khôi phục kết nối</string>
+    <string name="no_internet_title">Không có kết nối mạng!</string>
+    <string name="no_internet_desc">Vui lòng kết nối Wi-Fi hoặc bật dữ liệu di động để có trải nghiệm tốt hơn</string>
+    <string name="connect_now">Kết nối mạng</string>
+    <string name="cancel_dialog">Hủy</string>
 
     <!-- Admin -->
     <string name="admin_dashboard_title">Bảng điều khiển</string>
