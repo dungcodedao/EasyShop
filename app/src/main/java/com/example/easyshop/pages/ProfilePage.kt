@@ -220,6 +220,8 @@ fun ProfilePage(
                     val imageRequest = coil.request.ImageRequest.Builder(LocalContext.current)
                         .data(userModel.value.profileImg)
                         .crossfade(true)
+                        .memoryCacheKey(userModel.value.profileImg)
+                        .diskCacheKey(userModel.value.profileImg)
                         .size(300)
                         .build()
 

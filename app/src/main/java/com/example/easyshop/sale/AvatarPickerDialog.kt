@@ -28,7 +28,8 @@ import coil.compose.AsyncImage
 import com.example.easyshop.R
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
-
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
 
 @Composable
 fun AvatarPickerDialog(
@@ -56,26 +57,24 @@ fun AvatarPickerDialog(
     }
 
     val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+    val productRepository = remember { com.example.easyshop.repository.ProductRepository.getInstance(context) }
     val pickMedia = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
             isLoading = true
-            val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-            if (currentUser != null) {
-                val storageRef = com.google.firebase.storage.FirebaseStorage.getInstance().reference
-                    .child("avatars/${currentUser.uid}.jpg")
-                
-                storageRef.putFile(uri)
-                    .addOnSuccessListener {
-                        storageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
-                            onAvatarSelected(downloadUrl.toString())
-                            isLoading = false
-                        }
-                    }
-                    .addOnFailureListener {
+            scope.launch {
+                productRepository.uploadProductImage(uri, folder = "avatars").collect { result ->
+                    result.onSuccess { downloadUrl ->
+                        com.example.easyshop.AppUtil.showToast(context, "Đã tải ảnh lên thành công!")
+                        onAvatarSelected(downloadUrl)
+                        isLoading = false
+                    }.onFailure { e ->
+                        com.example.easyshop.AppUtil.showToast(context, "Lỗi tải ảnh: ${e.message}")
                         isLoading = false
                     }
+                }
             }
         }
     }
@@ -135,6 +134,8 @@ fun AvatarPickerDialog(
                                 model = coil.request.ImageRequest.Builder(context)
                                     .data(url)
                                     .crossfade(true)
+                                    .memoryCacheKey(url)
+                                    .diskCacheKey(url)
                                     .build(),
                                 contentDescription = "Avatar",
                                 modifier = Modifier
