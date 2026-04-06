@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,9 +26,8 @@ import com.example.easyshop.admin.ManagePromoCodesScreen
 import com.example.easyshop.admin.ManageUsersScreen
 import com.example.easyshop.admin.OrdersManagementScreen
 import com.example.easyshop.ai.ui.AIChatScreen
-import com.example.easyshop.components.AppSnackbarHost
-import com.example.easyshop.components.NotifBannerOverlay
 import com.example.easyshop.model.UserModel
+import com.example.easyshop.components.LoadingView
 import com.example.easyshop.pages.AddProductPage
 import com.example.easyshop.pages.CartPage
 import com.example.easyshop.pages.CategoryProductsPage
@@ -42,8 +42,10 @@ import com.example.easyshop.screen.AuthScreen
 import com.example.easyshop.screen.HomeScreen
 import com.example.easyshop.screen.LoginScreen
 import com.example.easyshop.screen.PaymentScreen
+import com.example.easyshop.screen.OnboardingScreen
 import com.example.easyshop.screen.ReceiptScreen
 import com.example.easyshop.screen.SignupScreen
+import com.example.easyshop.screen.SplashScreen
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
@@ -54,39 +56,26 @@ fun AppNavigation(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     GlobalNavigation.navController = navController
 
-    var isCheckingRole by remember { mutableStateOf(true) }
-    var startDestination by remember { mutableStateOf("auth") }
-
-    val currentUser = Firebase.auth.currentUser
-
-    // Check user role to determine start destination
-    LaunchedEffect(currentUser) {
-        if (currentUser != null) {
-            Firebase.firestore.collection("users")
-                .document(currentUser.uid)
-                .get()
-                .addOnSuccessListener { document ->
-                    val user = document.toObject(UserModel::class.java)
-                    startDestination = if (user?.role == "admin") {
-                        "admin-dashboard"
-                    } else {
-                        "home"
-                    }
-                    isCheckingRole = false
-                }
-                .addOnFailureListener {
-                    startDestination = "home"
-                    isCheckingRole = false
-                }
-        } else {
-            startDestination = "auth"
-            isCheckingRole = false
-        }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val connectivityObserver = remember {
+        com.example.easyshop.util.NetworkConnectivityObserver(context)
     }
+    val networkStatus by connectivityObserver.observe()
+        .collectAsState(initial = com.example.easyshop.util.ConnectivityObserver.Status.Available)
 
-    if (!isCheckingRole) {
+    val startDestination = "splash"
+
+    com.example.easyshop.components.ResponsiveContainer {
         Box(modifier = Modifier.fillMaxSize()) {
             NavHost(navController = navController, startDestination = startDestination) {
+
+                composable("splash") {
+                    SplashScreen(navController)
+                }
+
+                composable("onboarding") {
+                    OnboardingScreen(navController)
+                }
 
                 composable("auth") {
                     AuthScreen(modifier, navController)
@@ -246,12 +235,15 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             composable("profile") {
                 ProfilePage(modifier, navController)
             }
-        }
+            }
 
-            // 🔔 In-app notification banner (kiểu Shopee/MoMo) —    hiện trên mọi màn hình
-            NotifBannerOverlay()
+            // 🔔 In-app notification banner (kiểu Shopee/MoMo) — hiện trên mọi màn hình
+            com.example.easyshop.components.NotifBannerOverlay()
             // 🔔 Snackbar thông báo hành động
-            AppSnackbarHost()
+            com.example.easyshop.components.AppSnackbarHost()
+            
+            // 🌐 Thanh thông báo trạng thái mạng (Cố định ở trên cùng)
+            com.example.easyshop.components.NetworkStatusBanner(status = networkStatus)
         }
     }
 }

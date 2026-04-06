@@ -32,6 +32,8 @@ import androidx.navigation.NavController
 import com.example.easyshop.AppUtil
 import com.example.easyshop.R
 import com.example.easyshop.viewmodel.AuthViewModel
+import com.example.easyshop.util.clickableOnce
+import com.example.easyshop.util.rememberDebouncedClick
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
@@ -150,7 +152,7 @@ fun LoginScreen(
                 horizontalArrangement = Arrangement.End
             ) {
                 TextButton(
-                    onClick = {
+                    onClick = rememberDebouncedClick {
                         if (email.isBlank()) {
                             AppUtil.showToast(context, "Vui lòng nhập email để lấy lại mật khẩu")
                         } else {
@@ -216,7 +218,7 @@ fun LoginScreen(
             val credentialManager = CredentialManager.create(context)
             
             OutlinedButton(
-                onClick = {
+                onClick = rememberDebouncedClick(enabled = !isLoading) {
                     scope.launch {
                         try {
                             val googleIdOption = GetGoogleIdOption.Builder()
@@ -256,7 +258,9 @@ fun LoginScreen(
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
@@ -279,7 +283,11 @@ fun LoginScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(stringResource(id = R.string.no_account), style = MaterialTheme.typography.bodyMedium)
-                TextButton(onClick = { navController.navigate("signup") }) {
+                TextButton(
+                    onClick = rememberDebouncedClick { 
+                        navController.navigate("signup") 
+                    }
+                ) {
                     Text(
                         stringResource(id = R.string.signup_link),
                         style = MaterialTheme.typography.titleLarge,

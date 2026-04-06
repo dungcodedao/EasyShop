@@ -28,6 +28,8 @@ import androidx.navigation.NavController
 import com.example.easyshop.AppUtil
 import com.example.easyshop.R
 import com.example.easyshop.viewmodel.AuthViewModel
+import com.example.easyshop.util.clickableOnce
+import com.example.easyshop.util.rememberDebouncedClick
 
 @Composable
 fun SignupScreen(
@@ -41,6 +43,8 @@ fun SignupScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var adminCode by remember { mutableStateOf("") }
+    var isAdminFieldVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -189,30 +193,55 @@ fun SignupScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp)
                     )
+
+                    // ✅ Admin Code Toggle (Ẩn/Hiện ô nhập mã Admin)
+                    TextButton(
+                        onClick = { isAdminFieldVisible = !isAdminFieldVisible },
+                        modifier = Modifier.align(Alignment.End),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            text = if (isAdminFieldVisible) "Tôi là khách hàng" else "Bạn là Quản trị viên?",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    if (isAdminFieldVisible) {
+                        OutlinedTextField(
+                            value = adminCode,
+                            onValueChange = { adminCode = it },
+                            label = { Text("Mã xác thực Admin") },
+                            leadingIcon = { Icon(Icons.Default.Shield, null, tint = MaterialTheme.colorScheme.primary) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                    }
                 }
             }
 
             Spacer(Modifier.height(28.dp))
 
-            // Signup Button
             Button(
-                onClick = {
-                    if (isFormValid) {
-                        isLoading = true
-                        val cleanedName = name.trim().replace(Regex("\\s+"), " ")
-                        val cleanedEmail = email.trim().lowercase()
-                        authViewModel.signup(cleanedEmail, cleanedName, password) { success, errorMessage ->
-                            isLoading = false
-                            if (success) {
-                                navController.navigate("home") { popUpTo("auth") { inclusive = true } }
-                            } else {
-                                AppUtil.showToast(context, errorMessage ?: context.getString(R.string.something_went_wrong))
-                            }
+                onClick = rememberDebouncedClick(enabled = !isLoading && isFormValid) {
+                    isLoading = true
+                    val cleanedName = name.trim().replace(Regex("\\s+"), " ")
+                    val cleanedEmail = email.trim().lowercase()
+                    authViewModel.signup(cleanedEmail, cleanedName, password, adminCode) { success, errorMessage, role ->
+                        isLoading = false
+                        if (success) {
+                            val destination = if (role == "admin") "admin-dashboard" else "home"
+                            AppUtil.showToast(context, if (role == "admin") context.getString(R.string.welcome_admin_msg) else context.getString(R.string.signup_success_msg))
+                            navController.navigate(destination) { popUpTo("auth") { inclusive = true } }
+                        } else {
+                            AppUtil.showToast(context, errorMessage ?: context.getString(R.string.something_went_wrong))
                         }
                     }
                 },
-                enabled = !isLoading && isFormValid,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 if (isLoading) {
@@ -237,7 +266,11 @@ fun SignupScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                TextButton(onClick = { navController.navigateUp() }) {
+                TextButton(
+                    onClick = rememberDebouncedClick { 
+                        navController.navigateUp() 
+                    }
+                ) {
                     Text(
                         stringResource(id = R.string.login_btn),
                         style = MaterialTheme.typography.titleLarge,

@@ -29,9 +29,9 @@ fun ProductFilterDialog(
         title = { Text(stringResource(id = R.string.filter_sort)) },
         text = {
             val sortOptions = listOf(
-                stringResource(id = R.string.sort_default),
-                stringResource(id = R.string.sort_price_low_high),
-                stringResource(id = R.string.sort_price_high_low)
+                "DEFAULT" to stringResource(id = R.string.sort_default),
+                "LOW_TO_HIGH" to stringResource(id = R.string.sort_price_low_high),
+                "HIGH_TO_LOW" to stringResource(id = R.string.sort_price_high_low)
             )
 
             LazyColumn(
@@ -69,11 +69,11 @@ fun ProductFilterDialog(
                     )
                 }
 
-                items(sortOptions) { sortOption ->
+                items(sortOptions) { (key, label) ->
                     FilterItem(
-                        text = sortOption,
-                        isSelected = sortOption == selectedPriceSort,
-                        onClick = { onPriceSortSelected(sortOption) }
+                        text = label,
+                        isSelected = key == selectedPriceSort,
+                        onClick = { onPriceSortSelected(key) }
                     )
                 }
             }

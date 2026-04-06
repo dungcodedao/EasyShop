@@ -15,6 +15,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.easyshop.R
+import com.example.easyshop.util.clickableOnce
+import com.example.easyshop.util.rememberDebouncedClick
 
 @Composable
 fun AuthScreen(
@@ -65,7 +67,7 @@ fun AuthScreen(
 
         // Login Button
         Button(
-            onClick = { navController.navigate("login") },
+            onClick = rememberDebouncedClick { navController.navigate("login") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -82,7 +84,7 @@ fun AuthScreen(
 
         // Signup Button
         OutlinedButton(
-            onClick = { navController.navigate("signup") },
+            onClick = rememberDebouncedClick { navController.navigate("signup") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -99,7 +101,7 @@ fun AuthScreen(
 
         // Guest Mode Link
         TextButton(
-            onClick = { navController.navigate("home") }
+            onClick = rememberDebouncedClick { navController.navigate("home") }
         ) {
             Text("Tiếp tục với tư cách khách")
         }

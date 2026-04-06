@@ -4,7 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,18 +15,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.easyshop.AppUtil
 import com.example.easyshop.model.ProductModel
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.firestore
 
 @Composable
 fun CartItemView(modifier: Modifier = Modifier, product: ProductModel, qty: Long) {
     val context = LocalContext.current
-    val productId = product.id // Đảm bảo ProductModel có id field
+    val productId = product.id
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -47,7 +48,7 @@ fun CartItemView(modifier: Modifier = Modifier, product: ProductModel, qty: Long
                 model = imageRequest,
                 contentDescription = product.title,
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(85.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentScale = ContentScale.Crop
@@ -61,7 +62,7 @@ fun CartItemView(modifier: Modifier = Modifier, product: ProductModel, qty: Long
                     text = product.title,
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodyLarge,
-                    maxLines = 2,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(4.dp))
@@ -73,27 +74,57 @@ fun CartItemView(modifier: Modifier = Modifier, product: ProductModel, qty: Long
                 )
                 Spacer(Modifier.height(8.dp))
 
-                // Số lượng — hiển thị dạng badge "x1" thay vì nút +/-
+                // Quantity Selector
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.height(36.dp)
                 ) {
-                    Text(
-                        text = "x$qty",
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    ) {
+                        IconButton(
+                            onClick = { AppUtil.decrementCartItem(productId) },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(Icons.Default.Remove, null, Modifier.size(16.dp))
+                        }
+                        
+                        Text(
+                            text = qty.toString(),
+                            modifier = Modifier.widthIn(min = 32.dp),
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        
+                        IconButton(
+                            onClick = { 
+                                // Kiểm tra tồn kho trước khi tăng
+                                if (qty < product.stockCount) {
+                                    AppUtil.incrementCartItem(productId)
+                                } else {
+                                    AppUtil.showToast(context, "Đã đạt giới hạn tồn kho (${product.stockCount})")
+                                }
+                            },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(Icons.Default.Add, null, Modifier.size(16.dp))
+                        }
+                    }
                 }
             }
 
             // Delete
-            IconButton(onClick = { AppUtil.removeItemFromCart(context, productId, removeAll = true) }) {
+            IconButton(
+                onClick = { AppUtil.removeItemFromCart(context, productId, removeAll = true) },
+                modifier = Modifier.align(Alignment.Top)
+            ) {
                 Icon(
                     Icons.Default.Delete,
                     contentDescription = "Remove",
-                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
                 )
             }
         }

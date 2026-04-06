@@ -22,10 +22,10 @@ import com.example.easyshop.components.SearchView
 fun HomePage(
     modifier: Modifier = Modifier,
     onNavigateToProfile: () -> Unit = {},
-    onNotificationClick: () -> Unit = {}
+    onNotificationClick: () -> Unit = {},
+    isSearching: Boolean = false,
+    onSearchToggle: (Boolean) -> Unit = {}
 ) {
-    var isSearching by remember { mutableStateOf(false) }
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -39,7 +39,10 @@ fun HomePage(
             )
     ) {
         if (isSearching) {
-            SearchView(onBackClick = { isSearching = false })
+            SearchView(
+                onBackClick = { onSearchToggle(false) },
+                modifier = modifier
+            )
         } else {
             Column(
                 modifier = Modifier
@@ -50,7 +53,7 @@ fun HomePage(
                 Spacer(Modifier.height(8.dp))
 
                 HeaderView(
-                    onSearchClick = { isSearching = true },
+                    onSearchClick = { onSearchToggle(true) },
                     onAvatarClick = onNavigateToProfile,
                     onNotificationClick = onNotificationClick
                 )
@@ -74,7 +77,8 @@ fun HomePage(
 
                 CategoriesView()
 
-                Spacer(Modifier.height(24.dp))
+                // Tăng khoảng trống để tránh bị che bởi thanh điều hướng và nút AI (Spark button)
+                Spacer(Modifier.height(100.dp))
             }
         }
     }

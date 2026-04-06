@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
@@ -35,6 +36,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -86,6 +88,7 @@ fun ProfilePage(
     var phoneInput by remember { mutableStateOf("") }
     var nameInput by remember { mutableStateOf("") }
     var showEditNameDialog by remember { mutableStateOf(false) }
+    var showEditPhoneDialog by remember { mutableStateOf(false) }
     var showAvatarDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -101,6 +104,20 @@ fun ProfilePage(
                     showEditNameDialog = false
                 }
                 .addOnFailureListener { AppUtil.showToast(context, "Lỗi khi cập nhật tên") }
+        }
+    }
+
+    fun savePhone() {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (phoneInput.isNotEmpty() && currentUser != null) {
+            Firebase.firestore.collection("users").document(currentUser.uid)
+                .update("phone", phoneInput)
+                .addOnSuccessListener {
+                    userModel.value = userModel.value.copy(phone = phoneInput)
+                    AppUtil.showToast(context, "Đã cập nhật số điện thoại!")
+                    showEditPhoneDialog = false
+                }
+                .addOnFailureListener { AppUtil.showToast(context, "Lỗi khi cập nhật số điện thoại") }
         }
     }
 
@@ -164,10 +181,11 @@ fun ProfilePage(
             }
     }
 
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    val authViewModel: com.example.easyshop.viewmodel.AuthViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+        modifier = modifier.fillMaxSize()
     ) {
         // Profile Header
         Surface(tonalElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
@@ -242,7 +260,7 @@ fun ProfilePage(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(16.dp))
 
             if (userModel.value.role != "admin") {
                 // --- Primary Address Summary (TikTok Style) ---
@@ -325,33 +343,94 @@ fun ProfilePage(
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
-            }
-        }
+                Spacer(Modifier.height(32.dp))
 
-        // Ticked to Bottom: Sign Out Button
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 20.dp, vertical = 24.dp)
-        ) {
-            Button(
-                onClick = {
-                    FirebaseAuth.getInstance().signOut()
-                    GlobalNavigation.navController.navigate("auth") {
-                        popUpTo(0) { inclusive = true }
+                // Sign Out and Delete Account
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 40.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            FirebaseAuth.getInstance().signOut()
+                            GlobalNavigation.navController.navigate("auth") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ExitToApp, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.sign_out), fontWeight = FontWeight.Bold, color = Color.White)
                     }
-                },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(Icons.AutoMirrored.Filled.ExitToApp, null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.sign_out), fontWeight = FontWeight.Bold)
+
+                    if (userModel.value.role != "admin") {
+                        Spacer(Modifier.height(12.dp))
+                        TextButton(
+                            onClick = { showDeleteAccountDialog = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Text(stringResource(R.string.delete_account), fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
             }
         }
+    }
+
+    // Delete Account Confirmation Dialog
+    if (showDeleteAccountDialog) {
+        var isDeactivating by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = { if (!isDeactivating) showDeleteAccountDialog = false },
+            title = { Text(stringResource(R.string.delete_account_confirm), color = MaterialTheme.colorScheme.error) },
+            text = { Text(stringResource(R.string.delete_account_warning_msg)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        isDeactivating = true
+                        authViewModel.deleteAccount { success, error ->
+                            isDeactivating = false
+                            if (success) {
+                                showDeleteAccountDialog = false
+                                AppUtil.showToast(context, context.getString(R.string.delete_account_success))
+                                GlobalNavigation.navController.navigate("auth") {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            } else {
+                                if (error?.contains("recent-login", ignoreCase = true) == true) {
+                                    AppUtil.showToast(context, context.getString(R.string.reauth_required_msg))
+                                } else {
+                                    AppUtil.showToast(context, error ?: context.getString(R.string.something_went_wrong))
+                                }
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    enabled = !isDeactivating
+                ) {
+                    if (isDeactivating) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    } else {
+                        Text("Xóa vĩnh viễn")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteAccountDialog = false },
+                    enabled = !isDeactivating
+                ) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+            shape = RoundedCornerShape(26.dp)
+        )
     }
 
     // Avatar Picker Dialog
@@ -377,19 +456,43 @@ fun ProfilePage(
     if (showEditNameDialog) {
         AlertDialog(
             onDismissRequest = { showEditNameDialog = false },
-            title = { Text("Edit Name") },
+            title = { Text("Chỉnh sửa tên") },
             text = {
                 OutlinedTextField(
                     value = nameInput,
                     onValueChange = { nameInput = it },
-                    label = { Text("Full Name") },
+                    label = { Text("Họ và tên") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp)
                 )
             },
-            confirmButton = { TextButton(onClick = { saveName(); showEditNameDialog = false }) { Text("Save") } },
-            dismissButton = { TextButton(onClick = { showEditNameDialog = false }) { Text("Cancel") } },
+            confirmButton = { TextButton(onClick = { saveName() }) { Text("Lưu") } },
+            dismissButton = { TextButton(onClick = { showEditNameDialog = false }) { Text("Hủy") } },
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+
+    // Edit Phone Dialog
+    if (showEditPhoneDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditPhoneDialog = false },
+            title = { Text("Chỉnh sửa số điện thoại") },
+            text = {
+                OutlinedTextField(
+                    value = phoneInput,
+                    onValueChange = { phoneInput = it },
+                    label = { Text("Số điện thoại") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone
+                    )
+                )
+            },
+            confirmButton = { TextButton(onClick = { savePhone() }) { Text("Lưu") } },
+            dismissButton = { TextButton(onClick = { showEditPhoneDialog = false }) { Text("Hủy") } },
             shape = RoundedCornerShape(24.dp)
         )
     }
@@ -505,17 +608,30 @@ fun ProfilePage(
                                                 color = Color(0xFFFF4867),
                                                 fontSize = 10.sp
                                             )
-                                        }
                                     }
                                 }
-                                
-                                Text(
-                                    "Chỉnh sửa",
-                                    modifier = Modifier.clickable { editingAddress = addr; showAddressDialog = true },
-                                    color = Color(0xFFFF4867),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium
-                                )
+                            }
+
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        "Chỉnh sửa",
+                                        modifier = Modifier.clickable { editingAddress = addr; showAddressDialog = true },
+                                        color = MaterialTheme.colorScheme.primary,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    if (!addr.isDefault) {
+                                        Spacer(Modifier.height(8.dp))
+                                        Text(
+                                            "Đặt mặc định",
+                                            modifier = Modifier.clickable { 
+                                                saveAddressList(addr.copy(isDefault = true))
+                                            },
+                                            color = Color.Gray,
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
+                                }
                             }
                         }
                         HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))

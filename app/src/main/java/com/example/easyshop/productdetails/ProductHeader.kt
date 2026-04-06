@@ -38,6 +38,7 @@ import com.example.easyshop.ui.theme.WarningColor
 fun ProductHeader(
     title: String,
     inStock: Boolean,
+    stockCount: Int = 0,
     rating: Float = 4.5f,
     reviewCount: Int = 120
 ) {
@@ -74,7 +75,7 @@ fun ProductHeader(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(Modifier.width(4.dp))
+                Spacer(Modifier.width(8.dp))
                 Text(
                     stringResource(id = R.string.reviews_count, reviewCount),
                     style = MaterialTheme.typography.bodySmall,
@@ -85,24 +86,35 @@ fun ProductHeader(
             Spacer(Modifier.weight(1f))
 
             // Stock Badge
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = if (inStock) SuccessColor.copy(alpha = 0.1f) else MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+            Column(horizontalAlignment = Alignment.End) {
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (inStock) SuccessColor.copy(alpha = 0.1f) else MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
                 ) {
-                    Box(
-                        modifier = Modifier.size(8.dp)
-                            .background(if (inStock) SuccessColor else MaterialTheme.colorScheme.error, CircleShape)
-                    )
-                    Spacer(Modifier.width(6.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier.size(8.dp)
+                                .background(if (inStock) SuccessColor else MaterialTheme.colorScheme.error, CircleShape)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = if (inStock) stringResource(id = R.string.in_stock) else stringResource(id = R.string.out_of_stock),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (inStock) SuccessColor else MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+                
+                if (inStock) {
                     Text(
-                        text = if (inStock) stringResource(id = R.string.in_stock) else stringResource(id = R.string.out_of_stock),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (inStock) SuccessColor else MaterialTheme.colorScheme.error
+                        text = "Còn $stockCount sản phẩm",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp, end = 4.dp)
                     )
                 }
             }

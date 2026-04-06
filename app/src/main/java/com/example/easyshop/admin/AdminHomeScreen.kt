@@ -21,11 +21,13 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -34,6 +36,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -77,6 +80,9 @@ fun AdminHomeScreen(
 ) {
     var products by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var isMigrating by remember { mutableStateOf(false) }
+    var migrationMessage by remember { mutableStateOf<String?>(null) }
+    
     var showDeleteDialog by remember { mutableStateOf(false) }
     var productToDelete by remember { mutableStateOf<ProductModel?>(null) }
     var categories by remember { mutableStateOf<List<CategoryModel>>(emptyList()) }
@@ -102,6 +108,48 @@ fun AdminHomeScreen(
             .addOnSuccessListener { result ->
                 categories = result.documents.mapNotNull { it.toObject(CategoryModel::class.java) }.sortedBy { it.name }
             }
+    }
+
+    fun restoreStockData() {
+        scope.launch {
+            isMigrating = true
+            migrationMessage = "Đang bắt đầu đồng bộ..."
+            try {
+                val snapshot = firestore.collection("data").document("stock")
+                    .collection("products").get().await()
+                
+                val batch = firestore.batch()
+                var updatedCount = 0
+                
+                snapshot.documents.forEach { doc ->
+                    val inStock = doc.getBoolean("inStock") ?: false
+                    // Nếu chưa có stockCount hoặc muốn ép buộc về 5
+                    val currentStock = doc.getLong("stockCount")
+                    
+                    if (currentStock == null || currentStock == 0L) {
+                        val ref = doc.reference
+                        batch.update(ref, "stockCount", if (inStock) 5 else 0)
+                        updatedCount++
+                    }
+                }
+                
+                if (updatedCount > 0) {
+                    batch.commit().await()
+                    migrationMessage = "Đã cập nhật $updatedCount sản phẩm thành công!"
+                } else {
+                    migrationMessage = "Tất cả sản phẩm đã có số lượng kho."
+                }
+                
+                loadProducts()
+            } catch (e: Exception) {
+                migrationMessage = "Lỗi đồng bộ: ${e.message}"
+            } finally {
+                // Tự động tắt thông báo sau 3s
+                kotlinx.coroutines.delay(3000)
+                isMigrating = false
+                migrationMessage = null
+            }
+        }
     }
 
     fun deleteProduct(product: ProductModel) {
@@ -148,6 +196,35 @@ fun AdminHomeScreen(
                     }
 
                     Column(Modifier.fillMaxSize()) {
+                        // Migration Banner (Temporary)
+                        migrationMessage?.let { msg ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                            ) {
+                                Row(Modifier.padding(12.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    if (isMigrating && !msg.startsWith("Lỗi") && !msg.contains("thành công")) {
+                                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                                        Spacer(Modifier.width(12.dp))
+                                    }
+                                    Text(msg, style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
+
+                        if (!isMigrating && products.any { it.stockCount == 0 && it.inStock }) {
+                             Button(
+                                 onClick = { restoreStockData() },
+                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary),
+                                 shape = RoundedCornerShape(12.dp)
+                             ) {
+                                 Icon(Icons.Default.Inventory, null, Modifier.size(18.dp))
+                                 Spacer(Modifier.width(8.dp))
+                                 Text("Khởi tạo số lượng kho mặc định (5)", style = MaterialTheme.typography.labelLarge)
+                             }
+                        }
+
                         // Category Chips
                         LazyRow(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
@@ -276,24 +353,44 @@ private fun AdminProductItem(
                         overflow = TextOverflow.Ellipsis
                     )
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = AppUtil.formatPrice(product.actualPrice),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                        if (product.actualPrice != product.price) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(
-                                text = AppUtil.formatPrice(product.price),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textDecoration = TextDecoration.LineThrough
+                                text = AppUtil.formatPrice(product.actualPrice),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            if (product.actualPrice != product.price) {
+                                Text(
+                                    text = AppUtil.formatPrice(product.price),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textDecoration = TextDecoration.LineThrough
+                                )
+                            }
+                        }
+                        
+                        // HIẾN THỊ SỐ LƯỢNG KHO TẠI ĐÂY
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = "Kho: ${product.stockCount}",
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
+                    
                     Surface(
                         color = if (product.inStock) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer,
                         shape = RoundedCornerShape(999.dp)

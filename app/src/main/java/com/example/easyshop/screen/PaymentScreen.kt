@@ -29,6 +29,8 @@ import com.example.easyshop.R
 import com.example.easyshop.components.VirtualCreditCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.example.easyshop.util.ConnectivityObserver
+import com.example.easyshop.util.NetworkConnectivityObserver
 
 @Composable
 fun PaymentScreen(
@@ -49,6 +51,10 @@ fun PaymentScreen(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    
+    val connectivityObserver = remember { NetworkConnectivityObserver(context) }
+    val networkStatus by connectivityObserver.observe().collectAsState(initial = ConnectivityObserver.Status.Available)
+    val isNetworkAvailable = networkStatus == ConnectivityObserver.Status.Available
 
     Column(modifier = modifier.fillMaxSize().statusBarsPadding()) {
         Surface(
@@ -252,6 +258,7 @@ fun PaymentScreen(
             // Pay Button
             Button(
                 onClick = {
+                    if (!isNetworkAvailable) return@Button
                     when (selectedPaymentMethod) {
                         "MoMo QR" -> {
                     scope.launch {
@@ -260,7 +267,7 @@ fun PaymentScreen(
                         isProcessing = false
                         val orderId = "ORD" + java.util.UUID.randomUUID().toString().replace("-", "").take(8).uppercase()
                         val finalPromo = if (promoCode == "NONE") "" else promoCode
-                        AppUtil.clearCartAndAddToOrder(totalAmount, subtotal, discount, finalPromo, "MoMo QR", orderId)
+                        AppUtil.clearCartAndAddToOrder(context, totalAmount, subtotal, discount, finalPromo, "MoMo QR", orderId)
                         navController.navigate("receipt/${totalAmount.toFloat()}/$orderId") {
                             popUpTo("payment") { inclusive = true }
                         }
@@ -278,7 +285,7 @@ fun PaymentScreen(
                                 if (isSuccess) {
                                     val orderId = "ORD" + java.util.UUID.randomUUID().toString().replace("-", "").take(8).uppercase()
                                     val finalPromo = if (promoCode == "NONE") "" else promoCode
-                                    AppUtil.clearCartAndAddToOrder(totalAmount, subtotal, discount, finalPromo, selectedPaymentMethod, orderId)
+                                    AppUtil.clearCartAndAddToOrder(context, totalAmount, subtotal, discount, finalPromo, selectedPaymentMethod, orderId)
                                     navController.navigate("receipt/${totalAmount.toFloat()}/$orderId") {
                                         popUpTo("payment") { inclusive = true }
                                     }
@@ -295,7 +302,7 @@ fun PaymentScreen(
                                 isProcessing = false
                                 val orderId = "ORD" + java.util.UUID.randomUUID().toString().replace("-", "").take(8).uppercase()
                                 val finalPromo = if (promoCode == "NONE") "" else promoCode
-                                AppUtil.clearCartAndAddToOrder(totalAmount, subtotal, discount, finalPromo, selectedPaymentMethod, orderId)
+                                AppUtil.clearCartAndAddToOrder(context, totalAmount, subtotal, discount, finalPromo, selectedPaymentMethod, orderId)
                                 navController.navigate("receipt/${totalAmount.toFloat()}/$orderId") {
                                     popUpTo("payment") { inclusive = true }
                                 }
@@ -303,7 +310,7 @@ fun PaymentScreen(
                         }
                     }
                 },
-                enabled = !isProcessing && isFormValid(selectedPaymentMethod, cardNumber, cardName, expiryDate, cvv),
+                enabled = !isProcessing && isNetworkAvailable && isFormValid(selectedPaymentMethod, cardNumber, cardName, expiryDate, cvv),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -321,6 +328,16 @@ fun PaymentScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
+            }
+
+            if (!isNetworkAvailable) {
+                Text(
+                    text = stringResource(R.string.lost_internet),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
             }
 
             Spacer(Modifier.height(16.dp))

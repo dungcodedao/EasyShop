@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,6 +56,8 @@ import androidx.compose.ui.unit.sp
 import com.example.easyshop.AppUtil
 import com.example.easyshop.GlobalNavigation
 import com.example.easyshop.R
+import com.example.easyshop.util.clickableOnce
+import com.example.easyshop.util.rememberDebouncedClick
 import com.example.easyshop.model.AddressModel
 import com.example.easyshop.model.ProductModel
 import com.example.easyshop.model.UserModel
@@ -67,6 +70,7 @@ import com.google.firebase.firestore.firestore
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CheckoutPage(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
     val userModel = remember { mutableStateOf(UserModel()) }
     val productList = remember { mutableStateListOf<ProductModel>() }
     val subTotal = remember { mutableFloatStateOf(0f) }
@@ -155,9 +159,10 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                 .padding(top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // TikTok-style Delivery Address Selector
             Surface(
-                modifier = Modifier.fillMaxWidth().clickable { showAddressSheet = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickableOnce { showAddressSheet = true },
                 shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f))
@@ -260,14 +265,18 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                 }
             }
 
-            // Pay Button
             Button(
-                onClick = { 
-                    val pCode = promoCodeUsed.value.ifEmpty { "NONE" }
-                    GlobalNavigation.navController.navigate("payment/${total.floatValue}/${subTotal.floatValue}/${discount.floatValue}/$pCode") 
+                onClick = rememberDebouncedClick(enabled = selectedAddress != null) {
+                    if (!AppUtil.isNetworkAvailable(context)) {
+                        AppUtil.showToast(context, context.getString(R.string.lost_internet))
+                    } else {
+                        val pCode = promoCodeUsed.value.ifEmpty { "NONE" }
+                        GlobalNavigation.navController.navigate("payment/${total.floatValue}/${subTotal.floatValue}/${discount.floatValue}/$pCode")
+                    }
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                enabled = selectedAddress != null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Text(
@@ -301,7 +310,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { 
+                                    .clickableOnce { 
                                         selectedAddress = addr
                                         showAddressSheet = false 
                                     }

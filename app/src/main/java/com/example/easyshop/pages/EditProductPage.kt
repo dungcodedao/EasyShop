@@ -23,6 +23,7 @@ import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProductPage(
     productId: String,
@@ -36,6 +37,7 @@ fun EditProductPage(
     var actualPrice by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
     var inStock by remember { mutableStateOf(true) }
+    var stockCount by remember { mutableStateOf("0") }
     var specifications by remember { mutableStateOf(listOf<Pair<String, String>>()) }
     var showAddSpecDialog by remember { mutableStateOf(false) }
     var imageUrls by remember { mutableStateOf(listOf("")) }
@@ -76,6 +78,7 @@ fun EditProductPage(
             actualPrice = doc.getString("actualPrice") ?: ""
             category = doc.getString("category") ?: ""
             inStock = doc.getBoolean("inStock") ?: true
+            stockCount = doc.get("stockCount")?.toString() ?: "0"
 
             // Load images
             @Suppress("UNCHECKED_CAST")
@@ -127,6 +130,7 @@ fun EditProductPage(
                     "actualPrice" to actualPrice.ifBlank { price },
                     "category" to category,
                     "inStock" to inStock,
+                    "stockCount" to (stockCount.toIntOrNull() ?: 0).coerceAtLeast(0),
                     "images" to finalImageUrls,
                     "otherDetails" to otherDetails
                 )
@@ -176,6 +180,7 @@ fun EditProductPage(
                     style = MaterialTheme.typography.titleMedium
                 )
 
+                Modifier.size(40.dp) // Placeholder for alignment
                 Spacer(modifier = Modifier.size(40.dp))
             }
         }
@@ -318,6 +323,7 @@ fun EditProductPage(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                         modifier = Modifier
                             .fillMaxWidth()
+                            .menuAnchor()
                     )
 
                     ExposedDropdownMenu(
@@ -436,6 +442,26 @@ fun EditProductPage(
                         suffix = { Text("đ") }
                     )
                 }
+
+                // Stock Count Field
+                OutlinedTextField(
+                    value = stockCount,
+                    onValueChange = { 
+                        if (it.all { char -> char.isDigit() }) {
+                            stockCount = it
+                            // Auto-toggle inStock based on count
+                            val count = it.toIntOrNull() ?: 0
+                            inStock = count > 0
+                        }
+                    },
+                    label = { Text("Số lượng tồn kho *") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    ),
+                    leadingIcon = { Icon(Icons.Default.Inventory, null) }
+                )
 
                 // In Stock Switch
                 Row(

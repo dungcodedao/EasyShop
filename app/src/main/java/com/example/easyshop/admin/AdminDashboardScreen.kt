@@ -86,9 +86,22 @@ fun AdminDashboardScreen(
         currentUser?.let { user ->
             firestore.collection("users").document(user.uid).get()
                 .addOnSuccessListener { doc -> 
-                    adminName = doc.getString("name") ?: "Admin" 
-                    adminAvatar = doc.getString("profileImg") ?: "" // <-- Lấy link ảnh từ Firebase
+                    val role = doc.getString("role") ?: "user"
+                    if (role != "admin") {
+                        // ❌ Không phải Admin! Đẩy ra ngoài ngay lập tức
+                        navController.navigate("auth") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    } else {
+                        adminName = doc.getString("name") ?: "Admin" 
+                        adminAvatar = doc.getString("profileImg") ?: ""
+                    }
                 }
+                .addOnFailureListener {
+                    navController.navigate("auth") { popUpTo(0) { inclusive = true } }
+                }
+        } ?: run {
+            navController.navigate("auth") { popUpTo(0) { inclusive = true } }
         }
         firestore.collection("data").document("stock").collection("products").get()
             .addOnSuccessListener { totalProducts = it.size() }

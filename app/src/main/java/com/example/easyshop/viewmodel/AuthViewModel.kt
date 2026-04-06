@@ -17,15 +17,16 @@ class AuthViewModel : ViewModel() {
         email: String,
         name: String,
         password: String,
-        callback: (Boolean, String?) -> Unit
+        adminCode: String = "",
+        callback: (Boolean, String?, String?) -> Unit
     ) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     val userId = auth.currentUser?.uid ?: ""
 
-                    // ✅ Auto set admin nếu email có đuôi @easyshop.com
-                    val userRole = if (email.lowercase().endsWith("@easyshop.com")) {
+                    // ✅ Gán quyền Admin nếu nhập đúng mã bí mật
+                    val userRole = if (adminCode == "EASY_ADMIN_2024") {
                         "admin"
                     } else {
                         "user"
@@ -45,13 +46,13 @@ class AuthViewModel : ViewModel() {
                         .document(userId)
                         .set(userModel)
                         .addOnSuccessListener {
-                            callback(true, null)
+                            callback(true, null, userRole)
                         }
                         .addOnFailureListener { e ->
-                            callback(false, e.message)
+                            callback(false, e.message, null)
                         }
                 } else {
-                    callback(false, task.exception?.message)
+                    callback(false, task.exception?.message, null)
                 }
             }
     }
@@ -89,7 +90,7 @@ class AuthViewModel : ViewModel() {
     }
 
     /**
-     * Firebase Google Login
+     * Firebase Google Login với nhận diện Admin tự động
      */
     fun signInWithGoogle(idToken: String, callback: (Boolean, String?, String?) -> Unit) {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
@@ -98,7 +99,11 @@ class AuthViewModel : ViewModel() {
                 if (task.isSuccessful) {
                     val user = auth.currentUser
                     val userId = user?.uid ?: ""
-                    
+                    val email = user?.email ?: ""
+
+                    // ✅ Tự động gán quyền admin nếu email Google có đuôi @easyshop.com
+                    val initialRole = if (email.lowercase().endsWith("@easyshop.com")) "admin" else "user"
+
                     // Kiểm tra xem User đã tồn tại trên Firestore chưa
                     firestore.collection("users").document(userId).get()
                         .addOnSuccessListener { document ->
@@ -106,13 +111,13 @@ class AuthViewModel : ViewModel() {
                                 // Lấy thông tin từ Google gán vào UserModel mới
                                 val newUser = UserModel(
                                     uid = userId,
-                                    email = user?.email ?: "",
+                                    email = email,
                                     name = user?.displayName ?: "Google User",
-                                    role = "user", // Luôn mặc định là user khi đăng nhập Google
+                                    role = initialRole,
                                     profileImg = user?.photoUrl?.toString() ?: ""
                                 )
                                 firestore.collection("users").document(userId).set(newUser)
-                                    .addOnSuccessListener { callback(true, null, "user") }
+                                    .addOnSuccessListener { callback(true, null, initialRole) }
                             } else {
                                 val role = document.getString("role") ?: "user"
                                 callback(true, null, role)
@@ -121,6 +126,21 @@ class AuthViewModel : ViewModel() {
                 } else {
                     callback(false, task.exception?.message, null)
                 }
+            }
+    }
+
+    /**
+     * Nâng cấp quyền hạn người dùng (Dùng cho tính năng Nâng cấp Admin)
+     */
+    fun updateUserRole(newRole: String, callback: (Boolean, String?) -> Unit) {
+        val userId = auth.currentUser?.uid ?: return
+        firestore.collection("users").document(userId)
+            .update("role", newRole)
+            .addOnSuccessListener {
+                callback(true, null)
+            }
+            .addOnFailureListener { e ->
+                callback(false, e.message)
             }
     }
 
@@ -149,4 +169,29 @@ class AuthViewModel : ViewModel() {
      * Get current user
      */
     fun getCurrentUser() = auth.currentUser
+
+    /**
+     * Delete account function
+     */
+    fun deleteAccount(callback: (Boolean, String?) -> Unit) {
+        val user = auth.currentUser ?: return
+        val userId = user.uid
+
+        // 1. Delete from Firestore first
+        firestore.collection("users").document(userId).delete()
+            .addOnSuccessListener {
+                // 2. Then delete from Auth
+                user.delete()
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            callback(true, null)
+                        } else {
+                            callback(false, task.exception?.message)
+                        }
+                    }
+            }
+            .addOnFailureListener { e ->
+                callback(false, e.message)
+            }
+    }
 }

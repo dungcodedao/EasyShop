@@ -51,10 +51,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.easyshop.R
+import com.example.easyshop.model.ReviewModel
+import com.example.easyshop.model.ProductModel
 import com.example.easyshop.ui.theme.WarningColor
 import com.google.firebase.Firebase
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.firebase.firestore.toObjects
+import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.tasks.await
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -63,12 +73,27 @@ import kotlin.math.roundToInt
 fun ProductTabContent(
     selectedTab: Int,
     description: String,
-    specifications: Map<String, String>
+    specifications: Map<String, String>,
+    productId: String
 ) {
+    var productRating by remember { mutableStateOf(0f) }
+    var reviewCount by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(productId) {
+        Firebase.firestore.collection("data").document("stock")
+            .collection("products").document(productId)
+            .addSnapshotListener { snapshot: DocumentSnapshot?, _ -> 
+                val rating = snapshot?.getDouble("rating")?.toFloat() ?: 0f
+                val count = snapshot?.getLong("reviewCount")?.toInt() ?: 0
+                productRating = rating
+                reviewCount = count
+            }
+    }
+
     when (selectedTab) {
         0 -> DescriptionTab(description)
         1 -> SpecificationsTab(specifications)
-        2 -> ReviewsTab()
+        2 -> ReviewsTab(productId, productRating, reviewCount)
     }
 }
 
@@ -367,55 +392,57 @@ private fun shortSpecKey(label: String): String {
 }
 
 @Composable
-fun ReviewsTab() {
-    val reviewList = remember {
-        mutableStateListOf(
-            UserReview(
-                userName = "Nguyễn Văn A",
-                rating = 5,
-                comment = "Sản phẩm tuyệt vời. Rất đáng tiền. Chất lượng hoàn thiện tốt và giao hàng nhanh chóng.",
-                date = "2 ngày trước"
-            ),
-            UserReview(
-                userName = "Trần Thị B",
-                rating = 4,
-                comment = "Đáng đồng tiền bát gạo. Hoạt động tốt như mong đợi, nhưng đóng gói có thể cẩn thận hơn.",
-                date = "1 tuần trước"
-            ),
-            UserReview(
-                userName = "Lê Văn C",
-                rating = 5,
-                comment = "Hoàn hảo. Chính xác là những gì tôi đang tìm kiếm. Giao hàng thần tốc và dịch vụ khách hàng tốt.",
-                date = "2 tuần trước"
-            )
-        )
+fun ReviewsTab(productId: String, productRating: Float, totalReviews: Int) {
+    val reviewList = remember { mutableStateListOf<ReviewModel>() }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(productId) {
+        Firebase.firestore.collection("reviews")
+            .whereEqualTo("productId", productId)
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot: QuerySnapshot?, e: FirebaseFirestoreException? ->
+                if (e != null) {
+                    isLoading = false
+                    return@addSnapshotListener
+                }
+                
+                snapshot?.let {
+                    reviewList.clear()
+                    reviewList.addAll(it.toObjects(ReviewModel::class.java))
+                }
+                isLoading = false
+            }
     }
 
-    val reviewSnapshot = reviewList.toList()
-    val reviewCount = reviewSnapshot.size
-    val averageRating = if (reviewCount == 0) 0.0 else reviewSnapshot.map { it.rating }.average()
-    val ratingCounts = (1..5).associateWith { star -> reviewSnapshot.count { it.rating == star } }
+    val ratingCounts = remember(reviewList.size) {
+        (1..5).associateWith { star -> reviewList.count { it.rating.roundToInt() == star } }
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         OverallRatingCard(
-            averageRating = averageRating,
-            reviewCount = reviewCount,
+            averageRating = productRating.toDouble(),
+            reviewCount = totalReviews,
             ratingCounts = ratingCounts
         )
 
-        reviewSnapshot.forEach { review ->
+        if (isLoading) {
+            Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                androidx.compose.material3.CircularProgressIndicator()
+            }
+        }
+
+        reviewList.forEach { review ->
             ReviewCard(
                 userName = review.userName,
-                rating = review.rating,
+                rating = review.rating.toInt(),
                 comment = review.comment,
-                date = review.date
+                date = "Vừa xong" // In a real app, parse review.timestamp
             )
         }
 
         WriteReviewSection(
-            onSubmit = { newReview ->
-                reviewList.add(0, newReview)
-            }
+            productId = productId,
+            onReviewAdded = { /* Firestore snapshot handles update */ }
         )
     }
 }
@@ -501,13 +528,14 @@ fun RatingBar(stars: Int, count: Int, totalCount: Int) {
 }
 
 @Composable
-private fun WriteReviewSection(onSubmit: (UserReview) -> Unit) {
+private fun WriteReviewSection(productId: String, onReviewAdded: () -> Unit) {
     val currentUser = FirebaseAuth.getInstance().currentUser
     var accountName by remember(currentUser?.uid) {
         mutableStateOf(currentUser?.displayName?.trim().orEmpty())
     }
     var reviewText by remember { mutableStateOf("") }
     var selectedRating by remember { mutableIntStateOf(0) }
+    var isSubmitting by remember { mutableStateOf(false) }
 
     LaunchedEffect(currentUser?.uid) {
         val uid = currentUser?.uid ?: return@LaunchedEffect
@@ -517,9 +545,7 @@ private fun WriteReviewSection(onSubmit: (UserReview) -> Unit) {
             if (firestoreName.isNotBlank()) {
                 accountName = firestoreName
             }
-        } catch (_: Exception) {
-            // Ignore: fallback to FirebaseAuth displayName or default "Bạn"
-        }
+        } catch (_: Exception) { }
     }
 
     Card(
@@ -529,18 +555,10 @@ private fun WriteReviewSection(onSubmit: (UserReview) -> Unit) {
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(
-                text = "Viết đánh giá",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
+            Text(text = "Viết đánh giá", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Đánh giá của bạn:",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text(text = "Đánh giá của bạn:", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.width(8.dp))
                 repeat(5) { index ->
                     Icon(
@@ -549,22 +567,10 @@ private fun WriteReviewSection(onSubmit: (UserReview) -> Unit) {
                         tint = if (index < selectedRating) WarningColor else MaterialTheme.colorScheme.outlineVariant,
                         modifier = Modifier
                             .size(22.dp)
-                            .clickable { selectedRating = index + 1 }
+                            .clickable { if (!isSubmitting) selectedRating = index + 1 }
                     )
                 }
             }
-
-            OutlinedTextField(
-                value = accountName.ifBlank { "Bạn" },
-                onValueChange = {},
-                singleLine = true,
-                label = { Text("Tên hiển thị") },
-                readOnly = true,
-                modifier = Modifier.fillMaxWidth(),
-                supportingText = {
-                    Text("Lấy tự động từ tài khoản đang đăng nhập")
-                }
-            )
 
             OutlinedTextField(
                 value = reviewText,
@@ -573,38 +579,70 @@ private fun WriteReviewSection(onSubmit: (UserReview) -> Unit) {
                 placeholder = { Text("Chia sẻ trải nghiệm của bạn về sản phẩm...") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
-                maxLines = 5
+                maxLines = 5,
+                enabled = !isSubmitting
             )
 
             Button(
                 onClick = {
-                    onSubmit(
-                        UserReview(
-                            userName = accountName.ifBlank { "Bạn" },
-                            rating = selectedRating,
-                            comment = reviewText.trim(),
-                            date = "Vừa xong"
-                        )
+                    val user = currentUser ?: return@Button
+                    isSubmitting = true
+                    val reviewId = Firebase.firestore.collection("reviews").document().id
+                    val review = ReviewModel(
+                        id = reviewId,
+                        productId = productId,
+                        userId = user.uid,
+                        userName = accountName.ifBlank { user.email ?: "Người dùng" },
+                        rating = selectedRating.toFloat(),
+                        comment = reviewText.trim(),
+                        timestamp = Timestamp.now()
                     )
-                    reviewText = ""
-                    selectedRating = 0
+
+                    Firebase.firestore.collection("reviews").document(reviewId).set(review)
+                        .addOnSuccessListener {
+                            // Update Product Rating in background
+                            updateProductRating(productId, selectedRating.toFloat())
+                            reviewText = ""
+                            selectedRating = 0
+                            isSubmitting = false
+                            onReviewAdded()
+                        }
+                        .addOnFailureListener {
+                            isSubmitting = false
+                        }
                 },
-                enabled = selectedRating > 0 && reviewText.trim().length >= 8,
+                enabled = selectedRating > 0 && reviewText.trim().length >= 5 && !isSubmitting,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Gửi đánh giá", fontWeight = FontWeight.SemiBold)
+                if (isSubmitting) {
+                    androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                } else {
+                    Text("Gửi đánh giá", fontWeight = FontWeight.SemiBold)
+                }
             }
         }
     }
 }
 
-private data class UserReview(
-    val userName: String,
-    val rating: Int,
-    val comment: String,
-    val date: String
-)
+private fun updateProductRating(productId: String, newRating: Float) {
+    val productRef = Firebase.firestore.collection("data").document("stock")
+        .collection("products").document(productId)
+
+    Firebase.firestore.runTransaction { transaction: com.google.firebase.firestore.Transaction ->
+        val snapshot = transaction.get(productRef)
+        val currentRating = snapshot.getDouble("rating") ?: 0.0
+        val currentCount = snapshot.getLong("reviewCount") ?: 0L
+        
+        val newCount = currentCount + 1
+        val updatedRating = ((currentRating * currentCount) + newRating) / newCount
+        
+        transaction.update(productRef, "rating", updatedRating)
+        transaction.update(productRef, "reviewCount", newCount)
+    }.addOnSuccessListener {
+        // Success
+    }
+}
 
 @Composable
 fun ReviewCard(userName: String, rating: Int, comment: String, date: String) {

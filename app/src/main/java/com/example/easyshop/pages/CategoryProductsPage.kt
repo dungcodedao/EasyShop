@@ -1,4 +1,3 @@
-
 package com.example.easyshop.pages
 
 import androidx.compose.foundation.layout.*
@@ -15,11 +14,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.easyshop.R
-import com.example.easyshop.GlobalNavigation.navController
-import com.example.easyshop.components.ProductFilterDialog
-import com.example.easyshop.components.ProductItemView
+import com.example.easyshop.ScreenState
+import com.example.easyshop.AppUtil
+import com.example.easyshop.components.ErrorStateView
 import com.example.easyshop.model.ProductModel
+import com.example.easyshop.GlobalNavigation.navController
+import com.example.easyshop.components.ProductItemView
+import com.example.easyshop.components.ProductFilterDialog
+import com.example.easyshop.R
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 
@@ -38,11 +40,11 @@ fun CategoryProductsPage(
     var brandList by remember { mutableStateOf<List<String>>(emptyList()) }
     var selectedBrand by remember { mutableStateOf(allBrandsLabel) }
     var selectedPriceSort by remember { mutableStateOf(defaultSortLabel) }
-    var isLoading by remember { mutableStateOf(true) }
+    var screenState by remember { mutableStateOf(ScreenState.LOADING) }
     var showFilterDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(categoryId) {
-        isLoading = true
+    fun fetchProducts() {
+        screenState = ScreenState.LOADING
         Firebase.firestore.collection("data").document("stock")
             .collection("products")
             .whereEqualTo("category", categoryId)
@@ -57,9 +59,15 @@ fun CategoryProductsPage(
                         .filter { it.isNotBlank() }
                         .distinct()
                         .sorted()
+                    screenState = ScreenState.SUCCESS
+                } else {
+                    screenState = ScreenState.ERROR
                 }
-                isLoading = false
             }
+    }
+
+    LaunchedEffect(categoryId) {
+        fetchProducts()
     }
 
     val filteredProducts = remember(allProducts, selectedBrand, selectedPriceSort) {
@@ -105,12 +113,13 @@ fun CategoryProductsPage(
     ) { padding ->
         ProductListContent(
             modifier = Modifier.padding(padding),
-            isLoading = isLoading,
+            screenState = screenState,
             products = filteredProducts,
             onResetFilters = {
                 selectedBrand = allBrandsLabel
                 selectedPriceSort = defaultSortLabel
-            }
+            },
+            onRetry = { fetchProducts() }
         )
     }
 
@@ -133,46 +142,55 @@ fun CategoryProductsPage(
 @Composable
 private fun ProductListContent(
     modifier: Modifier = Modifier,
-    isLoading: Boolean,
+    screenState: ScreenState,
     products: List<ProductModel>,
-    onResetFilters: () -> Unit
+    onResetFilters: () -> Unit,
+    onRetry: () -> Unit
 ) {
-    when {
-        isLoading -> {
-            Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        }
-        products.isEmpty() -> {
-            Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        stringResource(id = R.string.no_products_found),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    TextButton(onClick = onResetFilters) {
-                        Text(stringResource(id = R.string.reset_filters))
-                    }
+    Box(modifier = modifier.fillMaxSize()) {
+        when (screenState) {
+            ScreenState.LOADING -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
                 }
             }
-        }
-        else -> {
-            LazyColumn(
-                modifier = modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(
-                    items = products.chunked(2),
-                    key = { row -> row.joinToString("-") { it.id } }
-                ) { rowItems ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        rowItems.forEach { product ->
-                            ProductItemView(product = product, modifier = Modifier.weight(1f))
+            ScreenState.ERROR -> {
+                ErrorStateView(
+                    onRetry = onRetry
+                )
+            }
+            ScreenState.SUCCESS -> {
+                if (products.isEmpty()) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                stringResource(id = R.string.no_products_found),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            TextButton(onClick = onResetFilters) {
+                                Text(stringResource(id = R.string.reset_filters))
+                            }
                         }
-                        if (rowItems.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(
+                            items = products.chunked(2),
+                            key = { row -> row.joinToString("-") { it.id } }
+                        ) { rowItems ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                rowItems.forEach { product ->
+                                    ProductItemView(product = product, modifier = Modifier.weight(1f))
+                                }
+                                if (rowItems.size == 1) Spacer(Modifier.weight(1f))
+                            }
+                        }
                     }
                 }
             }
