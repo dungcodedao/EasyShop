@@ -293,4 +293,7 @@
     <string name="out_of_stock_btn">Hết hàng</string>
     <string name="reviews_count">(%d đánh giá)</string>
     <string name="off_label">GIẢM</string>
+    <string name="profiles_incomplete_title">Thông tin giao hàng chưa đầy đủ</string>
+    <string name="profiles_incomplete_msg">Bạn cần cung cấp địa chỉ giao hàng và số điện thoại để có thể tiếp tục thanh toán.</string>
+    <string name="go_to_profile">Đi tới Hồ sơ</string>
 </resources>

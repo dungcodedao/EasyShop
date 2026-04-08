@@ -1,41 +1,56 @@
 package com.example.easyshop.components
 
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.firestore
+import com.example.easyshop.util.shimmerEffect
+import com.example.easyshop.viewmodel.HomeViewModel
 import com.tbuonomo.viewpagerdotsindicator.compose.DotsIndicator
 import com.tbuonomo.viewpagerdotsindicator.compose.model.DotGraphic
 import com.tbuonomo.viewpagerdotsindicator.compose.type.ShiftIndicatorType
 import kotlinx.coroutines.delay
 
 @Composable
-fun BannerView(modifier: Modifier = Modifier) {
-    var bannerList by remember { mutableStateOf<List<String>>(emptyList()) }
+fun BannerView(
+    viewModel: HomeViewModel,
+    modifier: Modifier = Modifier
+) {
+    val bannerList by viewModel.banners.collectAsState()
+    val screenState by viewModel.screenState.collectAsState()
+    val isLoading = screenState == com.example.easyshop.ScreenState.LOADING
 
-    LaunchedEffect(key1 = Unit) {
-        Firebase.firestore.collection("data")
-            .document("banners")
-            .get().addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    @Suppress("UNCHECKED_CAST")
-                    val urls = task.result?.get("urls") as? List<String>
-                    if (urls != null) bannerList = urls
-                }
-            }
+    if (isLoading) {
+        Card(
+            modifier = modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .shimmerEffect()
+            )
+        }
+        return
     }
 
     if (bannerList.isEmpty()) return
@@ -51,7 +66,7 @@ fun BannerView(modifier: Modifier = Modifier) {
             while (true) {
                 delay(4000)
                 if (!pagerState.isScrollInProgress) {
-                    val nextPage = (pagerState.currentPage + 1) % bannerList.size
+                    val nextPage = if (bannerList.isNotEmpty()) (pagerState.currentPage + 1) % bannerList.size else 0
                     pagerState.animateScrollToPage(nextPage, animationSpec = tween(800))
                 }
             }
@@ -59,13 +74,13 @@ fun BannerView(modifier: Modifier = Modifier) {
 
         // Banner Pager wrapped in Card for shadow
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().height(160.dp),
             shape = RoundedCornerShape(20.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxSize()
             ) { pageIndex ->
                 AsyncImage(
                     model = coil.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
@@ -73,9 +88,7 @@ fun BannerView(modifier: Modifier = Modifier) {
                         .crossfade(true)
                         .build(),
                     contentDescription = "Banner",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(160.dp),
+                    modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
             }

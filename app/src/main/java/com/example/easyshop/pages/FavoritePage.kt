@@ -16,45 +16,22 @@ import com.example.easyshop.model.ProductModel
 import com.example.easyshop.components.ProductItemView
 import com.example.easyshop.R
 import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
-import com.google.firebase.firestore.firestore
+import com.example.easyshop.viewmodel.FavoriteViewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoritePage(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: FavoriteViewModel
 ) {
-    var favoriteProducts by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
-    var screenState by remember { mutableStateOf(ScreenState.LOADING) }
-    val userId = Firebase.auth.currentUser?.uid
-
-    fun fetchFavorites() {
-        if (userId == null) {
-            screenState = ScreenState.ERROR
-            return
-        }
-        screenState = ScreenState.LOADING
-        Firebase.firestore.collection("users").document(userId)
-            .collection("favorites")
-            .get()
-            .addOnSuccessListener { result ->
-                favoriteProducts = result.documents.mapNotNull { doc ->
-                    doc.toObject(ProductModel::class.java)?.apply { id = doc.id }
-                }
-                screenState = ScreenState.SUCCESS
-            }
-            .addOnFailureListener {
-                screenState = ScreenState.ERROR
-            }
-    }
-
-    LaunchedEffect(userId) {
-        fetchFavorites()
-    }
+    val favoriteProducts by viewModel.favorites.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val screenState by viewModel.screenState.collectAsState()
 
     Scaffold(
         topBar = {
-            // Chỉ hiện TopBar nếu không phải trạng thái lỗi hoặc load để ErrorStateView được căn giữa tốt hơn
             if (screenState == ScreenState.SUCCESS) {
                 TopAppBar(
                     title = {
@@ -69,39 +46,31 @@ fun FavoritePage(
         }
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-            when (screenState) {
-                ScreenState.LOADING -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
-                ScreenState.ERROR -> {
-                    ErrorStateView(
-                        onRetry = { fetchFavorites() }
-                    )
-                }
-                ScreenState.SUCCESS -> {
-                    if (favoriteProducts.isEmpty()) {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                stringResource(id = R.string.no_favorites),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    } else {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(2),
-                            contentPadding = PaddingValues(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            items(favoriteProducts) { product ->
-                                ProductItemView(product = product)
-                            }
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            } else {
+                if (favoriteProducts.isEmpty()) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            stringResource(id = R.string.no_favorites),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(favoriteProducts) { product ->
+                            ProductItemView(product = product)
                         }
                     }
                 }

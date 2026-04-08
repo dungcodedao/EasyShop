@@ -24,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.easyshop.GlobalNavigation.navController
+import com.example.easyshop.util.GlobalNavigation.navController
 import com.example.easyshop.AppUtil
 import com.example.easyshop.ScreenState
 import com.example.easyshop.R
@@ -109,6 +109,12 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId: String) {
                     )
                 }
 
+                ScreenState.EMPTY -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Sản phẩm không tồn tại.")
+                    }
+                }
+
                 ScreenState.SUCCESS -> {
                     Column(
                         modifier = Modifier
@@ -119,7 +125,7 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId: String) {
                         ProductImageSlider(
                             images = product.images,
                             inStock = product.inStock,
-                            productId = productId
+                            product = product
                         )
 
                         // Product Info Card

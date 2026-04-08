@@ -52,7 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.easyshop.AppUtil
-import com.example.easyshop.GlobalNavigation.navController
+import com.example.easyshop.util.GlobalNavigation.navController
 import com.example.easyshop.R
 import com.example.easyshop.model.OrderModel
 import com.example.easyshop.model.ProductModel

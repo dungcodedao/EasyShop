@@ -41,7 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.easyshop.GlobalNavigation.navController
+import com.example.easyshop.util.GlobalNavigation.navController
 import com.example.easyshop.R
 import com.example.easyshop.components.OrderView
 import com.example.easyshop.model.OrderModel

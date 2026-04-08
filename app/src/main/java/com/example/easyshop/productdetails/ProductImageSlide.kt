@@ -48,6 +48,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.easyshop.AppUtil
 import com.example.easyshop.R
+import com.example.easyshop.model.ProductModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
@@ -56,10 +57,11 @@ import kotlin.math.absoluteValue
 fun ProductImageSlider(
     images: List<String>,
     inStock: Boolean,
-    productId: String
+    product: ProductModel
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val productId = product.id
     var isFav by remember { mutableStateOf(AppUtil.checkFavorite(context, productId)) }
     var heartPop by remember { mutableStateOf(false) }
 
@@ -126,8 +128,11 @@ fun ProductImageSlider(
 
         IconButton(
             onClick = {
-                AppUtil.addOrRemoveFromFavorite(context, productId)
-                isFav = AppUtil.checkFavorite(context, productId)
+                // ✅ 1. Cập nhật UI ngay lập tức (Optimistic Update)
+                isFav = !isFav
+                // ✅ 2. Gọi xử lý ngầm (AppUtil lo việc đồng bộ Firebase & Local)
+                AppUtil.addOrRemoveFromFavorite(context, product)
+                
                 heartPop = true
                 scope.launch {
                     delay(180)

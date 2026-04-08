@@ -1,12 +1,19 @@
 package com.example.easyshop.pages
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
@@ -17,6 +24,7 @@ import com.example.easyshop.components.BannerView
 import com.example.easyshop.components.CategoriesView
 import com.example.easyshop.components.HeaderView
 import com.example.easyshop.components.SearchView
+import com.example.easyshop.viewmodel.HomeViewModel
 
 @Composable
 fun HomePage(
@@ -24,7 +32,8 @@ fun HomePage(
     onNavigateToProfile: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
     isSearching: Boolean = false,
-    onSearchToggle: (Boolean) -> Unit = {}
+    onSearchToggle: (Boolean) -> Unit = {},
+    viewModel: HomeViewModel // ViewModel injected from HomeScreen
 ) {
     Column(
         modifier = modifier
@@ -44,41 +53,49 @@ fun HomePage(
                 modifier = modifier
             )
         } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp)
+            val isRefreshing by viewModel.isRefreshing.collectAsState()
+
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.refreshData() },
+                modifier = Modifier.fillMaxSize()
             ) {
-                Spacer(Modifier.height(8.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Spacer(Modifier.height(8.dp))
 
-                HeaderView(
-                    onSearchClick = { onSearchToggle(true) },
-                    onAvatarClick = onNavigateToProfile,
-                    onNotificationClick = onNotificationClick
-                )
+                    HeaderView(
+                        onSearchClick = { onSearchToggle(true) },
+                        onAvatarClick = onNavigateToProfile,
+                        onNotificationClick = onNotificationClick
+                    )
 
-                Spacer(Modifier.height(20.dp))
+                    Spacer(Modifier.height(20.dp))
 
-                // Banner
-                BannerView(modifier = Modifier.height(160.dp))
+                    // Banner
+                    BannerView(viewModel = viewModel, modifier = Modifier.height(160.dp))
 
-                Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(24.dp))
 
-                // Section Title
-                Text(
-                    text = stringResource(R.string.categories),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+                    // Section Title - Categories
+                    Text(
+                        text = stringResource(R.string.categories),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
 
-                Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(12.dp))
 
-                CategoriesView()
+                    CategoriesView(viewModel = viewModel)
 
-                // Tăng khoảng trống để tránh bị che bởi thanh điều hướng và nút AI (Spark button)
-                Spacer(Modifier.height(100.dp))
+                    // Tăng khoảng trống để tránh bị che bởi thanh điều hướng và nút AI (Spark button)
+                    Spacer(Modifier.height(100.dp))
+                }
             }
         }
     }

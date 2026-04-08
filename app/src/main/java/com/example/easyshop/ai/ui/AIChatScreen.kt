@@ -529,7 +529,7 @@ fun MarkdownText(text: String, textColor: Color) {
                 items(productIds.take(3)) { productId ->
                     AssistChip(
                         onClick = {
-                            com.example.easyshop.GlobalNavigation.navController.navigate("product-details/$productId")
+                            com.example.easyshop.util.GlobalNavigation.navController.navigate("product-details/$productId")
                         },
                         leadingIcon = {
                             Icon(

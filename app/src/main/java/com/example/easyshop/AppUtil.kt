@@ -5,6 +5,7 @@ import android.content.DialogInterface
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.widget.Toast
+import com.example.easyshop.components.NotifBannerController
 import androidx.appcompat.app.AlertDialog
 import com.example.easyshop.model.OrderModel
 import com.example.easyshop.model.ProductModel
@@ -13,6 +14,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -39,16 +41,17 @@ object AppUtil {
     }
 
     fun showToast(context: Context, message: String) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        // Khôi phục lại NotifBanner thay vì Toast truyền thống
+        NotifBannerController.show("Thông báo", message)
     }
 
-    fun showSuccess(message: String) {
-        showToast(appContext(), message)
+    fun showSuccess(title: String, message: String? = "") {
+        NotifBannerController.show(title, message ?: "", "SUCCESS")
     }
 
-    fun showError(message: String, detail: String? = null) {
-        val finalMessage = if (detail.isNullOrBlank()) message else "$message: $detail"
-        showToast(appContext(), finalMessage)
+    fun showError(title: String, message: String? = "", detail: String? = null) {
+        val finalMessage = if (detail.isNullOrBlank()) (message ?: "") else "${message ?: ""}: $detail"
+        NotifBannerController.show(title, finalMessage, "ERROR")
     }
 
     fun isNetworkAvailable(context: Context): Boolean {
@@ -103,51 +106,47 @@ object AppUtil {
         return getFavoriteIds(context).contains(productId)
     }
 
-    fun addOrRemoveFromFavorite(context: Context, productId: String) {
+    fun addOrRemoveFromFavorite(context: Context, product: ProductModel) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid == null) {
             showToast(context, "Vui lòng đăng nhập để dùng yêu thích")
             return
         }
 
+        val productId = product.id
         val db = Firebase.firestore
         val favoritesRef = db.collection("users").document(uid).collection("favorites")
-        val favoriteIds = getFavoriteIds(context)
+        
+        // ✅ 1. Lấy danh sách hiện tại
+        val favoriteIds = getFavoriteIds(context).toMutableSet()
+        val isRemoving = favoriteIds.contains(productId)
 
-        if (favoriteIds.contains(productId)) {
-            favoritesRef.document(productId)
-                .delete()
-                .addOnSuccessListener {
-                    favoriteIds.remove(productId)
-                    saveFavoriteIds(context, favoriteIds)
-                    showToast(context, "Đã xóa khỏi yêu thích")
-                }
+        // ✅ 2. CẬP NHẬT TỨC THÌ (Optimistic UI)
+        if (isRemoving) {
+            favoriteIds.remove(productId)
+            showSuccess("Gỡ yêu thích", "Đã xóa sản phẩm khỏi danh sách")
+        } else {
+            favoriteIds.add(productId)
+            showSuccess("Yêu thích", "Đã thêm vào danh sách yêu thích của bạn")
+        }
+        saveFavoriteIds(context, favoriteIds)
+
+        // ✅ 3. Xử lý Firebase ngầm bên dưới
+        if (isRemoving) {
+            favoritesRef.document(productId).delete()
                 .addOnFailureListener {
-                    showToast(context, "Xóa khỏi yêu thích thất bại")
+                    // Rollback nếu lỗi
+                    favoriteIds.add(productId)
+                    saveFavoriteIds(context, favoriteIds)
+                    showError("Lỗi đồng bộ", "Không thể xóa yêu thích")
                 }
         } else {
-            db.collection("data").document("stock")
-                .collection("products")
-                .document(productId)
-                .get()
-                .addOnSuccessListener { snapshot ->
-                    val product = snapshot.toObject(ProductModel::class.java)?.apply {
-                        id = snapshot.id
-                    } ?: ProductModel(id = productId)
-
-                    favoritesRef.document(productId)
-                        .set(product)
-                        .addOnSuccessListener {
-                            favoriteIds.add(productId)
-                            saveFavoriteIds(context, favoriteIds)
-                            showToast(context, "Đã thêm vào yêu thích")
-                        }
-                        .addOnFailureListener {
-                            showToast(context, "Thêm vào yêu thích thất bại")
-                        }
-                }
+            favoritesRef.document(productId).set(product)
                 .addOnFailureListener {
-                    showToast(context, "Không tìm thấy sản phẩm")
+                    // Rollback nếu lỗi
+                    favoriteIds.remove(productId)
+                    saveFavoriteIds(context, favoriteIds)
+                    showError("Lỗi đồng bộ", "Không thể thêm yêu thích")
                 }
         }
     }
@@ -157,24 +156,26 @@ object AppUtil {
     }
 
     fun addItemToCart(context: Context, productId: String, quantity: Int = 1) {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        val db = Firebase.firestore
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid == null) {
+            showToast(context, "Vui lòng đăng nhập để thêm vào giỏ hàng")
+            return
+        }
+        if (productId.isBlank()) return
         
-        db.collection("users").document(uid)
-            .update("cartItems.$productId", FieldValue.increment(quantity.toLong()))
-            .addOnSuccessListener {
-                showToast(context, "Đã thêm vào giỏ hàng")
-            }
+        val db = Firebase.firestore
+        val userRef = db.collection("users").document(uid)
+        
+        // Cách tiếp cận an toàn nhất: Thử update, nếu lỗi (do doc/field thiếu) thì dùng set merge
+        userRef.update("cartItems.$productId", FieldValue.increment(quantity.toLong()))
+            .addOnSuccessListener { showSuccess("Đã thêm vào giỏ hàng") }
             .addOnFailureListener {
-                // Nếu field cartItems chưa tồn tại hoặc rỗng, khởi tạo map mới
-                val initialCart = mapOf(productId to quantity.toLong())
-                db.collection("users").document(uid)
-                    .update("cartItems", initialCart)
-                    .addOnFailureListener {
-                         showToast(context, "Thêm vào giỏ hàng thất bại")
-                    }
-                    .addOnSuccessListener {
-                        showToast(context, "Đã thêm vào giỏ hàng")
+                // Nếu update thất bại, ta dùng set merge để khởi tạo cấu trúc map
+                val data = mapOf("cartItems" to mapOf(productId to quantity.toLong()))
+                userRef.set(data, SetOptions.merge())
+                    .addOnSuccessListener { showSuccess("Đã thêm vào giỏ hàng") }
+                    .addOnFailureListener { e -> 
+                        showError("Thêm vào giỏ hàng thất bại")
                     }
             }
     }

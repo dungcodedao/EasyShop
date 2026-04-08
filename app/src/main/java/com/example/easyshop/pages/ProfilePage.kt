@@ -69,7 +69,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.easyshop.AppUtil
-import com.example.easyshop.GlobalNavigation
+import com.example.easyshop.util.GlobalNavigation
 import com.example.easyshop.R
 import com.example.easyshop.model.UserModel
 import com.example.easyshop.sale.AvatarPickerDialog
@@ -173,12 +173,13 @@ fun ProfilePage(
         }
 
         Firebase.firestore.collection("users").document(currentUser.uid)
-            .update("addressList", currentList)
+            .set(mapOf("addressList" to currentList), com.google.firebase.firestore.SetOptions.merge())
             .addOnSuccessListener {
                 userModel.value = userModel.value.copy(addressList = currentList)
                 AppUtil.showToast(context, "Đã lưu địa chỉ")
                 showAddressDialog = false
             }
+            .addOnFailureListener { e -> AppUtil.showToast(context, "Lỗi khi lưu địa chỉ: ${e.message}") }
     }
 
     var showDeleteAccountDialog by remember { mutableStateOf(false) }

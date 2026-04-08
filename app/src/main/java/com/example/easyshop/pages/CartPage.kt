@@ -41,7 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.easyshop.GlobalNavigation
+import com.example.easyshop.util.GlobalNavigation
 import com.example.easyshop.R
 import com.example.easyshop.components.CartItemView
 import com.example.easyshop.model.ProductModel
@@ -57,6 +57,7 @@ fun CartPage(
 ) {
     val userModel = remember { mutableStateOf(UserModel()) }
     var isLoading by remember { mutableStateOf(true) }
+    var showIncompleteProfileDialog by remember { mutableStateOf(false) }
     val productsMap = remember { mutableStateOf<Map<String, ProductModel>>(emptyMap()) }
 
     DisposableEffect(Unit) {
@@ -148,7 +149,36 @@ fun CartPage(
                 modifier = Modifier.weight(1f),
                 model = userModel.value,
                 productsMap = productsMap.value,
-                showTitle = false
+                showTitle = false,
+                onCheckoutClick = {
+                    val defaultAddr = userModel.value.addressList.find { it.isDefault } ?: userModel.value.addressList.firstOrNull()
+                    if (defaultAddr == null || defaultAddr.phone.isBlank() || defaultAddr.detailedAddress.isBlank()) {
+                        showIncompleteProfileDialog = true
+                    } else {
+                        GlobalNavigation.navController.navigate("checkout")
+                    }
+                }
+            )
+        }
+
+        if (showIncompleteProfileDialog) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showIncompleteProfileDialog = false },
+                title = { Text(stringResource(R.string.profiles_incomplete_title)) },
+                text = { Text(stringResource(R.string.profiles_incomplete_msg)) },
+                confirmButton = {
+                    Button(onClick = {
+                        showIncompleteProfileDialog = false
+                        GlobalNavigation.navController.navigate("profile")
+                    }) {
+                        Text(stringResource(R.string.go_to_profile))
+                    }
+                },
+                dismissButton = {
+                    androidx.compose.material3.TextButton(onClick = { showIncompleteProfileDialog = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
             )
         }
     }
@@ -159,7 +189,8 @@ fun CartPageContent(
     modifier: Modifier,
     model: UserModel,
     productsMap: Map<String, ProductModel>,
-    showTitle: Boolean
+    showTitle: Boolean,
+    onCheckoutClick: () -> Unit
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         if (model.cartItems.isEmpty()) {
@@ -176,7 +207,8 @@ fun CartPageContent(
             CartContent(
                 userModel = model,
                 productsMap = productsMap,
-                showTitle = showTitle
+                showTitle = showTitle,
+                onCheckoutClick = onCheckoutClick
             )
         }
     }
@@ -224,7 +256,8 @@ private fun EmptyCart() {
 private fun CartContent(
     userModel: UserModel,
     productsMap: Map<String, ProductModel>,
-    showTitle: Boolean = false
+    showTitle: Boolean = false,
+    onCheckoutClick: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -273,7 +306,7 @@ private fun CartContent(
             }
 
             Button(
-                onClick = { GlobalNavigation.navController.navigate("checkout") },
+                onClick = onCheckoutClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),

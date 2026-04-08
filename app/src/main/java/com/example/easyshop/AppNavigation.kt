@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import com.example.easyshop.util.GlobalNavigation
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -246,9 +247,4 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             com.example.easyshop.components.NetworkStatusBanner(status = networkStatus)
         }
     }
-}
-
-object GlobalNavigation {
-    lateinit var navController: NavController
-    var pendingOrderTotal: Double = 0.0
 }

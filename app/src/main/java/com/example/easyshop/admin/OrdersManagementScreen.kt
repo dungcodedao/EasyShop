@@ -74,7 +74,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.easyshop.AppUtil
-import com.example.easyshop.GlobalNavigation.navController
+import com.example.easyshop.util.GlobalNavigation.navController
 import com.example.easyshop.R
 import com.example.easyshop.model.NotificationModel
 import com.example.easyshop.model.OrderModel

@@ -15,29 +15,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.easyshop.GlobalNavigation
+import com.example.easyshop.util.GlobalNavigation
 import com.example.easyshop.model.CategoryModel
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.firestore
+import com.example.easyshop.viewmodel.HomeViewModel
 
 @Composable
-fun CategoriesView(modifier: Modifier = Modifier) {
-    val categoryList = remember { mutableStateOf<List<CategoryModel>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-
-    LaunchedEffect(Unit) {
-        isLoading = true
-        Firebase.firestore.collection("data").document("stock")
-            .collection("categories")
-            .get()
-            .addOnSuccessListener { result ->
-                categoryList.value = result.documents.mapNotNull { it.toObject(CategoryModel::class.java) }
-                isLoading = false
-            }
-            .addOnFailureListener {
-                isLoading = false
-            }
-    }
+fun CategoriesView(
+    viewModel: HomeViewModel,
+    modifier: Modifier = Modifier
+) {
+    val categoryList by viewModel.categories.collectAsState()
+    val screenState by viewModel.screenState.collectAsState()
+    val isLoading = screenState == com.example.easyshop.ScreenState.LOADING
 
     if (isLoading) {
         // Placeholder: lưới 2 hàng x 3 cột
@@ -64,7 +53,7 @@ fun CategoriesView(modifier: Modifier = Modifier) {
         }
     } else {
         // Lưới 2 hàng x 3 cột
-        val rows = remember(categoryList.value) { categoryList.value.chunked(3) }
+        val rows = remember(categoryList) { categoryList.chunked(3) }
         Column(
             modifier = modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp)

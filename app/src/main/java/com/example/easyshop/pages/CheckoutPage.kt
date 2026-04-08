@@ -54,7 +54,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.easyshop.AppUtil
-import com.example.easyshop.GlobalNavigation
+import com.example.easyshop.util.GlobalNavigation
 import com.example.easyshop.R
 import com.example.easyshop.util.clickableOnce
 import com.example.easyshop.util.rememberDebouncedClick
@@ -181,7 +181,7 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                     Spacer(Modifier.width(12.dp))
 
                     Column(modifier = Modifier.weight(1f)) {
-                        if (selectedAddress != null) {
+                        if (selectedAddress != null && selectedAddress!!.phone.isNotBlank() && selectedAddress!!.detailedAddress.isNotBlank()) {
                             Text(
                                 text = "${selectedAddress!!.fullName} (+84)${selectedAddress!!.phone.removePrefix("0")}",
                                 style = MaterialTheme.typography.bodyLarge,
@@ -199,7 +199,9 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
                             )
                         } else {
                             Text(
-                                "⚠️ Chưa có địa chỉ giao hàng. Nhấn để chọn!",
+                                text = if (selectedAddress == null) "⚠️ Chưa có địa chỉ giao hàng. Nhấn để chọn!" 
+                                       else if (selectedAddress!!.phone.isBlank()) "⚠️ Thiếu số điện thoại giao hàng"
+                                       else "⚠️ Địa chỉ chi tiết không được để trống",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.error,
                                 fontWeight = FontWeight.Bold
@@ -266,7 +268,11 @@ fun CheckoutPage(modifier: Modifier = Modifier) {
             }
 
             Button(
-                onClick = rememberDebouncedClick(enabled = selectedAddress != null) {
+                onClick = rememberDebouncedClick(
+                    enabled = (selectedAddress != null && 
+                              selectedAddress!!.phone.isNotBlank() && 
+                              selectedAddress!!.detailedAddress.isNotBlank())
+                ) {
                     if (!AppUtil.isNetworkAvailable(context)) {
                         AppUtil.showToast(context, context.getString(R.string.lost_internet))
                     } else {

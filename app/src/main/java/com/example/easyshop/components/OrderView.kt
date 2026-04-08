@@ -26,7 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.easyshop.AppUtil
-import com.example.easyshop.GlobalNavigation
+import com.example.easyshop.util.GlobalNavigation
 import com.example.easyshop.R
 import com.example.easyshop.model.OrderModel
 import com.example.easyshop.ui.theme.SuccessColor

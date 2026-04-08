@@ -18,7 +18,7 @@ import com.example.easyshop.ScreenState
 import com.example.easyshop.AppUtil
 import com.example.easyshop.components.ErrorStateView
 import com.example.easyshop.model.ProductModel
-import com.example.easyshop.GlobalNavigation.navController
+import com.example.easyshop.util.GlobalNavigation.navController
 import com.example.easyshop.components.ProductItemView
 import com.example.easyshop.components.ProductFilterDialog
 import com.example.easyshop.R
@@ -158,6 +158,11 @@ private fun ProductListContent(
                 ErrorStateView(
                     onRetry = onRetry
                 )
+            }
+            ScreenState.EMPTY -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(stringResource(id = R.string.no_products_found))
+                }
             }
             ScreenState.SUCCESS -> {
                 if (products.isEmpty()) {

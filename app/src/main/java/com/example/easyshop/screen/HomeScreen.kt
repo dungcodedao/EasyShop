@@ -54,12 +54,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.easyshop.model.NavItemModel
 import com.example.easyshop.pages.CartPage
 import com.example.easyshop.pages.FavoritePage
 import com.example.easyshop.pages.HomePage
 import com.example.easyshop.pages.ProfilePage
+import com.example.easyshop.viewmodel.FavoriteViewModel
+import com.example.easyshop.viewmodel.HomeViewModel
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier, navController: NavController) {
@@ -105,6 +108,9 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavController) {
         },
         floatingActionButtonPosition = FabPosition.End
     ) { innerPadding ->
+        val homeViewModel: HomeViewModel = viewModel()
+        val favoriteViewModel: FavoriteViewModel = viewModel()
+
         ContentScreen(
             modifier = Modifier.padding(innerPadding).fillMaxSize(),
             selectedIndex = selectedIndex,
@@ -112,7 +118,9 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavController) {
             onNavigateToProfile = { selectedIndex = 3 },
             onNotificationClick = { navController.navigate("notifications") },
             isSearching = isSearching,
-            onSearchToggle = { isSearching = it }
+            onSearchToggle = { isSearching = it },
+            homeViewModel = homeViewModel,
+            favoriteViewModel = favoriteViewModel
         )
     }
 }
@@ -215,7 +223,9 @@ fun ContentScreen(
     onNavigateToProfile: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
     isSearching: Boolean = false,
-    onSearchToggle: (Boolean) -> Unit = {}
+    onSearchToggle: (Boolean) -> Unit = {},
+    homeViewModel: HomeViewModel,
+    favoriteViewModel: FavoriteViewModel
 ) {
     Box(modifier = modifier) {
         when (selectedIndex) {
@@ -224,9 +234,13 @@ fun ContentScreen(
                 onNavigateToProfile = onNavigateToProfile,
                 onNotificationClick = onNotificationClick,
                 isSearching = isSearching,
-                onSearchToggle = onSearchToggle
+                onSearchToggle = onSearchToggle,
+                viewModel = homeViewModel
             )
-            1 -> FavoritePage(Modifier.fillMaxSize())
+            1 -> FavoritePage(
+                modifier = Modifier.fillMaxSize(),
+                viewModel = favoriteViewModel
+            )
             2 -> CartPage(Modifier.fillMaxSize(), navController = navController)
             3 -> ProfilePage(Modifier.fillMaxSize(), navController = navController)
         }
