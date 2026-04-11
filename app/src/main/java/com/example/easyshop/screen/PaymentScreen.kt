@@ -27,10 +27,15 @@ import coil.request.ImageRequest
 import com.example.easyshop.AppUtil
 import com.example.easyshop.R
 import com.example.easyshop.components.VirtualCreditCard
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.easyshop.viewmodel.CheckoutViewModel
+import com.example.easyshop.viewmodel.CheckoutResult
+import com.example.easyshop.model.UserModel
 import com.example.easyshop.util.ConnectivityObserver
 import com.example.easyshop.util.NetworkConnectivityObserver
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun PaymentScreen(
@@ -39,7 +44,8 @@ fun PaymentScreen(
     totalAmount: Double = 0.0,
     subtotal: Double = 0.0,
     discount: Double = 0.0,
-    promoCode: String = ""
+    promoCode: String = "",
+    viewModel: CheckoutViewModel = viewModel()
 ) {
     var selectedPaymentMethod by remember { mutableStateOf("") }
     var cardNumber by remember { mutableStateOf("") }
@@ -55,6 +61,34 @@ fun PaymentScreen(
     val connectivityObserver = remember { NetworkConnectivityObserver(context) }
     val networkStatus by connectivityObserver.observe().collectAsState(initial = ConnectivityObserver.Status.Available)
     val isNetworkAvailable = networkStatus == ConnectivityObserver.Status.Available
+
+    val checkoutResult by viewModel.checkoutResult.collectAsState()
+    val selectedAddress by viewModel.selectedAddress.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchData()
+        // Nếu chuyển từ Checkout sang, ta cần đảm bảo address đã được set
+        // Hoặc ViewModel tự lo trong fetchData (lấy default)
+    }
+
+    LaunchedEffect(checkoutResult) {
+        when (val result = checkoutResult) {
+            is CheckoutResult.Success -> {
+                isProcessing = false
+                navController.navigate("receipt/${totalAmount.toFloat()}/${result.orderId}") {
+                    popUpTo("payment") { inclusive = true }
+                }
+            }
+            is CheckoutResult.Error -> {
+                isProcessing = false
+                AppUtil.showError("Lỗi thanh toán", result.message)
+            }
+            is CheckoutResult.Loading -> {
+                isProcessing = true
+            }
+            else -> {}
+        }
+    }
 
     Column(modifier = modifier.fillMaxSize().statusBarsPadding()) {
         Surface(
@@ -89,60 +123,32 @@ fun PaymentScreen(
         }
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(8.dp)
         ) {
             // Header
-
             Spacer(Modifier.height(8.dp))
-
             Text(
                 text = stringResource(R.string.payment_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-
             Spacer(Modifier.height(24.dp))
 
             // Order Summary Card
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                ),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            stringResource(R.string.payable_amount),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            AppUtil.formatPrice(totalAmount),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Text(stringResource(R.string.payable_amount), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(AppUtil.formatPrice(totalAmount), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     }
-                    Surface(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.secure),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
+                    Surface(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
+                        Text(text = stringResource(R.string.secure), modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -157,198 +163,76 @@ fun PaymentScreen(
 
             // Virtual Card Section
             if (selectedPaymentMethod == "Credit Card") {
-                VirtualCreditCard(
-                    number = cardNumber,
-                    name = cardName,
-                    expiry = expiryDate,
-                    cvv = cvv,
-                    isVisa = cardNumber.startsWith("4") || cardNumber.isEmpty()
-                )
+                VirtualCreditCard(number = cardNumber, name = cardName, expiry = expiryDate, cvv = cvv, isVisa = cardNumber.startsWith("4") || cardNumber.isEmpty())
                 Spacer(Modifier.height(24.dp))
             }
 
             Spacer(Modifier.height(24.dp))
 
             // Payment Methods
-            Text(
-                text = stringResource(R.string.payment_method),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-
+            Text(text = stringResource(R.string.payment_method), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(12.dp))
-
-            PaymentMethodSelector(
-                selectedMethod = selectedPaymentMethod,
-                onMethodSelected = { selectedPaymentMethod = it }
-            )
+            PaymentMethodSelector(selectedMethod = selectedPaymentMethod, onMethodSelected = { selectedPaymentMethod = it })
 
             Spacer(Modifier.height(24.dp))
 
             // Card Details (if Credit Card selected)
             if (selectedPaymentMethod == "Credit Card") {
-                Text(
-                    text = stringResource(R.string.card_details),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-
+                Text(text = stringResource(R.string.card_details), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(16.dp))
-
-                OutlinedTextField(
-                    value = cardNumber,
-                    onValueChange = {
-                        if (it.length <= 19) cardNumber = formatCardNumber(it)
-                    },
-                    label = { Text(stringResource(R.string.card_number)) },
-                    placeholder = { Text("1234 5678 9012 3456") },
-                    leadingIcon = {
-                        Icon(Icons.Default.CreditCard, contentDescription = null)
-                    },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
+                OutlinedTextField(value = cardNumber, onValueChange = { if (it.length <= 19) cardNumber = formatCardNumber(it) }, label = { Text(stringResource(R.string.card_number)) }, placeholder = { Text("1234 5678 9012 3456") }, leadingIcon = { Icon(Icons.Default.CreditCard, contentDescription = null) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = cardName,
-                    onValueChange = { cardName = it },
-                    label = { Text(stringResource(R.string.card_holder_name)) },
-                    placeholder = { Text("JOHN DOE") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
+                OutlinedTextField(value = cardName, onValueChange = { cardName = it }, label = { Text(stringResource(R.string.card_holder_name)) }, placeholder = { Text("JOHN DOE") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    OutlinedTextField(
-                        value = expiryDate,
-                        onValueChange = {
-                            if (it.length <= 5) expiryDate = formatExpiryDate(it)
-                        },
-                        label = { Text(stringResource(R.string.expiry)) },
-                        placeholder = { Text("MM/YY") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    OutlinedTextField(
-                        value = cvv,
-                        onValueChange = {
-                            if (it.length <= 3 && it.all { c -> c.isDigit() }) cvv = it
-                        },
-                        label = { Text(stringResource(R.string.cvv)) },
-                        placeholder = { Text("123") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
-                    )
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(value = expiryDate, onValueChange = { if (it.length <= 5) expiryDate = formatExpiryDate(it) }, label = { Text(stringResource(R.string.expiry)) }, placeholder = { Text("MM/YY") }, singleLine = true, modifier = Modifier.weight(1f))
+                    OutlinedTextField(value = cvv, onValueChange = { if (it.length <= 3 && it.all { c -> c.isDigit() }) cvv = it }, label = { Text(stringResource(R.string.cvv)) }, placeholder = { Text("123") }, singleLine = true, modifier = Modifier.weight(1f))
                 }
             }
+            Spacer(Modifier.height(20.dp))
+        }
 
-
-
-            Spacer(Modifier.height(32.dp))
-
-            // Pay Button
+        // --- Pinned Footer ---
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 2.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Button(
                 onClick = {
                     if (!isNetworkAvailable) return@Button
                     when (selectedPaymentMethod) {
-                        "MoMo QR" -> {
-                    scope.launch {
-                        isProcessing = true
-                        delay(1500)
-                        isProcessing = false
-                        val orderId = "ORD" + java.util.UUID.randomUUID().toString().replace("-", "").take(8).uppercase()
-                        val finalPromo = if (promoCode == "NONE") "" else promoCode
-                        AppUtil.clearCartAndAddToOrder(context, totalAmount, subtotal, discount, finalPromo, "MoMo QR", orderId)
-                        navController.navigate("receipt/${totalAmount.toFloat()}/$orderId") {
-                            popUpTo("payment") { inclusive = true }
+                        "MoMo QR" -> viewModel.placeOrder("MoMo QR")
+                        "Credit Card" -> {
+                            val isSuccess = cardNumber.replace(" ", "") == "4111111111111111"
+                            if (isSuccess) viewModel.placeOrder("Credit Card")
+                            else AppUtil.showToast(context, context.getString(R.string.test_card_hint))
                         }
-                    }
-                }
-                "Credit Card" -> {
-                            // Mock Payment Logic
-                            scope.launch {
-                                isProcessing = true
-                                delay(2000)
-
-                                val isSuccess = cardNumber.replace(" ", "") == "4111111111111111"
-                                isProcessing = false
-
-                                if (isSuccess) {
-                                    val orderId = "ORD" + java.util.UUID.randomUUID().toString().replace("-", "").take(8).uppercase()
-                                    val finalPromo = if (promoCode == "NONE") "" else promoCode
-                                    AppUtil.clearCartAndAddToOrder(context, totalAmount, subtotal, discount, finalPromo, selectedPaymentMethod, orderId)
-                                    navController.navigate("receipt/${totalAmount.toFloat()}/$orderId") {
-                                        popUpTo("payment") { inclusive = true }
-                                    }
-                                } else {
-                                    AppUtil.showToast(context, context.getString(R.string.test_card_hint))
-                                }
-                            }
-                        }
-                        else -> {
-                            // PayPal, Cash on Delivery
-                            scope.launch {
-                                isProcessing = true
-                                delay(2000)
-                                isProcessing = false
-                                val orderId = "ORD" + java.util.UUID.randomUUID().toString().replace("-", "").take(8).uppercase()
-                                val finalPromo = if (promoCode == "NONE") "" else promoCode
-                                AppUtil.clearCartAndAddToOrder(context, totalAmount, subtotal, discount, finalPromo, selectedPaymentMethod, orderId)
-                                navController.navigate("receipt/${totalAmount.toFloat()}/$orderId") {
-                                    popUpTo("payment") { inclusive = true }
-                                }
-                            }
-                        }
+                        else -> viewModel.placeOrder(selectedPaymentMethod)
                     }
                 },
                 enabled = !isProcessing && isNetworkAvailable && isFormValid(selectedPaymentMethod, cardNumber, cardName, expiryDate, cvv),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = MaterialTheme.shapes.medium
+                modifier = Modifier.width(260.dp).height(48.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4F46E5)
+                ),
+                shape = RoundedCornerShape(24.dp)
             ) {
                 if (isProcessing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                 } else {
-                    Text(
-                        text = stringResource(R.string.pay_with_amount, AppUtil.formatPrice(totalAmount)),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Text(text = stringResource(R.string.pay_with_amount, AppUtil.formatPrice(totalAmount)), fontSize = 15.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
             if (!isNetworkAvailable) {
-                Text(
-                    text = stringResource(R.string.lost_internet),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
+                Text(text = stringResource(R.string.lost_internet), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp).fillMaxWidth(), textAlign = TextAlign.Center)
             }
-
-            Spacer(Modifier.height(16.dp))
-
-            // Security Notice
-            Text(
-                text = stringResource(R.string.secure_notice_mock),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth()
-            )
+            
+            Spacer(Modifier.height(8.dp))
+            Text(text = stringResource(R.string.secure_notice_mock), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+            Spacer(Modifier.height(4.dp))
         }
     }
 

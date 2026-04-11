@@ -54,13 +54,15 @@ fun SignupScreen(
     val isPasswordMatch = password == confirmPassword
     val isFormValid = isEmailValid(email) && name.trim().isNotBlank() && isPasswordValid(password) && isPasswordMatch
 
+    val primaryIndigo = Color(0xFF4F46E5)
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.06f),
+                        primaryIndigo.copy(alpha = 0.08f),
                         MaterialTheme.colorScheme.background
                     )
                 )
@@ -78,14 +80,15 @@ fun SignupScreen(
             // Header
             Text(
                 text = stringResource(id = R.string.hello_there),
-                style = MaterialTheme.typography.displaySmall,
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.onBackground
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(id = R.string.create_account_subtitle),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
             )
 
             Spacer(Modifier.height(24.dp))
@@ -94,7 +97,7 @@ fun SignupScreen(
             Image(
                 painter = painterResource(id = R.drawable.login_banner),
                 contentDescription = null,
-                modifier = Modifier.fillMaxWidth(0.55f).height(140.dp)
+                modifier = Modifier.fillMaxWidth(0.5f).height(130.dp)
             )
 
             Spacer(Modifier.height(24.dp))
@@ -102,30 +105,29 @@ fun SignupScreen(
             // Form Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(28.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier.padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Email
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it.trim() },
                         label = { Text(stringResource(id = R.string.email_address)) },
-                        leadingIcon = { Icon(Icons.Default.Email, null, tint = MaterialTheme.colorScheme.primary) },
+                        leadingIcon = { Icon(Icons.Default.Email, null, tint = primaryIndigo) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         singleLine = true,
                         isError = email.isNotEmpty() && !isEmailValid(email),
-                        supportingText = {
-                            if (email.isNotEmpty() && !isEmailValid(email)) {
-                                Text(stringResource(id = R.string.email_invalid_error), color = MaterialTheme.colorScheme.error)
-                            }
-                        },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = primaryIndigo,
+                            focusedLabelColor = primaryIndigo
+                        )
                     )
 
                     // Name
@@ -133,16 +135,15 @@ fun SignupScreen(
                         value = name,
                         onValueChange = { name = it },
                         label = { Text(stringResource(id = R.string.full_name)) },
-                        leadingIcon = { Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary) },
+                        leadingIcon = { Icon(Icons.Default.Person, null, tint = primaryIndigo) },
                         singleLine = true,
                         isError = name.isNotEmpty() && name.trim().isBlank(),
-                        supportingText = {
-                            if (name.isNotEmpty() && name.trim().isBlank()) {
-                                Text(stringResource(id = R.string.name_empty_error), color = MaterialTheme.colorScheme.error)
-                            }
-                        },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = primaryIndigo,
+                            focusedLabelColor = primaryIndigo
+                        )
                     )
 
                     // Password
@@ -150,24 +151,22 @@ fun SignupScreen(
                         value = password,
                         onValueChange = { password = it },
                         label = { Text(stringResource(id = R.string.password)) },
-                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.primary) },
+                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = primaryIndigo) },
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff, null)
+                                Icon(if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff, null, tint = if (passwordVisible) primaryIndigo else Color.Gray)
                             }
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         singleLine = true,
                         isError = password.isNotEmpty() && !isPasswordValid(password),
-                        supportingText = {
-                            Text(
-                                stringResource(id = R.string.password_format_error),
-                                color = if (password.isNotEmpty() && !isPasswordValid(password)) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = primaryIndigo,
+                            focusedLabelColor = primaryIndigo
+                        )
                     )
 
                     // Confirm Password
@@ -175,56 +174,57 @@ fun SignupScreen(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it },
                         label = { Text(stringResource(id = R.string.confirm_password)) },
-                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.primary) },
+                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = primaryIndigo) },
                         visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                                Icon(if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff, null)
+                                Icon(if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff, null, tint = if (confirmPasswordVisible) primaryIndigo else Color.Gray)
                             }
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         singleLine = true,
                         isError = confirmPassword.isNotEmpty() && !isPasswordMatch,
-                        supportingText = {
-                            if (confirmPassword.isNotEmpty() && !isPasswordMatch) {
-                                Text(stringResource(id = R.string.password_mismatch_error), color = MaterialTheme.colorScheme.error)
-                            }
-                        },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = primaryIndigo,
+                            focusedLabelColor = primaryIndigo
+                        )
                     )
 
-                    // ✅ Admin Code Toggle (Ẩn/Hiện ô nhập mã Admin)
-                    TextButton(
-                        onClick = { isAdminFieldVisible = !isAdminFieldVisible },
-                        modifier = Modifier.align(Alignment.End),
-                        contentPadding = PaddingValues(0.dp)
-                    ) {
-                        Text(
-                            text = if (isAdminFieldVisible) "Tôi là khách hàng" else "Bạn là Quản trị viên?",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    // Admin Code Toggle
+                    Text(
+                        text = if (isAdminFieldVisible) "Tôi là khách hàng" else "Bạn là Quản trị viên?",
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .clickableOnce { isAdminFieldVisible = !isAdminFieldVisible },
+                        style = MaterialTheme.typography.labelLarge,
+                        color = primaryIndigo,
+                        fontWeight = FontWeight.Bold
+                    )
 
                     if (isAdminFieldVisible) {
                         OutlinedTextField(
                             value = adminCode,
                             onValueChange = { adminCode = it },
                             label = { Text("Mã xác thực Admin") },
-                            leadingIcon = { Icon(Icons.Default.Shield, null, tint = MaterialTheme.colorScheme.primary) },
+                            leadingIcon = { Icon(Icons.Default.Shield, null, tint = primaryIndigo) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = primaryIndigo,
+                                focusedLabelColor = primaryIndigo
+                            )
                         )
                     }
                 }
             }
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(32.dp))
 
             Button(
-                onClick = rememberDebouncedClick(enabled = !isLoading && isFormValid) {
+                onClick = {
                     isLoading = true
                     val cleanedName = name.trim().replace(Regex("\\s+"), " ")
                     val cleanedEmail = email.trim().lowercase()
@@ -232,30 +232,32 @@ fun SignupScreen(
                         isLoading = false
                         if (success) {
                             val destination = if (role == "admin") "admin-dashboard" else "home"
-                            AppUtil.showToast(context, if (role == "admin") context.getString(R.string.welcome_admin_msg) else context.getString(R.string.signup_success_msg))
                             navController.navigate(destination) { popUpTo("auth") { inclusive = true } }
                         } else {
                             AppUtil.showToast(context, errorMessage ?: context.getString(R.string.something_went_wrong))
                         }
                     }
                 },
+                enabled = !isLoading && isFormValid,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp)
+                    .height(54.dp),
+                shape = RoundedCornerShape(27.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = primaryIndigo)
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
                 } else {
                     Text(
                         text = stringResource(id = R.string.create_account_btn),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(24.dp))
 
             Row(
                 horizontalArrangement = Arrangement.Center,
@@ -264,23 +266,18 @@ fun SignupScreen(
                 Text(
                     stringResource(id = R.string.already_have_account),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color.Gray
                 )
-                TextButton(
-                    onClick = rememberDebouncedClick { 
-                        navController.navigateUp() 
-                    }
-                ) {
-                    Text(
-                        stringResource(id = R.string.login_btn),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                Text(
+                    text = " ${stringResource(id = R.string.login_btn)}",
+                    modifier = Modifier.clickableOnce { navController.navigateUp() },
+                    color = primaryIndigo,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.ExtraBold
+                )
             }
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(40.dp))
         }
     }
 }

@@ -83,9 +83,9 @@ fun NotifBannerOverlay() {
             progress = 1f
             visible = true
             
-            // Thanh chuyển động lùi của progress bar
-            val duration = 3000L
-            val steps = 100
+            // Thanh chuyển động lùi của progress bar (Giảm xuống 1 giây theo yêu cầu)
+            val duration = 1000L
+            val steps = 50
             val stepTime = duration / steps
             for (i in steps downTo 0) {
                 delay(stepTime)
@@ -99,13 +99,12 @@ fun NotifBannerOverlay() {
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.TopCenter
     ) {
         AnimatedVisibility(
             visible = visible,
+            modifier = Modifier.statusBarsPadding(),
             enter = slideInVertically(
                 initialOffsetY = { -it },
                 animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)

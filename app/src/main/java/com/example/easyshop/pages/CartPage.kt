@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -37,15 +38,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.easyshop.util.GlobalNavigation
 import com.example.easyshop.R
 import com.example.easyshop.components.CartItemView
 import com.example.easyshop.model.ProductModel
 import com.example.easyshop.model.UserModel
+import com.example.easyshop.util.GlobalNavigation
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
@@ -259,7 +261,7 @@ private fun CartContent(
     showTitle: Boolean = false,
     onCheckoutClick: () -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize())   {
         LazyColumn(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(
@@ -275,7 +277,7 @@ private fun CartContent(
 
         Column(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 2.dp)
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -308,18 +310,22 @@ private fun CartContent(
             Button(
                 onClick = onCheckoutClick,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp)
+                    .width(440.dp)
+                    .height(40.dp)
+                    .align(Alignment.CenterHorizontally),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4F46E5)
+                ),
+                shape = RoundedCornerShape(24.dp)
             ) {
                 Text(
                     text = stringResource(id = R.string.checkout),
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold
                 )
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(2.dp))
         }
     }
 }

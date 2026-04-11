@@ -144,7 +144,7 @@ fun CustomFloatingNavigationBar(
     ) {
         Surface(
             modifier = Modifier
-                .height(72.dp)
+                .height(60.dp)
                 .fillMaxWidth()
                 .shadow(
                     elevation = 16.dp,

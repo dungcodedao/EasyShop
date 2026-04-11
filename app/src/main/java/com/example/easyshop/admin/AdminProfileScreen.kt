@@ -1,7 +1,18 @@
 package com.example.easyshop.admin
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,8 +21,23 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,104 +91,113 @@ fun AdminProfileScreen(navController: NavController) {
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f)
                     )
-                    IconButton(onClick = {
-                        auth.signOut()
-                        navController.navigate("auth") { popUpTo(0) { inclusive = true } }
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Đăng xuất")
-                    }
                 }
             }
         }
     ) { padding ->
+        val primaryIndigo = Color(0xFF4F46E5)
+        val skyBlue = Color(0xFF0EA5E9)
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header gradient
-            Box(
+            // Scrollable Content
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .background(
-                        Brush.linearGradient(
-                            listOf(Color(0xFF6366F1), Color(0xFFA855F7))
-                        )
-                    ),
-                contentAlignment = Alignment.Center
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (adminAvatar.isNotEmpty()) {
-                            AsyncImage(
-                                model = adminAvatar,
-                                contentDescription = "Avatar",
-                                modifier = Modifier.fillMaxSize().clip(CircleShape),
-                                contentScale = ContentScale.Crop
+                // Header gradient
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .background(
+                            Brush.linearGradient(
+                                listOf(primaryIndigo, skyBlue)
                             )
-                        } else {
-                            Icon(
-                                Icons.Default.Person,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(44.dp)
-                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (adminAvatar.isNotEmpty()) {
+                                AsyncImage(
+                                    model = adminAvatar,
+                                    contentDescription = "Avatar",
+                                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(44.dp)
+                                )
+                            }
                         }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(text = adminName, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text(text = adminEmail, color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(text = adminName, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    Text(text = adminEmail, color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Info card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(2.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text("Thông tin tài khoản", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = primaryIndigo)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        InfoRow(label = "Tên", value = adminName)
+                        InfoRow(label = "Email", value = adminEmail)
+                        InfoRow(label = "Vai trò", value = "Quản trị viên")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Info card
-            Card(
+            // Pinned Footer
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(2.dp)
+                    .padding(16.dp)
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text("Thông tin tài khoản", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    InfoRow(label = "Tên", value = adminName)
-                    InfoRow(label = "Email", value = adminEmail)
-                    InfoRow(label = "Vai trò", value = "Quản trị viên")
+                Button(
+                    onClick = {
+                        auth.signOut()
+                        navController.navigate("auth") { popUpTo(0) { inclusive = true } }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
+                    shape = RoundedCornerShape(27.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryIndigo)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, tint = Color.White)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Đăng xuất", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
+                Spacer(modifier = Modifier.height(8.dp))
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Logout button
-            Button(
-                onClick = {
-                    auth.signOut()
-                    navController.navigate("auth") { popUpTo(0) { inclusive = true } }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .height(52.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
-            ) {
-                Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, tint = Color.White)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Đăng xuất", color = Color.White, fontWeight = FontWeight.SemiBold)
-            }
-            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

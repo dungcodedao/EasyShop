@@ -74,19 +74,23 @@ fun OnboardingScreen(navController: NavController) {
                 .padding(16.dp),
             horizontalArrangement = Arrangement.Center
         ) {
+            val primaryIndigo = Color(0xFF4F46E5)
             repeat(pages.size) { index ->
+                val isSelected = pagerState.currentPage == index
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 4.dp)
-                        .size(if (pagerState.currentPage == index) 12.dp else 8.dp)
+                        .width(if (isSelected) 24.dp else 8.dp)
+                        .height(8.dp)
                         .clip(CircleShape)
-                        .background(if (pagerState.currentPage == index) Color(0xFF6650A4) else Color(0xFFD1D5DB))
+                        .background(if (isSelected) primaryIndigo else Color(0xFFD1D5DB))
                 )
             }
         }
 
         // Button
         Box(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+            val primaryIndigo = Color(0xFF4F46E5)
             Button(
                 onClick = {
                     if (pagerState.currentPage < pages.size - 1) {
@@ -99,14 +103,15 @@ fun OnboardingScreen(navController: NavController) {
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6650A4))
+                    .height(54.dp),
+                shape = RoundedCornerShape(27.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = primaryIndigo)
             ) {
                 Text(
-                    text = if (pagerState.currentPage < pages.size - 1) "Tiếp theo" else "Bắt đầu",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
+                    text = if (pagerState.currentPage < pages.size - 1) "Tiếp theo" else "Bắt đầu ngay",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
             }
         }

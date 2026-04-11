@@ -46,6 +46,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -346,40 +347,58 @@ fun ProfilePage(
                     }
                 }
 
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(16.dp))
+            }
+        }
 
-                // Sign Out and Delete Account
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 40.dp)
+        // --- Bottom Buttons Section (Minimalist Style) ---
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 35.dp, bottom = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            OutlinedButton(
+                onClick = {
+                    FirebaseAuth.getInstance().signOut()
+                    GlobalNavigation.navController.navigate("auth") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                modifier = Modifier
+                    .width(440.dp)
+                    .height(44.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.6f)),
+                shape = RoundedCornerShape(22.dp)
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ExitToApp, 
+                    null, 
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.error
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    stringResource(R.string.sign_out),
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 14.sp
+                )
+            }
+
+            if (userModel.value.role != "admin") {
+                TextButton(
+                    onClick = { showDeleteAccountDialog = true },
+                    modifier = Modifier.padding(top = 4.dp),
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
+                    )
                 ) {
-                    Button(
-                        onClick = {
-                            FirebaseAuth.getInstance().signOut()
-                            GlobalNavigation.navController.navigate("auth") {
-                                popUpTo(0) { inclusive = true }
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ExitToApp, null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.sign_out), fontWeight = FontWeight.Bold, color = Color.White)
-                    }
-
-                    if (userModel.value.role != "admin") {
-                        Spacer(Modifier.height(12.dp))
-                        TextButton(
-                            onClick = { showDeleteAccountDialog = true },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Text(stringResource(R.string.delete_account), fontWeight = FontWeight.SemiBold)
-                        }
-                    }
+                    Text(
+                        stringResource(R.string.delete_account),
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 12.sp
+                    )
                 }
             }
         }
@@ -600,15 +619,15 @@ fun ProfilePage(
                                     if (addr.isDefault) {
                                         Spacer(Modifier.height(6.dp))
                                         Surface(
-                                            color = Color(0xFFFF4867).copy(alpha = 0.1f),
+                                            color = Color(0xFF4F46E5).copy(alpha = 0.1f),
                                             shape = RoundedCornerShape(2.dp),
-                                            border = androidx.compose.foundation.BorderStroke(0.5.dp, Color(0xFFFF4867))
+                                            border = androidx.compose.foundation.BorderStroke(0.5.dp, Color(0xFF4F46E5))
                                         ) {
                                             Text(
                                                 "Mặc định",
                                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
                                                 style = MaterialTheme.typography.labelSmall,
-                                                color = Color(0xFFFF4867),
+                                                color = Color(0xFF4F46E5),
                                                 fontSize = 10.sp
                                             )
                                     }
