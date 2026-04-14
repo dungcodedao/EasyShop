@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -36,7 +37,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.tasks.await
 
 @Composable
 fun SplashScreen(navController: NavController) {
@@ -63,12 +67,42 @@ fun SplashScreen(navController: NavController) {
         label = "alpha"
     )
 
+    var progress by remember { mutableStateOf(0f) }
+    
     LaunchedEffect(Unit) {
         startAnimation = true
-        delay(2000)
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-            navController.navigate("home") {
+        
+        // Start role fetch concurrently
+        val roleDeferred = async {
+            val currentUser = auth.currentUser
+            if (currentUser != null) {
+                try {
+                    val doc = FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(currentUser.uid)
+                        .get()
+                        .await()
+                    doc.getString("role") ?: "user"
+                } catch (e: Exception) {
+                    "user"
+                }
+            } else null
+        }
+
+        // Animate progress over 2 seconds
+        val startTime = System.currentTimeMillis()
+        val duration = 2000L
+        while (System.currentTimeMillis() - startTime < duration) {
+            progress = (System.currentTimeMillis() - startTime).toFloat() / duration
+            delay(16) // ~60fps
+        }
+        progress = 1f
+        
+        val role = roleDeferred.await()
+        
+        if (role != null) {
+            val destination = if (role == "admin") "admin-dashboard" else "home"
+            navController.navigate(destination) {
                 popUpTo("splash") { inclusive = true }
             }
         } else {
@@ -128,6 +162,20 @@ fun SplashScreen(navController: NavController) {
                 style = MaterialTheme.typography.bodyLarge,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium
+            )
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            // Progress Bar
+            androidx.compose.material3.LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .padding(horizontal = 64.dp)
+                    .height(6.dp)
+                    .fillMaxWidth(),
+                color = Color.White,
+                trackColor = Color.White.copy(alpha = 0.2f),
+                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
             )
         }
         
