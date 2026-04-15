@@ -308,7 +308,7 @@ fun ChatBubble(content: String, isUser: Boolean, timestamp: Timestamp?) {
     ) {
         if (!isUser) {
             Text(
-                text = "AI Copilot",
+                text = "AI Tư Vấn",
                 style = MaterialTheme.typography.labelSmall,
                 color = onSurfaceVariantColor,
                 modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)

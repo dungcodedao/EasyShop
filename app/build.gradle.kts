@@ -22,6 +22,9 @@ android {
         localProperties.load(localPropertiesFile.inputStream())
     }
     val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
+    val beeknoeeApiKey = localProperties.getProperty("BEEKNOEE_API_KEY") ?: ""
+    val beeknoeeBaseUrl = localProperties.getProperty("BEEKNOEE_BASE_URL") ?: "https://platform.beeknoee.com/api/v1"
+    val beeknoeeModel = localProperties.getProperty("BEEKNOEE_MODEL") ?: "deepseek-chat"
 
     defaultConfig {
         applicationId = "com.example.easyshop"
@@ -31,6 +34,9 @@ android {
         versionName = "1.0"
 
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
+        buildConfigField("String", "BEEKNOEE_API_KEY", "\"$beeknoeeApiKey\"")
+        buildConfigField("String", "BEEKNOEE_BASE_URL", "\"$beeknoeeBaseUrl\"")
+        buildConfigField("String", "BEEKNOEE_MODEL", "\"$beeknoeeModel\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -107,8 +113,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:19.0.0")
     implementation("com.google.android.gms:play-services-location:21.0.0")
 
-    // Gemini AI (Gọi trực tiếp từ Android)
-    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+    // AI provider (Beeknoee OpenAI-compatible qua OkHttp)
 
     // Google Login & Credentials
     implementation("com.google.android.gms:play-services-auth:21.0.0")

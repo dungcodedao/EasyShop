@@ -5,30 +5,41 @@ import com.example.easyshop.BuildConfig
 import com.example.easyshop.ai.model.ChatMessage
 import com.example.easyshop.model.OrderModel
 import com.example.easyshop.model.ProductModel
-import com.google.ai.client.generativeai.GenerativeModel
-import com.google.ai.client.generativeai.type.BlockThreshold
-import com.google.ai.client.generativeai.type.FinishReason
-import com.google.ai.client.generativeai.type.HarmCategory
-import com.google.ai.client.generativeai.type.SafetySetting
-import com.google.ai.client.generativeai.type.content
-import com.google.ai.client.generativeai.type.generationConfig
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
+import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.text.Normalizer
+import java.util.concurrent.TimeUnit
 
 class AiRepository {
     private val db = Firebase.firestore
     private val auth = Firebase.auth
 
-    private val apiKey = BuildConfig.GEMINI_API_KEY
+    private val beeknoeeApiKey = BuildConfig.BEEKNOEE_API_KEY
+    private val beeknoeeBaseUrl = BuildConfig.BEEKNOEE_BASE_URL
+        .ifBlank { "https://platform.beeknoee.com/api/v1" }
+        .trimEnd('/')
+    private val beeknoeeModel = BuildConfig.BEEKNOEE_MODEL.ifBlank { "deepseek-chat" }
+    private val gson = Gson()
+    private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(70, TimeUnit.SECONDS)
+        .writeTimeout(70, TimeUnit.SECONDS)
+        .build()
 
     private var cachedProducts: List<ProductModel> = emptyList()
     private var lastProductsFetchTimeMs: Long = 0L
@@ -41,7 +52,32 @@ class AiRepository {
         val cartSummary: String,
         val recentOrdersSummary: String,
         val favoriteCategories: String,
-        val averageDeliveredOrderValue: Double
+        val averageDeliveredOrderValue: Double,
+        val profileHealth: String,
+        val defaultAddressSummary: String,
+        val favoriteProductsSummary: String,
+        val preferredPaymentMethods: String,
+        val recentPromoUsage: String,
+        val orderStatusSummary: String,
+        val cartEstimatedValue: Long
+    )
+
+    private data class OpenAIChatResponse(
+        val choices: List<OpenAIChoice> = emptyList(),
+        val error: OpenAIError? = null
+    )
+
+    private data class OpenAIChoice(
+        val message: OpenAIMessage? = null
+    )
+
+    private data class OpenAIMessage(
+        val role: String = "",
+        val content: String = ""
+    )
+
+    private data class OpenAIError(
+        val message: String? = null
     )
 
     fun getMessages(): Flow<List<ChatMessage>> = callbackFlow {
@@ -100,10 +136,10 @@ class AiRepository {
         val allProducts = fetchAllProducts()
         val relevantProducts = selectRelevantProducts(userMessage, history, allProducts)
         val selectedProducts = when {
-            relevantProducts.isNotEmpty() -> relevantProducts.take(14)
+            relevantProducts.isNotEmpty() -> relevantProducts.take(18)
             allProducts.isNotEmpty() -> allProducts
                 .sortedWith(compareByDescending<ProductModel> { it.inStock }.thenBy { parseCurrencyToLong(it.price) ?: Long.MAX_VALUE })
-                .take(14)
+                .take(18)
             else -> emptyList()
         }
 
@@ -115,91 +151,41 @@ class AiRepository {
         val productsContextStr = buildProductsContext(selectedProducts)
 
         val systemInstructionStr = """
-            BẠN LÀ: AI EasyShop - Chuyên gia tư vấn mua sắm công nghệ cao cấp tại Việt Nam.
-            Ý ĐỊNH NGƯỜI DÙNG: $intent
+            BAN LA: EasyShop AI , tro ly tu van mua sam chuyen sau cho EasyShop.
+            Y DINH NGUOI DUNG: $intent
 
-            PHONG CÁCH PHỤC VỤ (CORE RULES):
-            1) Ngôn ngữ: Tiếng Việt tự nhiên, tinh tế, am hiểu sản phẩm. Tuyệt đối không dùng từ ngữ máy móc hoặc sai chính tả.
-            2) Tránh lặp lại: Không lặp lại câu chào "Chào bạn..." nếu người dùng đang trong luồng hội thoại. Chỉ chào ở tin nhắn đầu tiên.
-            3) Tư vấn chuyên sâu: Khi so sánh, hãy tập trung vào sự khác biệt thực tế về hiệu năng, giá trị sử dụng thay vì chỉ liệt kê thông số.
-            4) Quy tắc ID sản phẩm: Luôn kèm ID chính xác trong ngoặc vuông ngay sau tên sản phẩm nếu có trong ngữ cảnh. Ví dụ: Samsung S25 Ultra [s25u_01].
-            5) Tuyệt đối không bịa đặt: Chỉ tư vấn dựa trên dữ liệu sản phẩm thật bên dưới. Nếu không có máy người dùng hỏi, hãy xin lỗi và gợi ý máy tương đương tốt nhất.
-            6) Trình bày: Sử dụng bullet points (-) để so sánh hoặc liệt kê cho dễ đọc. 
-            7) Luôn kết thúc bằng một câu hỏi gợi mở để hỗ trợ người dùng chốt đơn hoặc tìm hiểu thêm (VD: "Bạn có muốn mình so sánh camera của 2 máy này không?").
-            8) Tự do ngôn luận: Bạn có thể trả lời chi tiết và đầy đủ nhất có thể để làm hài lòng người dùng, không bị giới hạn số dòng.
+            QUY TAC:
+            1) Tra loi bang tieng Viet co dau, tu nhien, de hieu.
+            2) Chi dung thong tin co trong ngu canh ben duoi. Khong bịa dat thong so.
+            3) Neu nhac san pham, bat buoc giu format: Ten [id].
+            4) Neu nguoi dung can tu van mua: de xuat 2-4 lua chon phu hop nhat.
+            5) Moi lua chon nen co: gia, tinh trang hang, 3-5 ly do, diem can luu y.
+            6) Neu nguoi dung hoi so sanh: tra loi bang bullet points theo tieu chi (hieu nang, gia tri, do ben, nang cap, gia).
+            7) Neu khong co dung san pham can tim: noi ro "khong thay dung mau" va de xuat mau gan nhat.
+            8) Khong tu nhan da dat don/giu hang/khuyen mai neu ngu canh khong co.
+            9) Luon ket thuc bang 1 cau hoi goi mo de chot nhu cau tiep theo.
+            10) Neu lien quan thanh toan/checkout: dua ra huong dan ro rang theo trang thai ho so, dia chi, gio hang va phuong thuc thanh toan thuong dung.
+            11) Neu lien quan yeu thich: uu tien de xuat theo danh sach yeu thich va danh muc ua thich cua nguoi dung.
+            12) Neu lien quan profile: chi ro thong tin thieu va huong dan cap nhat tung buoc ngan gon.
 
-            NGỮ CẢNH KHÁCH HÀNG:
+            MAU TRA LOI UU TIEN:
+            - Tom tat nhanh nhu cau cua nguoi dung (1-2 cau).
+            - Goi y chinh (2-4 san pham), moi san pham 4-7 dong ro rang.
+            - Ket luan va de xuat buoc tiep theo.
+
+            NGU CANH KHACH HANG:
             $userContextStr
 
-            DANH MỤC SẢN PHẨM KHẢ DỤNG:
+            DANH MUC SAN PHAM KHA DUNG:
             $productsContextStr
         """.trimIndent()
 
-        val generativeModel = GenerativeModel(
-            modelName = "gemini-2.5-flash",
-            apiKey = apiKey,
-            systemInstruction = content { text(systemInstructionStr) },
-            generationConfig = generationConfig {
-                temperature = 0.6f
-                topP = 0.95f
-                topK = 40
-                maxOutputTokens = 1024
-            },
-            safetySettings = listOf(
-                SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.NONE),
-                SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.NONE),
-                SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.NONE),
-                SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.NONE)
-            )
+        val aiReplyAccumulator = requestBeeSynapseReply(
+            systemInstructionStr = systemInstructionStr,
+            history = history,
+            userMessage = userMessage
         )
-
-        val chatContextContents = history.takeLast(14)
-            .filter { msg ->
-                msg.isUser || (msg.content.length > 50 || !msg.content.contains("Xin lỗi"))
-            }
-            .map { msg ->
-                content(if (msg.isUser) "user" else "model") { text(msg.content) }
-            }.toMutableList()
-
-        chatContextContents.add(content("user") { text(userMessage) })
-
-        var aiReplyAccumulator = ""
-
-        val responseStream = generativeModel.generateContentStream(*chatContextContents.toTypedArray())
-
-        try {
-            responseStream.collect { chunk ->
-                val finishReason = chunk.candidates.firstOrNull()?.finishReason
-                if (finishReason != null && finishReason != FinishReason.STOP) {
-                    Log.w("AI_DEBUG", "AI dừng sớm vì lý do: $finishReason")
-                }
-
-                val textPart = try {
-                    chunk.text ?: ""
-                } catch (e: Exception) {
-                    if (e.message?.contains("SAFETY", ignoreCase = true) == true) {
-                        throw Exception("Nội dung bị bộ lọc an toàn chặn. Hãy thử diễn đạt khác.")
-                    }
-                    ""
-                }
-                if (textPart.isNotEmpty()) {
-                    aiReplyAccumulator += textPart
-                    emit(aiReplyAccumulator)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("AI_CHAT_ERROR", "Lỗi khi stream: ${e.message}", e)
-            val msg = e.message ?: ""
-            if (msg.contains("MAX_TOKENS", ignoreCase = true)) {
-                if (aiReplyAccumulator.isNotBlank()) {
-                    emit(aiReplyAccumulator + "\n\n*(Hệ thống: Do nội dung quá dài nên mình xin phép ngắt lời tại đây. Bạn muốn mình nói tiếp về phần nào không?)*")
-                } else {
-                    throw Exception("Câu hỏi quá dài khiến mình bị 'quá tải', bạn thử hỏi ngắn gọn hơn nhé!")
-                }
-            } else if (!msg.contains("MAX_TOKENS", ignoreCase = true) || aiReplyAccumulator.isBlank()) {
-                throw e
-            }
-        }
+        emit(aiReplyAccumulator)
 
         if (aiReplyAccumulator.isNotBlank()) {
             chatDocRef.collection("messages").add(
@@ -213,6 +199,95 @@ class AiRepository {
         }
     }
 
+    private suspend fun requestBeeSynapseReply(
+        systemInstructionStr: String,
+        history: List<ChatMessage>,
+        userMessage: String
+    ): String = withContext(Dispatchers.IO) {
+        if (beeknoeeApiKey.isBlank()) {
+            throw Exception("Thieu BEEKNOEE_API_KEY trong local.properties")
+        }
+
+        val conversation = history.takeLast(14)
+            .filter { msg -> msg.isUser || msg.content.length > 10 }
+
+        val payloadMessages = mutableListOf<Map<String, String>>()
+        payloadMessages.add(
+            mapOf(
+                "role" to "system",
+                "content" to systemInstructionStr
+            )
+        )
+
+        conversation.forEach { msg ->
+            payloadMessages.add(
+                mapOf(
+                    "role" to if (msg.isUser) "user" else "assistant",
+                    "content" to msg.content
+                )
+            )
+        }
+
+        payloadMessages.add(
+            mapOf(
+                "role" to "user",
+                "content" to userMessage
+            )
+        )
+
+        val requestPayload = mapOf(
+            "model" to beeknoeeModel,
+            "messages" to payloadMessages,
+            "temperature" to 0.45,
+            "top_p" to 0.9,
+            "max_tokens" to 1600
+        )
+
+        val bodyJson = gson.toJson(requestPayload)
+        val request = Request.Builder()
+            .url("$beeknoeeBaseUrl/chat/completions")
+            .addHeader("Authorization", "Bearer $beeknoeeApiKey")
+            .addHeader("Content-Type", "application/json")
+            .post(bodyJson.toRequestBody("application/json; charset=utf-8".toMediaType()))
+            .build()
+
+        httpClient.newCall(request).execute().use { response ->
+            val rawBody = response.body?.string().orEmpty()
+
+            if (!response.isSuccessful) {
+                val parsedError = runCatching {
+                    gson.fromJson(rawBody, OpenAIChatResponse::class.java)
+                        ?.error
+                        ?.message
+                }.getOrNull()
+
+                val message = parsedError?.takeIf { it.isNotBlank() }
+                    ?: "Beeknoee request failed (${response.code})"
+                throw Exception(message)
+            }
+
+            if (rawBody.isBlank()) {
+                throw Exception("AI provider tra ve rong")
+            }
+
+            val parsed = runCatching {
+                gson.fromJson(rawBody, OpenAIChatResponse::class.java)
+            }.getOrNull()
+
+            val text = parsed?.choices
+                ?.firstOrNull()
+                ?.message
+                ?.content
+                ?.trim()
+                .orEmpty()
+
+            if (text.isBlank()) {
+                throw Exception(parsed?.error?.message ?: "Khong nhan duoc phan hoi tu AI")
+            }
+
+            text
+        }
+    }
     suspend fun clearChat() {
         val userId = auth.currentUser?.uid ?: return
         val docs = db.collection("chats").document(userId).collection("messages").get().await()
@@ -248,6 +323,9 @@ class AiRepository {
         return when {
             listOf("so sanh", "compare", "khac nhau").any { msg.contains(it) } -> "comparison"
             listOf("ngan sach", "duoi", "toi da", "tam gia", "bao nhieu").any { msg.contains(it) } -> "budget_advice"
+            listOf("thanh toan", "payment", "cod", "chuyen khoan", "the ngan hang", "checkout").any { msg.contains(it) } -> "payment_support"
+            listOf("yeu thich", "wishlist", "favorite", "favourite").any { msg.contains(it) } -> "favorite_support"
+            listOf("ho so", "profile", "dia chi", "so dien thoai", "cap nhat thong tin").any { msg.contains(it) } -> "profile_support"
             listOf("con hang", "het hang", "in stock", "stock").any { msg.contains(it) } -> "stock_check"
             listOf("don hang", "giao den", "shipping", "van chuyen", "order").any { msg.contains(it) } -> "order_support"
             listOf("khuyen mai", "giam gia", "deal", "voucher").any { msg.contains(it) } -> "promotion"
@@ -365,65 +443,77 @@ class AiRepository {
 
     private fun buildProductsContext(products: List<ProductModel>): String {
         if (products.isEmpty()) {
-            return "Danh mục sản phẩm hiện không khả dụng."
+            return "Khong co du lieu san pham kha dung."
         }
 
         return products.mapIndexed { index, product ->
-            val isMain = index < 3 // Chỉ lấy thông số kỹ thuật đầy đủ cho 3 sản phẩm đầu tiên
-
-            val price = product.price.ifBlank { "không có" }
-            val category = product.category.ifBlank { "chưa_phân_loại" }
+            val isMain = index < 6
+            val price = product.price.ifBlank { "khong_ro" }
+            val category = product.category.ifBlank { "chua_phan_loai" }
+            val oldPrice = product.actualPrice.takeIf { it.isNotBlank() && it != product.price }
+            val status = if (product.inStock) "con_hang" else "het_hang"
 
             if (isMain) {
                 val topSpecs = product.otherDetails.entries
-                    .take(4)
+                    .take(6)
                     .joinToString(", ") { "${it.key}: ${it.value}" }
-                    .ifBlank { "không có" }
+                    .ifBlank { "khong_ro" }
 
-                val oldPrice = product.actualPrice.takeIf { it.isNotBlank() && it != product.price }
-                val status = if (product.inStock) "còn_hàng" else "hết_hàng"
-                val shortDescription = product.description.take(150).replace("\n", " ").ifBlank { "không có mô tả" }
+                val shortDescription = product.description
+                    .take(220)
+                    .replace("\n", " ")
+                    .ifBlank { "khong_co_mo_ta" }
 
                 buildString {
                     append("${index + 1}. ${product.title} [${product.id}]")
-                    append(" | giá=$price")
-                    if (!oldPrice.isNullOrBlank()) append(" | giá_cũ=$oldPrice")
-                    append(" | trạng_thái=$status | danh_mục=$category")
-                    append("\n   - Thông số: $topSpecs")
-                    append("\n   - Tóm tắt: $shortDescription...")
+                    append(" | gia_hien_tai=$price")
+                    if (!oldPrice.isNullOrBlank()) append(" | gia_goc=$oldPrice")
+                    append(" | tinh_trang=$status | danh_muc=$category")
+                    append("\n   - thong_so_noi_bat: $topSpecs")
+                    append("\n   - mo_ta_ngan: $shortDescription")
                 }
             } else {
-                // Nén tối đa để tiết kiệm bộ nhớ
-                "${index + 1}. ${product.title} [${product.id}] | giá=$price | danh_mục=$category"
+                "${index + 1}. ${product.title} [${product.id}] | gia_hien_tai=$price | tinh_trang=$status | danh_muc=$category"
             }
         }.joinToString(separator = "\n\n")
     }
-
-    private suspend fun fetchUserContext(
+        private suspend fun fetchUserContext(
         userId: String,
         productsById: Map<String, ProductModel>
     ): UserChatContext {
         val userDoc = runCatching { db.collection("users").document(userId).get().await() }.getOrNull()
 
-        val name = userDoc?.getString("name")
-            ?.takeIf { it.isNotBlank() }
-            ?: auth.currentUser?.displayName
-            ?: "Khách hàng"
-        val email = userDoc?.getString("email")
-            ?.takeIf { it.isNotBlank() }
-            ?: auth.currentUser?.email
-            ?: "không_rõ"
-        val role = userDoc?.getString("role").orEmpty().ifBlank { "người_dùng" }
+        val name = userDoc?.getString("name")?.takeIf { it.isNotBlank() } ?: auth.currentUser?.displayName ?: "Khach hang"
+        val email = userDoc?.getString("email")?.takeIf { it.isNotBlank() } ?: auth.currentUser?.email ?: "khong_ro"
+        val role = userDoc?.getString("role").orEmpty().ifBlank { "nguoi_dung" }
+        val phone = userDoc?.getString("phone").orEmpty()
+
+        val addressMaps = (userDoc?.get("addressList") as? List<*>)
+            ?.mapNotNull { it as? Map<*, *> }
+            .orEmpty()
+        val defaultAddressMap = addressMaps.firstOrNull { (it["isDefault"] as? Boolean) == true } ?: addressMaps.firstOrNull()
+        val defaultAddressSummary = if (defaultAddressMap == null) {
+            "chua_co_dia_chi_mac_dinh"
+        } else {
+            val label = defaultAddressMap["label"]?.toString().orEmpty().ifBlank { "dia_chi" }
+            val fullName = defaultAddressMap["fullName"]?.toString().orEmpty().ifBlank { "khong_ro_ten" }
+            val addr = defaultAddressMap["detailedAddress"]?.toString().orEmpty().ifBlank { "khong_ro_dia_chi" }
+            val phoneAddr = defaultAddressMap["phone"]?.toString().orEmpty().ifBlank { "khong_ro_sdt" }
+            "$label|$fullName|$phoneAddr|$addr"
+        }
 
         val cartItems = readCartItems(userDoc?.get("cartItems"))
         val cartSummary = cartItems.entries
             .sortedByDescending { it.value }
-            .take(3)
+            .take(4)
             .joinToString("; ") { (productId, qty) ->
                 val productName = productsById[productId]?.title ?: productId
                 "$productName x$qty"
             }
-            .ifBlank { "giỏ_hàng_trống" }
+            .ifBlank { "gio_hang_trong" }
+        val cartEstimatedValue = cartItems.entries.sumOf { (productId, qty) ->
+            (parseCurrencyToLong(productsById[productId]?.price.orEmpty()) ?: 0L) * qty
+        }
 
         val orders = runCatching {
             db.collection("orders")
@@ -442,7 +532,7 @@ class AiRepository {
                 val shortId = order.id.take(8).uppercase()
                 "#$shortId:${order.status}:${order.total.toLong()}"
             }
-            .ifBlank { "không_có_đơn_hang_gần_đây" }
+            .ifBlank { "khong_co_don_hang_gan_day" }
 
         val deliveredOrders = orders.filter { it.status == "DELIVERED" }
         val avgDeliveredOrderValue = deliveredOrders.map { it.total }.average().takeIf { !it.isNaN() } ?: 0.0
@@ -459,7 +549,58 @@ class AiRepository {
             .sortedByDescending { it.value }
             .take(3)
             .joinToString(", ") { "${it.key}(${it.value})" }
-            .ifBlank { "chưa_rõ" }
+            .ifBlank { "chua_ro" }
+
+        val orderStatusSummary = orders
+            .groupingBy { it.status.ifBlank { "UNKNOWN" } }
+            .eachCount()
+            .entries
+            .sortedByDescending { it.value }
+            .joinToString(", ") { "${it.key}:${it.value}" }
+            .ifBlank { "chua_co_don_hang" }
+
+        val preferredPaymentMethods = orders
+            .map { it.paymentMethod.ifBlank { "COD" } }
+            .groupingBy { it }
+            .eachCount()
+            .entries
+            .sortedByDescending { it.value }
+            .take(3)
+            .joinToString(", ") { "${it.key}:${it.value}" }
+            .ifBlank { "COD:0" }
+
+        val recentPromoUsage = orders
+            .map { it.promoCode.trim() }
+            .filter { it.isNotBlank() && it != "NONE" }
+            .distinct()
+            .take(3)
+            .joinToString(", ")
+            .ifBlank { "khong_dung_promo_gan_day" }
+
+        val favoriteProductsSummary = runCatching {
+            db.collection("users")
+                .document(userId)
+                .collection("favorites")
+                .limit(8)
+                .get()
+                .await()
+                .documents
+                .mapNotNull { doc -> doc.toObject(ProductModel::class.java)?.apply { id = doc.id } }
+                .take(5)
+                .joinToString("; ") { "${it.title} [${it.id}]" }
+        }.getOrElse { "" }.ifBlank { "chua_co_san_pham_yeu_thich" }
+
+        val profileCompletenessScore = listOf(
+            name != "Khach hang",
+            email != "khong_ro",
+            phone.isNotBlank(),
+            defaultAddressMap != null
+        ).count { it }
+        val profileHealth = when (profileCompletenessScore) {
+            4 -> "day_du"
+            3 -> "kha_day_du"
+            else -> "thieu_thong_tin"
+        }
 
         return UserChatContext(
             name = name,
@@ -468,22 +609,35 @@ class AiRepository {
             cartSummary = cartSummary,
             recentOrdersSummary = recentOrdersSummary,
             favoriteCategories = favoriteCategories,
-            averageDeliveredOrderValue = avgDeliveredOrderValue
+            averageDeliveredOrderValue = avgDeliveredOrderValue,
+            profileHealth = profileHealth,
+            defaultAddressSummary = defaultAddressSummary,
+            favoriteProductsSummary = favoriteProductsSummary,
+            preferredPaymentMethods = preferredPaymentMethods,
+            recentPromoUsage = recentPromoUsage,
+            orderStatusSummary = orderStatusSummary,
+            cartEstimatedValue = cartEstimatedValue
         )
     }
 
     private fun buildUserContext(context: UserChatContext): String {
         return """
-            tên=${context.name}
+            ten=${context.name}
             email=${context.email}
-            vai_trò=${context.role}
-            giỏ_hàng=${context.cartSummary}
-            đơn_hàng_gần_đây=${context.recentOrdersSummary}
-            danh_mục_yêu_thích=${context.favoriteCategories}
-            giá_trị_đơn_hàng_trung_bình_vnd=${context.averageDeliveredOrderValue.toLong()}
+            vai_tro=${context.role}
+            profile_health=${context.profileHealth}
+            dia_chi_mac_dinh=${context.defaultAddressSummary}
+            gio_hang=${context.cartSummary}
+            uoc_tinh_gia_tri_gio_hang_vnd=${context.cartEstimatedValue}
+            don_hang_gan_day=${context.recentOrdersSummary}
+            thong_ke_trang_thai_don=${context.orderStatusSummary}
+            danh_muc_ua_thich=${context.favoriteCategories}
+            san_pham_yeu_thich=${context.favoriteProductsSummary}
+            phuong_thuc_thanh_toan_ua_dung=${context.preferredPaymentMethods}
+            promo_gan_day=${context.recentPromoUsage}
+            gia_tri_don_da_giao_trung_binh_vnd=${context.averageDeliveredOrderValue.toLong()}
         """.trimIndent()
     }
-
     private fun readCartItems(raw: Any?): Map<String, Long> {
         val map = raw as? Map<*, *> ?: return emptyMap()
         return map.entries.mapNotNull { entry ->
