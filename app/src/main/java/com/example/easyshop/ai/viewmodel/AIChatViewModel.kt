@@ -41,7 +41,7 @@ class AIChatViewModel : ViewModel() {
             _isLoading.value = true
             _error.value = null
             _typingMessage.value = "" // Start streaming UI
-            
+
             try {
                 repository.sendMessageStream(message, messages.value).collect { accumulatedText ->
                     _typingMessage.value = accumulatedText

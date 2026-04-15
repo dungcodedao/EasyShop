@@ -31,9 +31,9 @@ import com.example.easyshop.util.rememberDebouncedClick
 import com.example.easyshop.viewmodel.CheckoutViewModel
 import com.example.easyshop.viewmodel.CheckoutResult
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
+import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.Firebase
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

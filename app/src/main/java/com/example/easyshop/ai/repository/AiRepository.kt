@@ -109,7 +109,7 @@ class AiRepository {
 
         val productsById = allProducts.filter { it.id.isNotBlank() }.associateBy { it.id }
         val userContextInfo = fetchUserContext(userId, productsById)
-        
+
         val intent = detectIntent(userMessage)
         val userContextStr = buildUserContext(userContextInfo)
         val productsContextStr = buildProductsContext(selectedProducts)
@@ -160,13 +160,13 @@ class AiRepository {
             .map { msg ->
                 content(if (msg.isUser) "user" else "model") { text(msg.content) }
             }.toMutableList()
-        
+
         chatContextContents.add(content("user") { text(userMessage) })
 
         var aiReplyAccumulator = ""
 
         val responseStream = generativeModel.generateContentStream(*chatContextContents.toTypedArray())
-        
+
         try {
             responseStream.collect { chunk ->
                 val finishReason = chunk.candidates.firstOrNull()?.finishReason
@@ -174,9 +174,9 @@ class AiRepository {
                     Log.w("AI_DEBUG", "AI dừng sớm vì lý do: $finishReason")
                 }
 
-                val textPart = try { 
-                    chunk.text ?: "" 
-                } catch (e: Exception) { 
+                val textPart = try {
+                    chunk.text ?: ""
+                } catch (e: Exception) {
                     if (e.message?.contains("SAFETY", ignoreCase = true) == true) {
                         throw Exception("Nội dung bị bộ lọc an toàn chặn. Hãy thử diễn đạt khác.")
                     }
@@ -370,10 +370,10 @@ class AiRepository {
 
         return products.mapIndexed { index, product ->
             val isMain = index < 3 // Chỉ lấy thông số kỹ thuật đầy đủ cho 3 sản phẩm đầu tiên
-            
+
             val price = product.price.ifBlank { "không có" }
             val category = product.category.ifBlank { "chưa_phân_loại" }
-            
+
             if (isMain) {
                 val topSpecs = product.otherDetails.entries
                     .take(4)

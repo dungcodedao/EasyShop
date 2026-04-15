@@ -8,9 +8,14 @@ import coil.memory.MemoryCache
 import coil.request.CachePolicy
 import com.example.easyshop.components.NotifBannerController
 import com.example.easyshop.services.NotificationHelper
+import com.google.firebase.Firebase
+import com.google.firebase.appcheck.appCheck
+import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.initialize
 
 class EasyShopApplication : Application(), ImageLoaderFactory {
 
@@ -18,6 +23,16 @@ class EasyShopApplication : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Khởi tạo Firebase App Check
+        Firebase.initialize(this)
+        Firebase.appCheck.installAppCheckProviderFactory(
+            if (BuildConfig.DEBUG) {
+                DebugAppCheckProviderFactory.getInstance()
+            } else {
+                PlayIntegrityAppCheckProviderFactory.getInstance()
+            }
+        )
 
         // Tạo Notification Channels (bắt buộc Android 8+)
         NotificationHelper.createChannels(this)
