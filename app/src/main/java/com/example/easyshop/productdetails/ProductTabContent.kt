@@ -1,4 +1,4 @@
-package com.example.easyshop.productdetails
+﻿package com.example.easyshop.productdetails
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
@@ -26,7 +26,6 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -43,7 +42,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -52,19 +50,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.easyshop.R
 import com.example.easyshop.model.ReviewModel
-import com.example.easyshop.model.ProductModel
 import com.example.easyshop.ui.theme.WarningColor
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.firestore
-import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestoreException
-import com.google.firebase.firestore.toObjects
-import com.google.firebase.firestore.toObject
+import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.tasks.await
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -82,7 +75,7 @@ fun ProductTabContent(
     LaunchedEffect(productId) {
         Firebase.firestore.collection("data").document("stock")
             .collection("products").document(productId)
-            .addSnapshotListener { snapshot: DocumentSnapshot?, _ -> 
+            .addSnapshotListener { snapshot: DocumentSnapshot?, _ ->
                 val rating = snapshot?.getDouble("rating")?.toFloat() ?: 0f
                 val count = snapshot?.getLong("reviewCount")?.toInt() ?: 0
                 productRating = rating
@@ -405,7 +398,7 @@ fun ReviewsTab(productId: String, productRating: Float, totalReviews: Int) {
                     isLoading = false
                     return@addSnapshotListener
                 }
-                
+
                 snapshot?.let {
                     reviewList.clear()
                     reviewList.addAll(it.toObjects(ReviewModel::class.java))
@@ -633,10 +626,10 @@ private fun updateProductRating(productId: String, newRating: Float) {
         val snapshot = transaction.get(productRef)
         val currentRating = snapshot.getDouble("rating") ?: 0.0
         val currentCount = snapshot.getLong("reviewCount") ?: 0L
-        
+
         val newCount = currentCount + 1
         val updatedRating = ((currentRating * currentCount) + newRating) / newCount
-        
+
         transaction.update(productRef, "rating", updatedRating)
         transaction.update(productRef, "reviewCount", newCount)
     }.addOnSuccessListener {

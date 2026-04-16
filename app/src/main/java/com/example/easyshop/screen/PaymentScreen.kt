@@ -2,15 +2,46 @@ package com.example.easyshop.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,20 +52,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.easyshop.AppUtil
 import com.example.easyshop.R
 import com.example.easyshop.components.VirtualCreditCard
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.easyshop.viewmodel.CheckoutViewModel
-import com.example.easyshop.viewmodel.CheckoutResult
-import com.example.easyshop.model.UserModel
 import com.example.easyshop.util.ConnectivityObserver
+import com.example.easyshop.util.ImageSaver
 import com.example.easyshop.util.NetworkConnectivityObserver
-import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.delay
+import com.example.easyshop.viewmodel.CheckoutResult
+import com.example.easyshop.viewmodel.CheckoutViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -292,7 +321,8 @@ private fun PaymentMethodSelector(
 // ── VietQR MoMo QR Section ────────────────────────────────────────────────
 @Composable
 private fun MoMoQRSection(totalAmount: Double) {
-    // Thông tin tài khoản MoMo
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val bankId = "MOMO"
     val accountNo = "0969690132"
     val accountName = "NGO VAN DUNG"
@@ -307,24 +337,15 @@ private fun MoMoQRSection(totalAmount: Double) {
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Header card
+        // --- Phần thông tin tài khoản (Card cũ giữ nguyên) ---
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFF0F0F0)
-            )
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F0F0))
         ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // MoMo logo badge
+            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFAE2070)),
+                    modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFAE2070)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text("Mo\nMo", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center, lineHeight = 11.sp)
@@ -335,25 +356,15 @@ private fun MoMoQRSection(totalAmount: Double) {
                     Text(accountNo, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                     Text(accountName, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                 }
-                // Amount badge
-                Surface(
-                    color = Color(0xFFAE2070).copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        AppUtil.formatPrice(totalAmount),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFFAE2070),
-                        fontSize = 13.sp
-                    )
+                Surface(color = Color(0xFFAE2070).copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
+                    Text(AppUtil.formatPrice(totalAmount), modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp), fontWeight = FontWeight.Bold, color = Color(0xFFAE2070), fontSize = 13.sp)
                 }
             }
         }
 
         Spacer(Modifier.height(16.dp))
 
-        // QR Image (dynamic via VietQR)
+        // --- Phần ảnh QR ---
         Box(
             modifier = Modifier
                 .size(240.dp)
@@ -373,9 +384,51 @@ private fun MoMoQRSection(totalAmount: Double) {
             )
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // Instruction
+        // --- HÀNG NÚT MỚI THÊM VÀO ---
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Nút Lưu Mã
+            OutlinedButton(
+                onClick = {
+                    scope.launch {
+                        AppUtil.showToast(context, "Đang tải mã QR...")
+                        val success = ImageSaver.saveQrToGallery(context, qrUrl)
+                        if (success) {
+                            AppUtil.showToast(context, "Đã lưu mã QR vào máy")
+                        } else {
+                            AppUtil.showToast(context, "Lỗi khi lưu ảnh, vui lòng thử lại")
+                        }
+                    }
+                },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFAE2070))
+            ) {
+                Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color(0xFFAE2070))
+                Spacer(Modifier.width(8.dp))
+                Text("Lưu mã", color = Color(0xFFAE2070))
+            }
+
+            // Nút Mở Ví MoMo
+            Button(
+                onClick = {
+                    openMoMoApp(context, accountNo, totalAmount.toLong(), orderId)
+                },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFAE2070))
+            ) {
+                Text("Mở ví MoMo", color = Color.White)
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // --- Hướng dẫn (Sửa lại nội dung cho khớp) ---
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -386,16 +439,26 @@ private fun MoMoQRSection(totalAmount: Double) {
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text("📲 Hướng dẫn thanh toán", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFAE2070))
-                Text("1. Mở app MoMo → Chọn \"Quét QR\"", fontSize = 12.sp, color = Color.DarkGray)
-                Text("2. Quét mã QR bên trên", fontSize = 12.sp, color = Color.DarkGray)
-                Text("3. Số tiền ${AppUtil.formatPrice(totalAmount)} đã được điền sẵn", fontSize = 12.sp, color = Color.DarkGray)
-                Text("4. Nhấn \"Xác nhận thanh toán\" trên app MoMo", fontSize = 12.sp, color = Color.DarkGray)
-                Text("5. Quay lại đây và nhấn nút \"Đã thanh toán\"", fontSize = 12.sp, color = Color.DarkGray)
+                Text("Cách 1: Nhấn 'Mở ví MoMo' để thanh toán nhanh trên máy này.", fontSize = 12.sp, color = Color.DarkGray)
+                Text("Cách 2: Lưu mã QR hoặc dùng máy khác quét mã bên trên.", fontSize = 12.sp, color = Color.DarkGray)
+                Text("Sau khi thanh toán, quay lại đây nhấn 'Đã thanh toán'.", fontSize = 12.sp, color = Color.DarkGray)
             }
         }
     }
 }
 
+private fun openMoMoApp(context: android.content.Context, phone: String, amount: Long, note: String) {
+    // Deep link MoMo để chuyển tiền
+    val momoLink = "momo://app/transfer?phone=$phone&amount=$amount&note=${android.net.Uri.encode(note)}"
+    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(momoLink))
+
+    try {
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        // Nếu không có app MoMo thì báo lỗi hoặc mở Store
+        android.widget.Toast.makeText(context, "Máy chưa cài ứng dụng MoMo", android.widget.Toast.LENGTH_SHORT).show()
+    }
+}
 // Helper functions
 private fun formatCardNumber(input: String): String {
     val digits = input.replace(" ", "").filter { it.isDigit() }

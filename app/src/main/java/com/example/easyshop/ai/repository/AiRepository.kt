@@ -26,13 +26,25 @@ import java.text.Normalizer
 import java.util.concurrent.TimeUnit
 
 class AiRepository {
+    companion object {
+        private const val DEFAULT_BEE_BASE_URL = "https://platform.beeknoee.com/api/v1"
+    }
+
     private val db = Firebase.firestore
     private val auth = Firebase.auth
 
     private val beeknoeeApiKey = BuildConfig.BEEKNOEE_API_KEY
     private val beeknoeeBaseUrl = BuildConfig.BEEKNOEE_BASE_URL
-        .ifBlank { "https://platform.beeknoee.com/api/v1" }
+        .trim()
+        .trim('"')
         .trimEnd('/')
+        .let { configured ->
+            if (configured.startsWith("https://") || configured.startsWith("http://")) {
+                configured
+            } else {
+                DEFAULT_BEE_BASE_URL
+            }
+        }
     private val beeknoeeModel = BuildConfig.BEEKNOEE_MODEL.ifBlank { "deepseek-chat" }
     private val gson = Gson()
     private val httpClient = OkHttpClient.Builder()
