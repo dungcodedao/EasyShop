@@ -105,6 +105,10 @@
     <string name="method_razorpay">Razorpay (Thật)</string>
     <string name="method_paypal">PayPal</string>
     <string name="method_cod">Thanh toán khi nhận hàng</string>
+    <string name="mbbank_qr_label">SePay (MBBank QR)</string>
+    <string name="momo_qr_label">MoMo QR</string>
+    <string name="save_qr_msg">Đã lưu mã QR vào thư viện ảnh</string>
+    <string name="open_app_msg">Đang mở ứng dụng %s...</string>
 
     <!-- Receipt -->
     <string name="e_receipt">Hóa đơn điện tử</string>

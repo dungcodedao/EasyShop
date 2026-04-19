@@ -16,6 +16,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import com.example.easyshop.BuildConfig
+import com.example.easyshop.network.RetrofitClient
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import java.util.UUID
 
 sealed class CheckoutResult {
@@ -50,6 +54,17 @@ class CheckoutViewModel : ViewModel() {
     private val _selectedAddress = MutableStateFlow<AddressModel?>(null)
     val selectedAddress: StateFlow<AddressModel?> = _selectedAddress.asStateFlow()
 
+    private val _paymentReference = MutableStateFlow("")
+    val paymentReference: StateFlow<String> = _paymentReference.asStateFlow()
+
+    private val _isPaymentChecking = MutableStateFlow(false)
+    val isPaymentChecking: StateFlow<Boolean> = _isPaymentChecking.asStateFlow()
+
+    private var pollingJob: Job? = null
+
+    private val _isPaymentConfirmed = MutableStateFlow(false)
+    val isPaymentConfirmed: StateFlow<Boolean> = _isPaymentConfirmed.asStateFlow()
+
     fun fetchData() {
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
@@ -79,6 +94,11 @@ class CheckoutViewModel : ViewModel() {
                         _cartProducts.value = products
                         calculateTotals(it.cartItems, products)
                     }
+                }
+                
+                // Khởi tạo mã tham chiếu thanh toán duy nhất cho phiên này
+                if (_paymentReference.value.isEmpty()) {
+                    _paymentReference.value = "ES" + System.currentTimeMillis().toString().takeLast(6)
                 }
             } catch (e: Exception) {
                 _checkoutResult.value = CheckoutResult.Error("Lỗi khi tải dữ liệu: ${e.message}")
@@ -204,5 +224,99 @@ class CheckoutViewModel : ViewModel() {
     
     fun resetResult() {
         _checkoutResult.value = CheckoutResult.Idle
+    }
+
+    /**
+     * Xác thực thanh toán qua SePay API
+     */
+    fun verifySePayPayment(amount: Double) {
+        if (_isPaymentChecking.value) return
+        
+        _isPaymentChecking.value = true
+        _checkoutResult.value = CheckoutResult.Loading
+
+        viewModelScope.launch {
+            try {
+                val token = "Bearer " + BuildConfig.SEPAY_TOKEN
+                val response = RetrofitClient.sePayApiService.getTransactions(
+                    token = token,
+                    content = _paymentReference.value,
+                    amountInMin = amount - 1.0, // Cho phép sai số nhỏ nếu cần
+                    limit = 5
+                )
+
+                if (response.status == 200) {
+                    // Kiểm tra xem có giao dịch nào khớp chính xác không
+                    val successTransaction = response.transactions.find { it.transactionContent?.contains(_paymentReference.value, ignoreCase = true) == true }
+                    
+                    if (successTransaction != null) {
+                        // Thanh toán thành công -> Tiến hành đặt hàng
+                        placeOrder("MB")
+                    } else {
+                        // Chưa tìm thấy giao dịch
+                        _checkoutResult.value = CheckoutResult.Error("Chưa tìm thấy giao dịch chuyển khoản cho mã ${_paymentReference.value}. Vui lòng thử lại sau 1-2 phút hoặc liên hệ hỗ trợ.")
+                    }
+                } else {
+                    _checkoutResult.value = CheckoutResult.Error("Lỗi từ hệ thống SePay: ${response.messages}")
+                }
+            } catch (e: Exception) {
+                _checkoutResult.value = CheckoutResult.Error("Lỗi kết nối khi kiểm tra thanh toán: ${e.message}")
+            } finally {
+                _isPaymentChecking.value = false
+            }
+        }
+    }
+
+    /**
+     * Bắt đầu quét thanh toán tự động mỗi 5 giây
+     */
+    fun startPaymentPolling(amount: Double) {
+        if (pollingJob != null && pollingJob?.isActive == true) return
+        
+        pollingJob = viewModelScope.launch {
+            // Quét trong tối đa 15 phút (180 lần x 5s)
+            var retryCount = 0
+            while (retryCount < 180) {
+                try {
+                    val token = "Bearer " + BuildConfig.SEPAY_TOKEN
+                    val response = RetrofitClient.sePayApiService.getTransactions(
+                        token = token,
+                        content = _paymentReference.value,
+                        amountInMin = amount - 1.0,
+                        limit = 5
+                    )
+
+                    if (response.status == 200) {
+                        val successTransaction = response.transactions.find { 
+                            it.transactionContent?.contains(_paymentReference.value, ignoreCase = true) == true 
+                        }
+                        
+                        if (successTransaction != null) {
+                            // Tìm thấy tiền! Kích hoạt trạng thái Xác nhận để sáng nút bấm
+                            _isPaymentConfirmed.value = true
+                            break
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Lỗi mạng tạm thời, bỏ qua và quét tiếp ở vòng sau
+                }
+                
+                delay(5000) // Chờ 5 giây cho vòng quét tiếp theo
+                retryCount++
+            }
+        }
+    }
+
+    /**
+     * Dừng quét thanh toán
+     */
+    fun stopPaymentPolling() {
+        pollingJob?.cancel()
+        pollingJob = null
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopPaymentPolling()
     }
 }

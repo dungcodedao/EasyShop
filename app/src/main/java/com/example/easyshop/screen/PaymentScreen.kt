@@ -52,6 +52,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Wallet
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -59,6 +62,8 @@ import coil.request.ImageRequest
 import com.example.easyshop.AppUtil
 import com.example.easyshop.R
 import com.example.easyshop.components.VirtualCreditCard
+import com.example.easyshop.components.payment.MBBankQRSection
+import com.example.easyshop.components.payment.MoMoQRSection
 import com.example.easyshop.util.ConnectivityObserver
 import com.example.easyshop.util.ImageSaver
 import com.example.easyshop.util.NetworkConnectivityObserver
@@ -93,11 +98,21 @@ fun PaymentScreen(
 
     val checkoutResult by viewModel.checkoutResult.collectAsState()
     val selectedAddress by viewModel.selectedAddress.collectAsState()
+    val paymentReference by viewModel.paymentReference.collectAsState()
+    val isPaymentChecking by viewModel.isPaymentChecking.collectAsState()
+    val isPaymentConfirmed by viewModel.isPaymentConfirmed.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.fetchData()
-        // Nếu chuyển từ Checkout sang, ta cần đảm bảo address đã được set
-        // Hoặc ViewModel tự lo trong fetchData (lấy default)
+    }
+
+    // Tự động bật/tắt quét thanh toán SePay
+    LaunchedEffect(selectedPaymentMethod) {
+        if (selectedPaymentMethod == "MB") {
+            viewModel.startPaymentPolling(totalAmount)
+        } else {
+            viewModel.stopPaymentPolling()
+        }
     }
 
     LaunchedEffect(checkoutResult) {
@@ -183,6 +198,11 @@ fun PaymentScreen(
             }
 
             Spacer(Modifier.height(16.dp))
+            // MBBank QR Section
+            if (selectedPaymentMethod == "MB") {
+                MBBankQRSection(totalAmount = totalAmount, paymentReference = paymentReference)
+                Spacer(Modifier.height(24.dp))
+            }
 
             // MoMo QR Section
             if (selectedPaymentMethod == "MoMo QR") {
@@ -198,10 +218,22 @@ fun PaymentScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // Payment Methods
-            Text(text = stringResource(R.string.payment_method), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(12.dp))
-            PaymentMethodSelector(selectedMethod = selectedPaymentMethod, onMethodSelected = { selectedPaymentMethod = it })
+            // Chế độ hiển thị linh hoạt: Ẩn danh sách khi đang quét QR
+            if (selectedPaymentMethod != "MB" && selectedPaymentMethod != "MoMo QR") {
+                Text(text = stringResource(R.string.payment_method), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(12.dp))
+                PaymentMethodSelector(selectedMethod = selectedPaymentMethod, onMethodSelected = { selectedPaymentMethod = it })
+            } else {
+                // Hiển thị nút thay đổi nếu muốn chọn lại
+                OutlinedButton(
+                    onClick = { selectedPaymentMethod = "" },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f))
+                ) {
+                    Text("Thay đổi phương thức thanh toán", color = MaterialTheme.colorScheme.primary)
+                }
+            }
 
             Spacer(Modifier.height(24.dp))
 
@@ -228,30 +260,52 @@ fun PaymentScreen(
                 .padding(horizontal = 16.dp, vertical = 2.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Button(
-                onClick = {
-                    if (!isNetworkAvailable) return@Button
-                    when (selectedPaymentMethod) {
-                        "MoMo QR" -> viewModel.placeOrder("MoMo QR")
-                        "Credit Card" -> {
-                            val isSuccess = cardNumber.replace(" ", "") == "4111111111111111"
-                            if (isSuccess) viewModel.placeOrder("Credit Card")
-                            else AppUtil.showToast(context, context.getString(R.string.test_card_hint))
+            // Chỉ hiện nút thanh toán cho các phương thức không phải QR hoặc khi MB đã nhận tiền
+            if (selectedPaymentMethod != "MoMo QR" && (selectedPaymentMethod != "MB" || isPaymentConfirmed)) {
+                Button(
+                    onClick = {
+                        if (!isNetworkAvailable) return@Button
+                        when (selectedPaymentMethod) {
+                            "MB" -> {
+                                if (isPaymentConfirmed) viewModel.placeOrder(selectedPaymentMethod)
+                            }
+                            "MoMo QR" -> viewModel.placeOrder(selectedPaymentMethod)
+                            "Credit Card" -> {
+                                val isSuccess = cardNumber.replace(" ", "") == "4111111111111111"
+                                if (isSuccess) viewModel.placeOrder("Credit Card")
+                                else AppUtil.showToast(context, context.getString(R.string.test_card_hint))
+                            }
+                            else -> viewModel.placeOrder(selectedPaymentMethod)
                         }
-                        else -> viewModel.placeOrder(selectedPaymentMethod)
+                    },
+                    enabled = !isProcessing && !isPaymentChecking && isNetworkAvailable && 
+                        isFormValid(selectedPaymentMethod, cardNumber, cardName, expiryDate, cvv) &&
+                        (selectedPaymentMethod != "MB" || isPaymentConfirmed),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .padding(horizontal = 16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (selectedPaymentMethod == "MB" && !isPaymentConfirmed) 
+                            Color(0xFF94A3B8) else Color(0xFF4F46E5),
+                        disabledContainerColor = Color(0xFFE2E8F0),
+                        disabledContentColor = Color(0xFF64748B)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    if (isProcessing || isPaymentChecking) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+                    } else {
+                        val buttonText = when (selectedPaymentMethod) {
+                            "MB" -> if (isPaymentConfirmed) "Đã nhận tiền - Nhấn để Hoàn tất" else "Đang chờ thanh toán..."
+                            else -> stringResource(R.string.payment) + " " + AppUtil.formatPrice(totalAmount)
+                        }
+                        Text(
+                            text = buttonText,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                },
-                enabled = !isProcessing && isNetworkAvailable && isFormValid(selectedPaymentMethod, cardNumber, cardName, expiryDate, cvv),
-                modifier = Modifier.width(260.dp).height(48.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4F46E5)
-                ),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                if (isProcessing) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
-                } else {
-                    Text(text = stringResource(R.string.pay_with_amount, AppUtil.formatPrice(totalAmount)), fontSize = 15.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -273,23 +327,25 @@ private fun PaymentMethodSelector(
     onMethodSelected: (String) -> Unit
 ) {
     val methods = listOf(
-        "MoMo QR" to "🟣",
-        "Credit Card" to "💳",
-        "PayPal" to "🅿️",
-        "Cash on Delivery" to "💵"
+        Triple("MB", "https://vietqr.net/portal-static/img/bank_logo/mbb.png", "Ngân hàng MB"),
+        Triple("MoMo QR", "https://img.vietqr.io/image/momo.png", "Ví điện tử MoMo"),
+        Triple("Credit Card", "💳", "Thẻ quốc tế (Visa/Master)"),
+        Triple("Cash on Delivery", "💵", "Thanh toán khi nhận hàng")
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        methods.forEach { (method, icon) ->
+        methods.forEach { (method, logo, subtitle) ->
             val isSelected = selectedMethod == method
             Surface(
                 onClick = { onMethodSelected(method) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f) 
-                        else MaterialTheme.colorScheme.surface,
-                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) 
-                         else androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f))
+                color = if (isSelected) Color(0xFFEEF2FF) else MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(
+                    width = if (isSelected) 2.dp else 1.dp,
+                    color = if (isSelected) Color(0xFF4F46E5) else Color.LightGray.copy(alpha = 0.5f)
+                ),
+                tonalElevation = if (isSelected) 2.dp else 0.dp
             ) {
                 Row(
                     modifier = Modifier
@@ -297,168 +353,88 @@ private fun PaymentMethodSelector(
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = icon, fontSize = 20.sp)
+                    // Thiết kế Icon "xịn" tự vẽ
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                when (method) {
+                                    "MB" -> Color(0xFF003BAB) // Màu xanh MB chuẩn
+                                    "MoMo QR" -> Color(0xFFD82D8B) // Màu hồng MoMo chuẩn
+                                    else -> Color.White
+                                }
+                            )
+                            .then(
+                                if (method != "MB" && method != "MoMo QR") 
+                                    Modifier.border(1.dp, Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                else Modifier
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        when (method) {
+                            "MB" -> {
+                                Text(
+                                    text = "MB",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 18.sp,
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                            "MoMo QR" -> {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = "mo",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        lineHeight = 12.sp
+                                    )
+                                    Text(
+                                        text = "mo",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        lineHeight = 12.sp
+                                    )
+                                }
+                            }
+                            else -> {
+                                Text(text = logo.toString(), fontSize = 24.sp)
+                            }
+                        }
+                    }
+                    
                     Spacer(Modifier.width(16.dp))
+                    
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = method,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isSelected) Color(0xFF1F2937) else Color.Unspecified
+                        )
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
                         )
                     }
-                    if (isSelected) {
-                        RadioButton(
-                            selected = true,
-                            onClick = { onMethodSelected(method) }
+                    
+                    RadioButton(
+                        selected = isSelected,
+                        onClick = { onMethodSelected(method) },
+                        colors = androidx.compose.material3.RadioButtonDefaults.colors(
+                            selectedColor = Color(0xFF4F46E5)
                         )
-                    }
+                    )
                 }
             }
         }
     }
 }
 
-// ── VietQR MoMo QR Section ────────────────────────────────────────────────
-@Composable
-private fun MoMoQRSection(totalAmount: Double) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val bankId = "MOMO"
-    val accountNo = "0969690132"
-    val accountName = "NGO VAN DUNG"
-    val orderId = remember { "EasyShop-" + System.currentTimeMillis().toString().takeLast(6) }
-
-    val qrUrl = "https://img.vietqr.io/image/$bankId-$accountNo-compact2.png" +
-            "?amount=${totalAmount.toLong()}" +
-            "&addInfo=${android.net.Uri.encode(orderId)}" +
-            "&accountName=${android.net.Uri.encode(accountName)}"
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // --- Phần thông tin tài khoản (Card cũ giữ nguyên) ---
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F0F0))
-        ) {
-            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFAE2070)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Mo\nMo", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center, lineHeight = 11.sp)
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("MoMo", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                    Text(accountNo, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                    Text(accountName, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                }
-                Surface(color = Color(0xFFAE2070).copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
-                    Text(AppUtil.formatPrice(totalAmount), modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp), fontWeight = FontWeight.Bold, color = Color(0xFFAE2070), fontSize = 13.sp)
-                }
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // --- Phần ảnh QR ---
-        Box(
-            modifier = Modifier
-                .size(240.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .border(2.dp, Color(0xFFAE2070).copy(alpha = 0.3f), RoundedCornerShape(20.dp))
-                .background(Color.White)
-                .padding(12.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(qrUrl)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = "QR MoMo",
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // --- HÀNG NÚT MỚI THÊM VÀO ---
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Nút Lưu Mã
-            OutlinedButton(
-                onClick = {
-                    scope.launch {
-                        AppUtil.showToast(context, "Đang tải mã QR...")
-                        val success = ImageSaver.saveQrToGallery(context, qrUrl)
-                        if (success) {
-                            AppUtil.showToast(context, "Đã lưu mã QR vào máy")
-                        } else {
-                            AppUtil.showToast(context, "Lỗi khi lưu ảnh, vui lòng thử lại")
-                        }
-                    }
-                },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFAE2070))
-            ) {
-                Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color(0xFFAE2070))
-                Spacer(Modifier.width(8.dp))
-                Text("Lưu mã", color = Color(0xFFAE2070))
-            }
-
-            // Nút Mở Ví MoMo
-            Button(
-                onClick = {
-                    openMoMoApp(context, accountNo, totalAmount.toLong(), orderId)
-                },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFAE2070))
-            ) {
-                Text("Mở ví MoMo", color = Color.White)
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // --- Hướng dẫn (Sửa lại nội dung cho khớp) ---
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3F8))
-        ) {
-            Column(
-                modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text("📲 Hướng dẫn thanh toán", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFAE2070))
-                Text("Cách 1: Nhấn 'Mở ví MoMo' để thanh toán nhanh trên máy này.", fontSize = 12.sp, color = Color.DarkGray)
-                Text("Cách 2: Lưu mã QR hoặc dùng máy khác quét mã bên trên.", fontSize = 12.sp, color = Color.DarkGray)
-                Text("Sau khi thanh toán, quay lại đây nhấn 'Đã thanh toán'.", fontSize = 12.sp, color = Color.DarkGray)
-            }
-        }
-    }
-}
-
-private fun openMoMoApp(context: android.content.Context, phone: String, amount: Long, note: String) {
-    // Deep link MoMo để chuyển tiền
-    val momoLink = "momo://app/transfer?phone=$phone&amount=$amount&note=${android.net.Uri.encode(note)}"
-    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(momoLink))
-
-    try {
-        context.startActivity(intent)
-    } catch (e: Exception) {
-        // Nếu không có app MoMo thì báo lỗi hoặc mở Store
-        android.widget.Toast.makeText(context, "Máy chưa cài ứng dụng MoMo", android.widget.Toast.LENGTH_SHORT).show()
-    }
-}
 // Helper functions
 private fun formatCardNumber(input: String): String {
     val digits = input.replace(" ", "").filter { it.isDigit() }
@@ -489,7 +465,7 @@ private fun isFormValid(
                     expiryDate.length == 5 &&
                     cvv.length == 3
         }
-        "PayPal", "Cash on Delivery", "MoMo QR" -> true
+        "PayPal", "Cash on Delivery", "MoMo QR", "MB" -> true
         else -> false
     }
 }

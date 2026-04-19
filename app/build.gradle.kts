@@ -22,9 +22,12 @@ android {
         localProperties.load(localPropertiesFile.inputStream())
     }
     val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
+    val geminiBaseUrl = localProperties.getProperty("GEMINI_BASE_URL") ?: "https://generativelanguage.googleapis.com/v1beta"
+    val geminiModel = localProperties.getProperty("GEMINI_MODEL") ?: "gemini-2.0-flash"
     val beeknoeeApiKey = localProperties.getProperty("BEEKNOEE_API_KEY") ?: ""
     val beeknoeeBaseUrl = localProperties.getProperty("BEEKNOEE_BASE_URL") ?: "https://platform.beeknoee.com/api/v1"
     val beeknoeeModel = localProperties.getProperty("BEEKNOEE_MODEL") ?: "deepseek-chat"
+    val sepayToken = localProperties.getProperty("SEPAY_TOKEN") ?: ""
 
     defaultConfig {
         applicationId = "com.example.easyshop"
@@ -34,9 +37,12 @@ android {
         versionName = "1.0"
 
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
+        buildConfigField("String", "GEMINI_BASE_URL", "\"$geminiBaseUrl\"")
+        buildConfigField("String", "GEMINI_MODEL", "\"$geminiModel\"")
         buildConfigField("String", "BEEKNOEE_API_KEY", "\"$beeknoeeApiKey\"")
         buildConfigField("String", "BEEKNOEE_BASE_URL", "\"$beeknoeeBaseUrl\"")
         buildConfigField("String", "BEEKNOEE_MODEL", "\"$beeknoeeModel\"")
+        buildConfigField("String", "SEPAY_TOKEN", "\"$sepayToken\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

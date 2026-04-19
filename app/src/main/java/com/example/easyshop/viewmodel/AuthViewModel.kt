@@ -46,6 +46,7 @@ class AuthViewModel : ViewModel() {
                         .document(userId)
                         .set(userModel)
                         .addOnSuccessListener {
+                            com.example.easyshop.AppUtil.syncFcmToken()
                             callback(true, null, userRole)
                         }
                         .addOnFailureListener { e ->
@@ -78,9 +79,11 @@ class AuthViewModel : ViewModel() {
                         .addOnSuccessListener { document ->
                             val user = document.toObject(UserModel::class.java)
                             val role = user?.role ?: "user"
+                            com.example.easyshop.AppUtil.syncFcmToken()
                             callback(true, null, role)
                         }
                         .addOnFailureListener {
+                            com.example.easyshop.AppUtil.syncFcmToken()
                             callback(true, null, "user")
                         }
                 } else {
@@ -117,9 +120,13 @@ class AuthViewModel : ViewModel() {
                                     profileImg = user?.photoUrl?.toString() ?: ""
                                 )
                                 firestore.collection("users").document(userId).set(newUser)
-                                    .addOnSuccessListener { callback(true, null, initialRole) }
+                                    .addOnSuccessListener { 
+                                        com.example.easyshop.AppUtil.syncFcmToken()
+                                        callback(true, null, initialRole) 
+                                    }
                             } else {
                                 val role = document.getString("role") ?: "user"
+                                com.example.easyshop.AppUtil.syncFcmToken()
                                 callback(true, null, role)
                             }
                         }

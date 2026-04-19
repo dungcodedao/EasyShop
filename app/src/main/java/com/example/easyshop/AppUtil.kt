@@ -375,4 +375,41 @@ object AppUtil {
             .setCancelable(true)
             .show()
     }
+
+    /**
+     * Lưu FCM Token vào SharedPreferences và Firestore
+     */
+    fun saveFcmToken(token: String) {
+        if (token.isBlank()) return
+        
+        // 1. Lưu local (để có thể lấy lại khi user đăng nhập sau này)
+        val context = appContext()
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString("fcm_token", token)
+            .apply()
+            
+        // 2. Nếu đã đăng nhập, lưu đồng bộ lên Firestore
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid != null) {
+            val db = Firebase.firestore
+            db.collection("users").document(uid)
+                .update("fcmToken", token)
+                .addOnFailureListener {
+                    // Nếu field chưa có hoặc doc chưa có, dùng merge
+                    db.collection("users").document(uid)
+                        .set(mapOf("fcmToken" to token), SetOptions.merge())
+                }
+        }
+    }
+
+    /**
+     * Đồng bộ Token hiện tại lên Firestore (thường gọi sau khi Login/Signup)
+     */
+    fun syncFcmToken() {
+        com.google.firebase.messaging.FirebaseMessaging.getInstance().token
+            .addOnSuccessListener { token ->
+                saveFcmToken(token)
+            }
+    }
 }
