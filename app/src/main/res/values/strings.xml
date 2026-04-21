@@ -14,6 +14,7 @@
     <string name="email">Email</string>
     <string name="cart_items">Giỏ hàng</string>
     <string name="your_cart">Giỏ hàng của bạn</string>
+    <string name="your_products">Sản phẩm của bạn</string>
     <string name="empty_cart_msg">Giỏ hàng trống</string>
     <string name="total_items">Tổng sản phẩm</string>
     <string name="checkout">Thanh toán</string>
@@ -109,7 +110,7 @@
     <string name="momo_qr_label">MoMo QR</string>
     <string name="save_qr_msg">Đã lưu mã QR vào thư viện ảnh</string>
     <string name="open_app_msg">Đang mở ứng dụng %s...</string>
-
+    
     <!-- Receipt -->
     <string name="e_receipt">Hóa đơn điện tử</string>
     <string name="transaction_summary">Tóm tắt giao dịch</string>
@@ -150,6 +151,7 @@
     <string name="products_count">%d sản phẩm</string>
     <string name="reset_filters">Xóa bộ lọc</string>
     <string name="lost_internet">Mất kết nối Internet</string>
+    <string name="no_internet">Vui lòng kiểm tra kết nối Internet!</string>
     <string name="restored_internet">Đã khôi phục kết nối</string>
     <string name="no_internet_title">Không có kết nối mạng!</string>
     <string name="no_internet_desc">Vui lòng kết nối Wi-Fi hoặc bật dữ liệu di động để có trải nghiệm tốt hơn</string>
@@ -278,7 +280,7 @@
     <!-- Analytics Management -->
     <string name="business_analytics_title">Phân tích kinh doanh</string>
     <string name="total_revenue_label">Tổng doanh thu</string>
-    <string name="revenue_trend_title">Xu hướng doanh thu (7 ngày qua)</string>
+    <string name="revenue_trend_title">Xu hướng doanh thu</string>
     <string name="order_distribution_title">Phân bố đơn hàng</string>
     <string name="top_selling_products_title">Sản phẩm bán chạy</string>
     <string name="no_sales_data">Không có dữ liệu bán hàng</string>
@@ -300,4 +302,32 @@
     <string name="profiles_incomplete_title">Thông tin giao hàng chưa đầy đủ</string>
     <string name="profiles_incomplete_msg">Bạn cần cung cấp địa chỉ giao hàng và số điện thoại để có thể tiếp tục thanh toán.</string>
     <string name="go_to_profile">Đi tới Hồ sơ</string>
+
+    <!-- Edit Promo Code Dialog -->
+    <string name="edit_promo_code_title">Chỉnh sửa mã giảm giá</string>
+    <string name="extend_days_label">Gia hạn thêm (ngày)</string>
+    <string name="current_expiry_label">HSD hiện tại: %s</string>
+    <string name="used_count_readonly">Đã dùng: %d lượt (không thể sửa)</string>
+    <string name="save_changes_btn">Lưu thay đổi</string>
+    <string name="updated_promo_msg">Cập nhật mã %s thành công!</string>
+    <string name="error_updating_promo">Lỗi khi cập nhật</string>
+
+    <!-- Orders Management Feedback -->
+    <string name="order_updated_msg">Đã cập nhật đơn #%s</string>
+    <string name="order_update_failed">Cập nhật trạng thái thất bại</string>
+    
+    <!-- New Order Note & Messaging -->
+    <string name="order_note_label">Ghi chú cho Shop</string>
+    <string name="order_note_hint">Nhập yêu cầu đặc biệt (ví dụ: giao giờ hành chính...)</string>
+    <string name="message_customer">Nhắn tin cho khách</string>
+    <string name="customer_note_title">Ghi chú của khách hàng</string>
+
+    <!-- Chat -->
+    <string name="chat_with_shop">Nhắn tin với Shop</string>
+    <string name="admin_chat_title">Tin nhắn khách</string>
+    <string name="delete_chat_confirm_title">Xoá cuộc trò chuyện</string>
+    <string name="delete_chat_confirm_msg">Bạn có chắc chắn muốn xóa dữ liệu cuộc trò chuyện này không?</string>
+    <string name="delete_action">Xóa</string>
+    <string name="shop_support_title">Hỗ trợ EasyShop</string>
+    <string name="shop_support_status">Hỗ trợ trực tuyến</string>
 </resources>

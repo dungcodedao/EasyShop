@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 data class SePayResponse(
     val status: Int,
-    val messages: String,
+    val messages: Any?,
     val transactions: List<SePayTransaction>
 )
 

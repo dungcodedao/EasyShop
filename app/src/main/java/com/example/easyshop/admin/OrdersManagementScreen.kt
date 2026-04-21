@@ -1,82 +1,34 @@
 package com.example.easyshop.admin
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.HelpOutline
-import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DeleteForever
-import androidx.compose.material.icons.filled.Archive
-import androidx.compose.material.icons.filled.LocalShipping
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.ShoppingBag
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.BasicAlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.easyshop.AppUtil
-import com.example.easyshop.util.GlobalNavigation.navController
 import com.example.easyshop.R
-import com.example.easyshop.model.NotificationModel
 import com.example.easyshop.model.OrderModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -86,7 +38,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
-import java.util.Locale
+import java.util.*
 
 @Composable
 fun OrdersManagementScreen(
@@ -95,14 +47,20 @@ fun OrdersManagementScreen(
 ) {
     val context = LocalContext.current
     var orders by remember { mutableStateOf<List<OrderModel>>(emptyList()) }
-    var filteredOrders by remember { mutableStateOf<List<OrderModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var selectedFilter by remember { mutableStateOf("ALL") }
+    var searchQuery by remember { mutableStateOf("") }
     var showOrderDetails by remember { mutableStateOf<OrderModel?>(null) }
 
     val scope = rememberCoroutineScope()
 
-    // ✅ Load orders
+    val filteredOrders = orders.filter {
+        val matchesFilter = if (selectedFilter == "ALL") true else it.status == selectedFilter
+        val matchesSearch = it.id.contains(searchQuery, ignoreCase = true) || 
+                           it.userName.contains(searchQuery, ignoreCase = true)
+        matchesFilter && matchesSearch
+    }.sortedByDescending { it.date }
+
     fun loadOrders() {
         isLoading = true
         Firebase.firestore.collection("orders")
@@ -115,8 +73,7 @@ fun OrdersManagementScreen(
                         } else {
                             doc.toObject(OrderModel::class.java)?.copy(id = doc.id)
                         }
-                    }.sortedByDescending { it.date }
-                    filteredOrders = if (selectedFilter == "ALL") orders else orders.filter { it.status == selectedFilter }
+                    }
                 }
                 isLoading = false
             }
@@ -126,34 +83,12 @@ fun OrdersManagementScreen(
         loadOrders()
     }
 
-    // Filter orders when status changes
-    LaunchedEffect(selectedFilter, orders) {
-        filteredOrders = if (selectedFilter == "ALL") orders else orders.filter { it.status == selectedFilter }
-    }
-
-    // Tự sinh thông báo gửi cho khách hàng khi admin cập nhật trạng thái
     fun createNotificationForUser(order: OrderModel, newStatus: String) {
         val (title, body, type) = when (newStatus) {
-            "SHIPPING"  -> Triple(
-                "Đơn hàng đang vận chuyển 🚚",
-                "Đơn #${order.id.take(8).uppercase()} đang trên đường giao đến bạn.",
-                "SHIPPING"
-            )
-            "DELIVERED" -> Triple(
-                "Đơn hàng đã giao thành công ✅",
-                "Đơn #${order.id.take(8).uppercase()} đã giao thành công. Chúc bạn mua sắm vui vẻ!",
-                "DELIVERED"
-            )
-            "CANCELLED" -> Triple(
-                "Đơn hàng đã bị hủy ❌",
-                "Đơn #${order.id.take(8).uppercase()} đã bị hủy. Liên hệ hỗ trợ nếu cần.",
-                "CANCELLED"
-            )
-            else -> Triple(
-                "Cập nhật đơn hàng",
-                "Đơn #${order.id.take(8).uppercase()} vừa cập nhật trạng thái: $newStatus",
-                "ORDER_STATUS"
-            )
+            "SHIPPING"  -> Triple("Đơn hàng đang vận chuyển 🚚", "Đơn #${order.id.take(8).uppercase()} đang trên đường giao đến bạn.", "SHIPPING")
+            "DELIVERED" -> Triple("Đơn hàng đã giao thành công ✅", "Đơn #${order.id.take(8).uppercase()} đã giao thành công.", "DELIVERED")
+            "CANCELLED" -> Triple("Đơn hàng đã bị hủy ❌", "Đơn #${order.id.take(8).uppercase()} đã bị hủy.", "CANCELLED")
+            else -> Triple("Cập nhật đơn hàng", "Đơn #${order.id.take(8).uppercase()} vừa cập nhật trạng thái: $newStatus", "ORDER_STATUS")
         }
 
         val notif = hashMapOf(
@@ -168,23 +103,20 @@ fun OrdersManagementScreen(
         )
 
         Firebase.firestore.collection("notifications").add(notif)
+            .addOnSuccessListener {
+                com.example.easyshop.services.FcmSender.sendToUser(order.userId, title, body, type)
+            }
     }
 
-    // Update order status
     fun updateOrderStatus(order: OrderModel, newStatus: String) {
         scope.launch {
             try {
-                Firebase.firestore.collection("orders")
-                    .document(order.id)
-                    .update("status", newStatus)
-                    .await()
-                
-                // Gửi thông báo kèm trạng thái mới cho người dùng
+                Firebase.firestore.collection("orders").document(order.id).update("status", newStatus).await()
                 createNotificationForUser(order, newStatus)
-
+                AppUtil.showSuccess(context.getString(R.string.order_updated_msg, order.id.take(8).uppercase()))
                 loadOrders()
             } catch (e: Exception) {
-                e.printStackTrace()
+                AppUtil.showError(context.getString(R.string.order_update_failed), e.message)
             }
         }
     }
@@ -193,16 +125,9 @@ fun OrdersManagementScreen(
         scope.launch {
             try {
                 val adminUid = FirebaseAuth.getInstance().currentUser?.uid ?: "unknown"
-                Firebase.firestore.collection("orders")
-                    .document(order.id)
-                    .update(
-                        mapOf(
-                            "archived" to true,
-                            "archivedAt" to FieldValue.serverTimestamp(),
-                            "archivedBy" to adminUid
-                        )
-                    )
-                    .await()
+                Firebase.firestore.collection("orders").document(order.id).update(
+                    mapOf("archived" to true, "archivedAt" to FieldValue.serverTimestamp(), "archivedBy" to adminUid)
+                ).await()
                 AppUtil.showSuccess("Đã lưu trữ đơn #${order.id.take(8).uppercase()}")
                 loadOrders()
             } catch (e: Exception) {
@@ -215,23 +140,9 @@ fun OrdersManagementScreen(
         scope.launch {
             try {
                 val adminUid = FirebaseAuth.getInstance().currentUser?.uid ?: "unknown"
-                val auditData = hashMapOf(
-                    "order" to order,
-                    "deletedBy" to adminUid,
-                    "deletedAt" to FieldValue.serverTimestamp(),
-                    "source" to "admin_orders_management"
-                )
-
-                Firebase.firestore.collection("deleted_orders")
-                    .document(order.id)
-                    .set(auditData)
-                    .await()
-
-                Firebase.firestore.collection("orders")
-                    .document(order.id)
-                    .delete()
-                    .await()
-
+                val auditData = hashMapOf("order" to order, "deletedBy" to adminUid, "deletedAt" to FieldValue.serverTimestamp(), "source" to "admin_orders_management")
+                Firebase.firestore.collection("deleted_orders").document(order.id).set(auditData).await()
+                Firebase.firestore.collection("orders").document(order.id).delete().await()
                 AppUtil.showSuccess("Đã xóa vĩnh viễn đơn #${order.id.take(8).uppercase()}")
                 loadOrders()
             } catch (e: Exception) {
@@ -244,50 +155,65 @@ fun OrdersManagementScreen(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(id = R.string.orders_management_title), fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { loadOrders() }) { Icon(Icons.Default.Refresh, stringResource(id = R.string.reset)) }
-                },
+                navigationIcon = { IconButton(onClick = { navController.navigateUp() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
+                actions = { IconButton(onClick = { loadOrders() }) { Icon(Icons.Default.Refresh, "Refresh") } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         }
     ) { padding ->
-
         Column(modifier = modifier.fillMaxSize().padding(padding)) {
-            // Filter Chips
-            LazyRow(
-                contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                placeholder = { Text("Tìm theo mã đơn hoặc tên khách...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = if (searchQuery.isNotEmpty()) {
+                    { IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Close, contentDescription = "Clear") } }
+                } else null,
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                )
+            )
+
+            val tabs = listOf("ALL", "ORDERED", "SHIPPING", "DELIVERED", "CANCELLED")
+            ScrollableTabRow(
+                selectedTabIndex = tabs.indexOf(selectedFilter),
+                edgePadding = 16.dp,
+                containerColor = Color.Transparent,
+                divider = {},
+                indicator = { tabPositions ->
+                    TabRowDefaults.SecondaryIndicator(
+                        Modifier.tabIndicatorOffset(tabPositions[tabs.indexOf(selectedFilter)]),
+                        color = MaterialTheme.colorScheme.primary,
+                        height = 3.dp
+                    )
+                }
             ) {
-                items(listOf("ALL", "ORDERED", "SHIPPING", "DELIVERED", "CANCELLED")) { filter ->
-                    FilterChip(
+                tabs.forEach { filter ->
+                    val label = when (filter) {
+                        "ALL" -> "TẤT CẢ"
+                        "ORDERED" -> "ĐÃ ĐẶT"
+                        "SHIPPING" -> "ĐANG GIAO"
+                        "DELIVERED" -> "ĐÃ GIAO"
+                        "CANCELLED" -> "ĐÃ HỦY"
+                        else -> filter
+                    }
+                    Tab(
                         selected = selectedFilter == filter,
                         onClick = { selectedFilter = filter },
-                        label = {
+                        text = {
                             Text(
-                                text = when (filter) {
-                                    "ALL" -> "${stringResource(id = R.string.all_filter)} (${orders.size})"
-                                    else -> {
-                                        val statusLabel = when(filter) {
-                                            "ORDERED" -> stringResource(id = R.string.ordered_status)
-                                            "SHIPPING" -> stringResource(id = R.string.shipping_status)
-                                            "DELIVERED" -> stringResource(id = R.string.delivered_status)
-                                            "CANCELLED" -> stringResource(id = R.string.cancelled_status)
-                                            else -> filter
-                                        }
-                                        "$statusLabel (${orders.count { it.status == filter }})"
-                                    }
-                                }
+                                text = label,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = if (selectedFilter == filter) FontWeight.Bold else FontWeight.Medium
                             )
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        leadingIcon = if (selectedFilter == filter) {
-                            { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
-                        } else null
+                        }
                     )
                 }
             }
@@ -300,31 +226,42 @@ fun OrdersManagementScreen(
                     }
                 }
                 filteredOrders.isEmpty() -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    // Premium Empty State
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Icon(
-                                Icons.Default.ShoppingCart,
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp),
-                                tint = MaterialTheme.colorScheme.outline
-                            )
+                            Surface(
+                                modifier = Modifier.size(120.dp),
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Default.ShoppingCart,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(48.dp),
+                                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(24.dp))
                             Text(
-                                if (selectedFilter == "ALL") stringResource(id = R.string.no_orders_yet) 
-                                else {
-                                    val statusLabel = when(selectedFilter) {
-                                        "ORDERED" -> stringResource(id = R.string.ordered_status)
-                                        "SHIPPING" -> stringResource(id = R.string.shipping_status)
-                                        "DELIVERED" -> stringResource(id = R.string.delivered_status)
-                                        "CANCELLED" -> stringResource(id = R.string.cancelled_status)
-                                        else -> selectedFilter
-                                    }
-                                    stringResource(id = R.string.no_filtered_orders, statusLabel)
-                                },
+                                text = "Không tìm thấy đơn hàng",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "Hãy thử thay đổi bộ lọc hoặc từ khóa tìm kiếm của bạn.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
                             )
                         }
                     }
@@ -356,6 +293,7 @@ fun OrdersManagementScreen(
     if (showOrderDetails != null) {
         OrderDetailsDialog(
             order = showOrderDetails!!,
+            navController = navController,
             onDismiss = { showOrderDetails = null },
             onUpdateStatus = { newStatus ->
                 updateOrderStatus(showOrderDetails!!, newStatus)
@@ -374,23 +312,34 @@ fun OrderCard(
     onDeletePermanently: () -> Unit
 ) {
     val context = LocalContext.current
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
+    val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("vi", "VN"))
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
     var showMenu by remember { mutableStateOf(false) }
     var showArchiveConfirm by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     val canManageFinalized = order.status == "DELIVERED" || order.status == "CANCELLED"
 
+    // Dynamic coloring based on status
+    val statusColor = when (order.status) {
+        "ORDERED" -> Color(0xFFFFF8E1) // Amber tint
+        "SHIPPING" -> Color(0xFFE3F2FD) // Blue tint
+        "DELIVERED" -> Color(0xFFE8F5E9) // Green tint
+        "CANCELLED" -> Color(0xFFFFEBEE) // Red tint
+        else -> MaterialTheme.colorScheme.surface
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = onViewDetails,
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(2.dp)
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = statusColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Header: Order ID and Status
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -398,50 +347,35 @@ fun OrderCard(
             ) {
                 Column {
                     Text(
-                        text = "${stringResource(id = R.string.order_number_prefix)}${order.id.take(8)}",
+                        text = "#${order.id.take(8).uppercase()}",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = order.date?.toDate()?.let { dateFormat.format(it) } ?: stringResource(id = R.string.no_active_orders),
-                        style = MaterialTheme.typography.bodySmall,
+                        text = order.date?.toDate()?.let { dateFormat.format(it) } ?: "N/A",
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     OrderStatusBadge(status = order.status)
                     if (canManageFinalized) {
                         Box {
-                            IconButton(
-                                onClick = { showMenu = true }
-                            ) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                            IconButton(onClick = { showMenu = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "More", modifier = Modifier.size(20.dp))
                             }
-                            DropdownMenu(
-                                expanded = showMenu,
-                                onDismissRequest = { showMenu = false }
-                            ) {
+                            DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                                 DropdownMenuItem(
-                                    text = { Text("Lưu trữ") },
-                                    leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) },
-                                    onClick = {
-                                        showMenu = false
-                                        showArchiveConfirm = true
-                                    }
+                                    text = { Text("Lưu trữ (Ẩn)") },
+                                    leadingIcon = { Icon(Icons.Default.Delete, null) },
+                                    onClick = { showMenu = false; showArchiveConfirm = true }
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Xóa vĩnh viễn", color = MaterialTheme.colorScheme.error) },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Default.DeleteForever,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
-                                    },
-                                    onClick = {
-                                        showMenu = false
-                                        showDeleteConfirm = true
-                                    }
+                                    leadingIcon = { Icon(Icons.Default.DeleteForever, null, tint = MaterialTheme.colorScheme.error) },
+                                    onClick = { showMenu = false; showDeleteConfirm = true }
                                 )
                             }
                         }
@@ -449,78 +383,152 @@ fun OrderCard(
                 }
             }
 
-            HorizontalDivider()
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
 
+            // Body: Customer Info & Call Button
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Column {
-                    Text(
-                        text = order.userName.ifBlank { stringResource(id = R.string.customer_label) },
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = order.userEmail.ifBlank { stringResource(id = R.string.no_active_orders) },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Person, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                    }
+                    Column {
+                        Text(
+                            text = order.userName.ifBlank { "Khách hàng" },
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = order.userEmail.ifBlank { "Không có email" },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (order.userPhone.isNotBlank()) {
+                        IconButton(
+                            onClick = {
+                                val intent = android.content.Intent(android.content.Intent.ACTION_SENDTO).apply {
+                                    data = android.net.Uri.parse("smsto:${order.userPhone}")
+                                }
+                                context.startActivity(intent)
+                            },
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                contentColor = MaterialTheme.colorScheme.primary
+                            ),
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(Icons.Default.Message, null, modifier = Modifier.size(18.dp))
+                        }
+                    }
                 }
             }
 
+            // Customer Note Preview in Card
+            if (order.note.isNotBlank()) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color.White.copy(alpha = 0.5f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Notes,
+                            null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = order.note,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            // Products Thumbnails
+            OrderProductThumbnails(productIds = order.items.keys.toList())
+
+            // Footer: Items count and Total
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
             ) {
                 Text(
-                    text = stringResource(id = R.string.items_count, order.items.size),
-                    style = MaterialTheme.typography.bodyMedium
+                    text = "${order.items.values.sum()} sản phẩm",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = currencyFormat.format(order.total),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
 
+            // Status Actions (Ship, Cancel, Complete)
             if (order.status != "DELIVERED" && order.status != "CANCELLED") {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     when (order.status) {
                         "ORDERED" -> {
-                            OutlinedButton(
+                            Button(
                                 onClick = { onUpdateStatus("SHIPPING") },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                elevation = ButtonDefaults.buttonElevation(0.dp),
+                                shape = RoundedCornerShape(12.dp)
                             ) {
                                 Icon(Icons.Default.LocalShipping, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text(stringResource(id = R.string.ship_btn))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Giao hàng", fontSize = 13.sp)
                             }
                             OutlinedButton(
                                 onClick = { onUpdateStatus("CANCELLED") },
                                 modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
                             ) {
                                 Icon(Icons.Default.Close, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text(context.getString(R.string.cancel_btn))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Hủy đơn", fontSize = 13.sp)
                             }
                         }
                         "SHIPPING" -> {
                             Button(
                                 onClick = { onUpdateStatus("DELIVERED") },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                             ) {
-                                Icon(Icons.Default.CheckCircle, null)
+                                Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text(stringResource(id = R.string.mark_as_delivered))
+                                Text("Hoàn thành đơn hàng")
                             }
                         }
                     }
@@ -529,19 +537,23 @@ fun OrderCard(
         }
     }
 
+    // Confirmation Dialogs (Archive/Delete) unchanged...
+
+
     if (showArchiveConfirm) {
         AlertDialog(
             onDismissRequest = { showArchiveConfirm = false },
-            title = { Text("Lưu trữ đơn hàng?") },
-            text = { Text("Đơn #${order.id.take(8).uppercase()} sẽ bị ẩn khỏi danh sách quản lý chính.") },
+            title = { Text("Xóa và Ẩn đơn hàng?") },
+            text = { Text("Đơn #${order.id.take(8).uppercase()} sẽ bị ẩn khỏi danh sách này nhưng VẪN ĐƯỢC tính vào doanh số trong phần Thống kê.") },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showArchiveConfirm = false
                         onArchive()
-                    }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Lưu trữ")
+                    Text("Xóa (Vẫn giữ thống kê)")
                 }
             },
             dismissButton = {
@@ -555,9 +567,9 @@ fun OrderCard(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Xóa vĩnh viễn đơn hàng?") },
+            title = { Text("⚠️ Xóa vĩnh viễn dữ liệu?") },
             text = {
-                Text("Đơn #${order.id.take(8).uppercase()} sẽ bị xóa khỏi orders. Hành động này không thể hoàn tác.")
+                Text("Đơn #${order.id.take(8).uppercase()} sẽ bị xóa hoàn toàn. Dữ liệu này sẽ KHÔNG CÒN xuất hiện trong phần Thống kê doanh thu.\n\nBạn chắc chắn chứ?")
             },
             confirmButton = {
                 TextButton(
@@ -566,7 +578,7 @@ fun OrderCard(
                         onDeletePermanently()
                     }
                 ) {
-                    Text("Xóa vĩnh viễn", color = MaterialTheme.colorScheme.error)
+                    Text("Tôi hiểu, cứ xóa đi", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -579,26 +591,87 @@ fun OrderCard(
 }
 
 @Composable
+fun OrderProductThumbnails(productIds: List<String>) {
+    var images by remember { mutableStateOf<List<String>>(emptyList()) }
+    val firestore = Firebase.firestore
+
+    LaunchedEffect(productIds) {
+        val urls = mutableListOf<String>()
+        val idsToLoad = productIds.take(4)
+        for (id in idsToLoad) {
+            try {
+                val doc = firestore.collection("data").document("stock").collection("products")
+                    .document(id).get().await()
+                val product = doc.toObject(com.example.easyshop.model.ProductModel::class.java)
+                product?.images?.firstOrNull()?.let { urls.add(it) }
+            } catch (e: Exception) { }
+        }
+        images = urls
+    }
+
+    if (images.isNotEmpty()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            images.forEach { url ->
+                AsyncImage(
+                    model = url,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            if (productIds.size > 4) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "+${productIds.size - 4}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun OrderStatusBadge(status: String) {
-    val (color, text, icon) = when (status) {
-        "ORDERED" -> Triple(MaterialTheme.colorScheme.primaryContainer, stringResource(id = R.string.ordered_status), Icons.Default.ShoppingBag)
-        "SHIPPING" -> Triple(MaterialTheme.colorScheme.tertiaryContainer, stringResource(id = R.string.shipping_status), Icons.Default.LocalShipping)
-        "DELIVERED" -> Triple(MaterialTheme.colorScheme.secondaryContainer, stringResource(id = R.string.delivered_status), Icons.Default.CheckCircle)
-        "CANCELLED" -> Triple(MaterialTheme.colorScheme.errorContainer, stringResource(id = R.string.cancelled_status), Icons.Default.Cancel)
-        else -> Triple(MaterialTheme.colorScheme.surfaceVariant, stringResource(id = R.string.no_active_orders), Icons.AutoMirrored.Filled.HelpOutline)
+    val (color, text, icon, contentColor) = when (status) {
+        "ORDERED" -> Quad(Color(0xFFFFC107), "Đã đặt", Icons.Default.ShoppingBag, Color.White)
+        "SHIPPING" -> Quad(Color(0xFF2196F3), "Đang giao", Icons.Default.LocalShipping, Color.White)
+        "DELIVERED" -> Quad(Color(0xFF4CAF50), "Đã giao", Icons.Default.CheckCircle, Color.White)
+        "CANCELLED" -> Quad(Color(0xFFF44336), "Đã hủy", Icons.Default.Cancel, Color.White)
+        else -> Quad(MaterialTheme.colorScheme.outline, status, Icons.Default.Help, Color.White)
     }
 
     Surface(
         color = color,
-        shape = RoundedCornerShape(10.dp)
+        shape = RoundedCornerShape(8.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
-            Text(text = text, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            Icon(icon, null, modifier = Modifier.size(14.dp), tint = contentColor)
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = contentColor
+            )
         }
     }
 }
@@ -607,6 +680,7 @@ fun OrderStatusBadge(status: String) {
 @Composable
 fun OrderDetailsDialog(
     order: OrderModel,
+    navController: NavController,
     onDismiss: () -> Unit,
     onUpdateStatus: (String) -> Unit
 ) {
@@ -665,6 +739,32 @@ fun OrderDetailsDialog(
                 DetailRow(stringResource(id = R.string.email), order.userEmail.ifBlank { stringResource(id = R.string.no_active_orders) })
                 DetailRow(stringResource(id = R.string.address), order.address.ifBlank { stringResource(id = R.string.no_active_orders) })
                 DetailRow(stringResource(id = R.string.payment_method_label), order.paymentMethod.ifBlank { "COD" })
+
+                if (order.note.isNotBlank()) {
+                    Spacer(Modifier.height(8.dp))
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+                            .padding(12.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(Icons.Default.Notes, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                            Text(
+                                text = stringResource(R.string.customer_note_title),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = order.note,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
@@ -772,7 +872,7 @@ fun OrderDetailsDialog(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
                 ) {
-                    Icon(Icons.Default.ReceiptLong, null)
+                    Icon(Icons.AutoMirrored.Filled.ReceiptLong, null)
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(id = R.string.view_receipt_btn))
                 }
@@ -799,3 +899,5 @@ fun DetailRow(label: String, value: String) {
         Text(text = value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
     }
 }
+
+data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)

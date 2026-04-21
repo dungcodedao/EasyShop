@@ -5,7 +5,6 @@ import com.example.easyshop.BuildConfig
 import com.example.easyshop.ai.model.ChatMessage
 import com.example.easyshop.model.OrderModel
 import com.example.easyshop.model.ProductModel
-import com.example.easyshop.model.UserModel
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
@@ -21,6 +20,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -41,12 +41,15 @@ class AiRepository {
     private val geminiApiKey = BuildConfig.GEMINI_API_KEY
     private val geminiBaseUrl = BuildConfig.GEMINI_BASE_URL.trim().trim('"').trimEnd('/')
         .let { it.ifBlank { "https://generativelanguage.googleapis.com/v1beta" } }
-    private val geminiModel = BuildConfig.GEMINI_MODEL.ifBlank { "gemini-3.1-flash-latest" }
+    private val geminiModel = BuildConfig.GEMINI_MODEL.ifBlank { "gemini-2.5-flash" }
 
-    // Config Beeknoee
     private val beeknoeeApiKey = BuildConfig.BEEKNOEE_API_KEY
     private val beeknoeeBaseUrl = BuildConfig.BEEKNOEE_BASE_URL.trim().trim('"').trimEnd('/')
-    private val beeknoeeModel = BuildConfig.BEEKNOEE_MODEL.ifBlank { "deepseek-chat" }
+    private val beeknoeeModel = BuildConfig.BEEKNOEE_MODEL.ifBlank { "gemini-2.5-flash-lite" }
+    
+    // Config Cloudinary
+    private val cloudinaryCloudName = BuildConfig.CLOUDINARY_CLOUD_NAME
+    private val cloudinaryUploadPreset = BuildConfig.CLOUDINARY_UPLOAD_PRESET
 
     // Cache cho Sản phẩm
     private var cachedProducts: List<ProductModel> = emptyList()
@@ -126,16 +129,21 @@ class AiRepository {
         val intent = detectIntent(userMessage)
         val systemInstruction = buildComplexInstruction(intent, userContext, relevantProducts)
 
-        // 3. Gọi AI với cơ chế Hybrid Fallback
+        // 3. Gọi AI với cơ chế Beeknoee là Primary
         var aiResponse = ""
         try {
-            aiResponse = requestGeminiWithFallback(systemInstruction, history, userMessage)
-        } catch (e: Exception) {
             if (beeknoeeApiKey.isNotBlank()) {
-                Log.w("AI_CHAT", "Gemini failed: ${e.message}. Using Beeknoee Fallback...")
+                Log.d("AI_CHAT", "Calling Beeknoee (Primary)...")
                 aiResponse = requestBeeknoeeReply(systemInstruction, history, userMessage)
             } else {
-                throw e
+                throw Exception("Beeknoee Key missing")
+            }
+        } catch (e: Exception) {
+            Log.w("AI_CHAT", "Beeknoee failed: ${e.message}. Using Gemini Fallback...")
+            try {
+                aiResponse = requestGeminiWithFallback(systemInstruction, history, userMessage)
+            } catch (ge: Exception) {
+                throw ge
             }
         }
 
@@ -164,17 +172,14 @@ class AiRepository {
         }
     }
 
+    private val STOP_WORDS = setOf("co", "khong", "shop", "ban", "mat", "hang", "mua", "gia", "tim", "xem", "loai", "nao", "giup", "voi", "cho", "em")
+
     private fun selectRelevantProducts(query: String, history: List<ChatMessage>, all: List<ProductModel>): List<ProductModel> {
-        val q = foldText(query + " " + history.takeLast(2).joinToString(" ") { it.content })
-        val tokens = q.split(" ").filter { it.length > 2 }
+        val normalizedQuery = foldText(query)
+        val queryTokens = getSearchTokens(normalizedQuery)
         
-        return all.map { p ->
-            var score = 0
-            val pText = foldText("${p.title} ${p.category} ${p.description}")
-            if (pText.contains(foldText(query))) score += 15
-            tokens.forEach { if (pText.contains(it)) score += 5 }
-            if (p.inStock) score += 2
-            p to score
+        return all.map { product ->
+            product to calculateProductScore(product, normalizedQuery, queryTokens)
         }.filter { it.second > 0 }
             .sortedByDescending { it.second }
             .map { it.first }
@@ -196,27 +201,43 @@ class AiRepository {
     }
 
     private fun buildComplexInstruction(intent: String, userContext: String, products: List<ProductModel>): String {
-        val productStr = products.joinToString("\n") { "- ${it.title} [${it.id}] | Giá: ${it.price} | Kho: ${if(it.inStock) "Còn" else "Hết"}" }
+        val productListInfo = formatProductsForAI(products)
         return """
             BẠN LÀ CHUYÊN VIÊN TƯ VẤN CỦA EASYSHOP.
             NGỮ CẢNH KHÁCH HÀNG:
             $userContext
             
-            KHO HÀNG KHẢ DỤNG:
-            $productStr
+            DANH SÁCH SẢN PHẨM KHẢ DỤNG:
+            $productListInfo
             
             Ý ĐỊNH NGƯỜI DÙNG: $intent
             
-            QUY TẮC:
-            1. Ưu tiên sản phẩm có trong kho hàng bên trên.
-            2. Xưng hô Thân thiện (Shop - Bạn).
-            3. Trả lời tư vấn chuyên nghiệp, ngắn gọn.
-            4. Trả lời bằng Tiếng Việt.
+            ${getCommonRules()}
+        """.trimIndent()
+    }
+
+    private fun formatProductsForAI(products: List<ProductModel>): String {
+        if (products.isEmpty()) return "Hiện chưa tìm thấy sản phẩm chính xác trong kho."
+        return products.joinToString("\n") { product ->
+            "- ${product.title} [${product.id}] | Giá: ${product.price} | Tình trạng: ${if(product.inStock) "Còn hàng" else "Hết hàng"}"
+        }
+    }
+
+    private fun getCommonRules(): String {
+        return """
+            QUY TẮC PHẢN HỒI BẮT BUỘC:
+            1. KHÔNG HIỂN THỊ MÃ ID: Tuyệt đối không viết các mã lộn xộn (như 3qifh...) ra nội dung chat.
+            2. GẮN THẺ SẢN PHẨM: Khi nhắc đến sản phẩm, phải gắn thẻ [PID_id] ngay sau tên hoặc cuối câu. 
+               Thẻ này dùng để hiển thị nút bấm ngầm, người dùng sẽ không thấy thẻ này.
+               Ví dụ: "Bạn có thể tham khảo mẫu Laptop Gaming [PID_abc123] này ạ!"
+            3. TRƯỜNG HỢP HẾT HÀNG: Nếu sản phẩm khách hỏi đã hết hàng, hãy thông báo lịch sự và chủ động gợi ý sản phẩm thay thế có gắn [PID_...].
+            4. PHONG CÁCH: Thân thiện, chuyên nghiệp (Xưng hô: Shop - Bạn).
+            5. NGÔN NGỮ: Tiếng Việt.
         """.trimIndent()
     }
 
     private suspend fun requestGeminiWithFallback(sys: String, history: List<ChatMessage>, user: String): String {
-        val models = listOf(geminiModel, "gemini-3.1-flash-latest", "gemini-2.5-flash", "gemini-1.5-flash").distinct()
+        val models = listOf(geminiModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash").distinct()
         var lastErr: Exception? = null
         for (m in models) {
             try {
@@ -232,11 +253,119 @@ class AiRepository {
         throw lastErr ?: Exception("Gemini Error")
     }
 
-    private suspend fun callGeminiApi(model: String, sys: String, history: List<ChatMessage>, user: String): String = withContext(Dispatchers.IO) {
-        val contents = history.takeLast(10).map { 
+    /**
+     * Gửi tin nhắn kèm hình ảnh (Vision)
+     */
+    fun sendMessageWithImageStream(userMessage: String, base64Image: String, history: List<ChatMessage>): Flow<String> = flow {
+        val uid = auth.currentUser?.uid ?: throw Exception("Vui lòng đăng nhập")
+        val collection = getMessagesCollection()!!
+
+        // 1. Tải ảnh lên Cloudinary trước để có URL
+        val imageUrl = try {
+            uploadImageToCloudinary(base64Image)
+        } catch (e: Exception) {
+            Log.e("AI_CHAT", "Upload image to Cloudinary failed", e)
+            null
+        }
+
+        // 2. Lưu tin nhắn User kèm URL ảnh
+        collection.add(ChatMessage(content = userMessage, isUser = true, timestamp = Timestamp.now(), imageUrl = imageUrl)).await()
+
+        // 3. Thu thập dữ liệu ngữ cảnh
+        val allProducts = fetchAllProducts()
+        val userContext = fetchUserContext(uid, allProducts.associateBy { it.id })
+        
+        // Hướng dẫn đặc biệt cho Vision
+        val visionSystemInstruction = """
+            BẠN LÀ CHUYÊN VIÊN TƯ VẤN THỊ GIÁC CỦA EASYSHOP.
+            NGỮ CẢNH: $userContext
+            
+            KHO HÀNG SHOP ĐANG CÓ:
+            ${formatProductsForAI(allProducts)}
+            
+            NHIỆM VỤ CỦA BẠN:
+            1. PHÂN TÍCH ẢNH: Xác định sản phẩm trong ảnh là gì.
+            2. TRA CỨU KHO: So khớp với DANH SÁCH SẢN PHẨM KHẢ DỤNG bên trên.
+            3. TƯ VẤN: 
+               - NẾU KHỚP: Tư vấn giá và cấu hình, bắt buộc kèm [PID_id] ngầm.
+               - NẾU KHÔNG KHỚP: Thông báo chưa có mẫu này, gợi ý sản phẩm TƯƠNG TỰ nhất kèm [PID_id] ngầm.
+            
+            ${getCommonRules()}
+        """.trimIndent()
+
+        // 4. Gọi AI Vision (Beeknoee Primary)
+        var aiResponse = ""
+        try {
+            if (beeknoeeApiKey.isNotBlank()) {
+                Log.d("AI_CHAT", "Calling Beeknoee Vision (Primary)...")
+                aiResponse = requestBeeknoeeReply(visionSystemInstruction, history, userMessage, base64Image)
+            } else {
+                throw Exception("Beeknoee Key missing")
+            }
+        } catch (e: Exception) {
+            Log.w("AI_CHAT", "Beeknoee Vision failed: ${e.message}. Using Gemini Vision Fallback...")
+            try {
+                aiResponse = requestGeminiVisionWithFallback(visionSystemInstruction, history, userMessage, base64Image)
+            } catch (ge: Exception) {
+                Log.e("AI_CHAT", "All AI providers failed", ge)
+                aiResponse = "Xin lỗi, mình gặp trục trặc khi kết nối với máy chủ AI. Bạn vui lòng thử lại sau nhé!"
+            }
+        }
+
+        // 4. Lưu phản hồi AI
+        if (aiResponse.isNotBlank()) {
+            collection.add(ChatMessage(content = aiResponse, isUser = false, timestamp = Timestamp.now())).await()
+            db.collection("chats").document(uid).update("lastActivity", FieldValue.serverTimestamp())
+            emit(aiResponse)
+        }
+    }
+
+    private suspend fun requestGeminiVisionWithFallback(sys: String, history: List<ChatMessage>, user: String, base64Image: String): String {
+        val models = listOf(geminiModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash").distinct()
+        var lastErr: Exception? = null
+        for (m in models) {
+            try {
+                Log.d("AI_CHAT", "Trying Gemini Vision: $m")
+                return callGeminiApi(m, sys, history, user, base64Image)
+            } catch (e: Exception) {
+                lastErr = e
+                Log.w("AI_CHAT", "Gemini Vision $m failed: ${e.message}")
+                if (e.message?.contains("quota") == true || e.message?.contains("429") == true) continue
+                if (m == models.last()) throw e
+            }
+        }
+        throw lastErr ?: Exception("Gemini Vision Error")
+    }
+
+    private suspend fun callGeminiApi(
+        model: String, 
+        sys: String, 
+        history: List<ChatMessage>, 
+        user: String,
+        base64Image: String? = null
+    ): String = withContext(Dispatchers.IO) {
+        val contents = history.takeLast(6).map { 
             mapOf("role" to if(it.isUser) "user" else "model", "parts" to listOf(mapOf("text" to it.content)))
         }.toMutableList()
-        contents.add(mapOf("role" to "user", "parts" to listOf(mapOf("text" to user))))
+
+        // Tạo phần "parts" cho tin nhắn hiện tại
+        val currentParts = mutableListOf<Map<String, Any>>(
+            mapOf("text" to user)
+        )
+        
+        // Nếu có ảnh, thêm vào parts dưới dạng inline_data
+        base64Image?.let {
+            currentParts.add(
+                mapOf(
+                    "inline_data" to mapOf(
+                        "mime_type" to "image/jpeg",
+                        "data" to it
+                    )
+                )
+            )
+        }
+
+        contents.add(mapOf("role" to "user", "parts" to currentParts))
 
         val payload = mapOf("systemInstruction" to mapOf("parts" to listOf(mapOf("text" to sys))), "contents" to contents)
         val req = Request.Builder()
@@ -253,23 +382,118 @@ class AiRepository {
         }
     }
 
-    private suspend fun requestBeeknoeeReply(sys: String, history: List<ChatMessage>, user: String): String = withContext(Dispatchers.IO) {
-        val messages = mutableListOf(mapOf("role" to "system", "content" to sys))
-        messages.addAll(history.takeLast(10).map { mapOf("role" to if(it.isUser) "user" else "assistant", "content" to it.content) })
-        messages.add(mapOf("role" to "user", "content" to user))
+    private suspend fun requestBeeknoeeReply(
+        sys: String, 
+        history: List<ChatMessage>, 
+        user: String,
+        base64Image: String? = null
+    ): String = withContext(Dispatchers.IO) {
+        val messages = mutableListOf<Map<String, Any>>()
+        
+        // 1. System Instruction
+        if (sys.isNotBlank()) {
+            messages.add(mapOf("role" to "system", "content" to sys))
+        }
 
-        val payload = mapOf("model" to beeknoeeModel, "messages" to messages)
+        // 2. Chuyển đổi lịch sử & Lọc tin nhắn trống (Tránh lỗi 400)
+        val chatHistory = history.takeLast(10).mapNotNull { msg ->
+            val role = if (msg.isUser) "user" else "assistant"
+            val text = msg.content.trim()
+            if (text.isNotEmpty()) {
+                mapOf("role" to role, "content" to text)
+            } else null
+        }
+        messages.addAll(chatHistory)
+
+        // 3. Tin nhắn hiện tại (Hỗ trợ Vision)
+        if (base64Image == null) {
+            // Text only
+            messages.add(mapOf("role" to "user", "content" to user))
+        } else {
+            // Multi-modal (OpenAI Format)
+            val content = mutableListOf<Map<String, Any>>(
+                mapOf("type" to "text", "text" to user)
+            )
+            val finalBase64 = if (!base64Image.startsWith("data:image")) {
+                "data:image/jpeg;base64,$base64Image"
+            } else base64Image
+            
+            content.add(mapOf(
+                "type" to "image_url",
+                "image_url" to mapOf("url" to finalBase64)
+            ))
+            messages.add(mapOf("role" to "user", "content" to content))
+        }
+
+        val payload = mapOf(
+            "model" to beeknoeeModel,
+            "messages" to messages,
+            "temperature" to 0.7,
+            "max_tokens" to 1500
+        )
+
         val req = Request.Builder()
             .url("$beeknoeeBaseUrl/chat/completions")
             .header("Authorization", "Bearer $beeknoeeApiKey")
+            .header("Content-Type", "application/json")
             .post(gson.toJson(payload).toRequestBody("application/json".toMediaType()))
             .build()
 
-        httpClient.newCall(req).execute().use { resp ->
-            val body = resp.body?.string() ?: ""
-            if (!resp.isSuccessful) throw Exception("Beeknoee Error: ${resp.code}")
-            val json = gson.fromJson(body, com.google.gson.JsonObject::class.java)
-            json.getAsJsonArray("choices")?.get(0)?.asJsonObject?.getAsJsonObject("message")?.get("content")?.asString ?: ""
+        try {
+            httpClient.newCall(req).execute().use { resp ->
+                val body = resp.body?.string() ?: ""
+                if (!resp.isSuccessful) {
+                    Log.e("AI_CHAT", "Beeknoee API Error: ${resp.code} - $body")
+                    throw Exception("Beeknoee Error: ${resp.code}")
+                }
+                val json = gson.fromJson(body, com.google.gson.JsonObject::class.java)
+                json.getAsJsonArray("choices")
+                    ?.get(0)?.asJsonObject
+                    ?.getAsJsonObject("message")
+                    ?.get("content")?.asString ?: "Lỗi phản hồi từ Bee."
+            }
+        } catch (e: Exception) {
+            Log.e("AI_CHAT", "Beeknoee Request Exception", e)
+            throw e
+        }
+    }
+
+    private suspend fun uploadImageToCloudinary(base64Image: String): String? = withContext(Dispatchers.IO) {
+        if (cloudinaryCloudName.isBlank()) return@withContext null
+        
+        val url = "https://api.cloudinary.com/v1_1/$cloudinaryCloudName/image/upload"
+        
+        // Cloudinary có thể nhận base64 trực tiếp kèm prefix
+        val finalBase64 = if (!base64Image.startsWith("data:image")) {
+            "data:image/jpeg;base64,$base64Image"
+        } else base64Image
+
+        val requestBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("file", finalBase64)
+            .addFormDataPart("upload_preset", cloudinaryUploadPreset)
+            .build()
+
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .build()
+
+        try {
+            httpClient.newCall(request).execute().use { response ->
+                val body = response.body?.string() ?: ""
+                if (!response.isSuccessful) {
+                    Log.e("AI_CHAT", "Cloudinary Error: ${response.code} - $body")
+                    return@withContext null
+                }
+                val json = gson.fromJson(body, com.google.gson.JsonObject::class.java)
+                val secureUrl = json.get("secure_url")?.asString
+                Log.d("AI_CHAT", "Uploaded to Cloudinary: $secureUrl")
+                secureUrl
+            }
+        } catch (e: Exception) {
+            Log.e("AI_CHAT", "Cloudinary upload Exception: ${e.message}")
+            null
         }
     }
 
@@ -280,4 +504,24 @@ class AiRepository {
     }
 
     private fun foldText(text: String): String = Normalizer.normalize(text.lowercase(), Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "")
+
+    private fun getSearchTokens(text: String): List<String> {
+        return text.split(Regex("\\s+"))
+            .filter { it.isNotBlank() && it !in STOP_WORDS }
+    }
+
+    private fun calculateProductScore(product: ProductModel, query: String, queryTokens: List<String>): Int {
+        var score = 0
+        val titleFolded = foldText(product.title)
+        
+        // Match nguyên câu (ưu tiên cao)
+        if (titleFolded.contains(query)) score += 10
+        
+        // Match từng từ
+        queryTokens.forEach { token ->
+            if (titleFolded.contains(token)) score += 2
+        }
+        
+        return score
+    }
 }

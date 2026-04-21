@@ -65,6 +65,13 @@ class CheckoutViewModel : ViewModel() {
     private val _isPaymentConfirmed = MutableStateFlow(false)
     val isPaymentConfirmed: StateFlow<Boolean> = _isPaymentConfirmed.asStateFlow()
 
+    private val _note = MutableStateFlow("")
+    val note: StateFlow<String> = _note.asStateFlow()
+
+    fun updateNote(newNote: String) {
+        _note.value = newNote
+    }
+
     fun fetchData() {
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
@@ -117,8 +124,7 @@ class CheckoutViewModel : ViewModel() {
     }
 
     private fun parsePrice(priceStr: String): Double {
-        // Robust price parsing: "80.000đ" -> 80000.0
-        return priceStr.replace(Regex("[^0-9]"), "").toDoubleOrNull() ?: 0.0
+        return com.example.easyshop.AppUtil.parsePrice(priceStr)
     }
 
     fun setSelectedAddress(address: AddressModel) {
@@ -143,7 +149,12 @@ class CheckoutViewModel : ViewModel() {
         _discount.value = 0.0
     }
 
-    fun placeOrder(paymentMethod: String) {
+    fun setDiscountInfo(promoCode: String, discount: Double) {
+        _promoCode.value = promoCode
+        _discount.value = discount
+    }
+
+    fun placeOrder(paymentMethod: String, note: String = "") {
         val user = _userModel.value ?: return
         val address = _selectedAddress.value
         if (address == null) {
@@ -174,19 +185,32 @@ class CheckoutViewModel : ViewModel() {
                 status = "ORDERED",
                 address = "${address.label}: ${address.detailedAddress}",
                 paymentMethod = paymentMethod,
-                date = Timestamp.now()
+                date = Timestamp.now(),
+                note = if (note.isNotBlank()) note else _note.value
             )
 
             try {
                 db.runTransaction { transaction ->
-                    // 1. Verify Stock and Promo in ONE transaction
-                    user.cartItems.forEach { (pid, qty) ->
+                    // --- GIAI ĐOẠN 1: ĐỌC (READS) ---
+                    // Phải đọc tất cả dữ liệu trước khi thực hiện bất kỳ lệnh ghi nào
+                    val productSnapshots = user.cartItems.map { (pid, _) ->
                         val productRef = db.collection("data").document("stock")
                             .collection("products").document(pid)
-                        val productSnap = transaction.get(productRef)
-                        val stock = productSnap.getLong("stockCount") ?: 0L
+                        productRef to transaction.get(productRef)
+                    }
+
+                    val promoSnap = if (_promoCode.value.isNotEmpty()) {
+                        val promoRef = db.collection("promoCodes").document(_promoCode.value)
+                        promoRef to transaction.get(promoRef)
+                    } else null
+
+                    // --- GIAI ĐOẠN 2: KIỂM TRA & GHI (WRITES) ---
+                    productSnapshots.forEach { (productRef, snapshot) ->
+                        val qty = user.cartItems[snapshot.id] ?: 0L
+                        val stock = snapshot.getLong("stockCount") ?: 0L
+                        
                         if (stock < qty) {
-                            throw Exception("Sản phẩm ${productSnap.getString("title")} đã hết hàng hoặc không đủ số lượng")
+                            throw Exception("Sản phẩm ${snapshot.getString("title")} đã hết hàng hoặc không đủ số lượng")
                         }
                         
                         // Update Stock
@@ -196,21 +220,19 @@ class CheckoutViewModel : ViewModel() {
                         }
                     }
 
-                    if (_promoCode.value.isNotEmpty()) {
-                        val promoRef = db.collection("promoCodes").document(_promoCode.value)
-                        val promoSnap = transaction.get(promoRef)
-                        if (!promoSnap.exists() || promoSnap.getBoolean("active") == false) {
+                    promoSnap?.let { (promoRef, snapshot) ->
+                        if (!snapshot.exists() || snapshot.getBoolean("active") == false) {
                             throw Exception("Mã giảm giá không còn khả dụng")
                         }
-                        val usageLimit = promoSnap.getLong("usageLimit") ?: 0L
-                        val usedCount = promoSnap.getLong("usedCount") ?: 0L
+                        val usageLimit = snapshot.getLong("usageLimit") ?: 0L
+                        val usedCount = snapshot.getLong("usedCount") ?: 0L
                         if (usageLimit > 0 && usedCount >= usageLimit) {
                             throw Exception("Mã giảm giá đã hết lượt sử dụng")
                         }
                         transaction.update(promoRef, "usedCount", usedCount + 1)
                     }
 
-                    // 2. Finalize: Set Order and Clear Cart
+                    // Lưu đơn hàng và xóa giỏ hàng
                     transaction.set(db.collection("orders").document(orderId), order)
                     transaction.update(db.collection("users").document(uid), "cartItems", emptyMap<String, Long>())
                 }.await()

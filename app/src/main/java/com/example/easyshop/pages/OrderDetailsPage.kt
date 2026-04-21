@@ -215,6 +215,16 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
+                            // Order Note (if any)
+                            if (order!!.note.isNotBlank()) {
+                                Spacer(Modifier.height(16.dp))
+                                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                                Spacer(Modifier.height(16.dp))
+                                Text(stringResource(id = R.string.order_note_label), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                                Spacer(Modifier.height(4.dp))
+                                Text(order!!.note, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+
                             Spacer(Modifier.height(16.dp))
                             HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                             Spacer(Modifier.height(16.dp))

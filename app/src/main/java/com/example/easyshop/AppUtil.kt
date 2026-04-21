@@ -1,12 +1,19 @@
 package com.example.easyshop
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
+import android.graphics.Bitmap
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.widget.Toast
-import com.example.easyshop.components.NotifBannerController
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.FileProvider
+import com.example.easyshop.components.NotifBannerController
 import com.example.easyshop.model.OrderModel
 import com.example.easyshop.model.ProductModel
 import com.example.easyshop.model.UserModel
@@ -16,6 +23,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
+import java.io.File
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.UUID
@@ -41,17 +50,53 @@ object AppUtil {
     }
 
     fun showToast(context: Context, message: String) {
-        // Khôi phục lại NotifBanner thay vì Toast truyền thống
-        NotifBannerController.show("Thông báo", message)
+        // Tự động dịch nếu là lỗi hệ thống (Firebase, SePay, v.v.)
+        val translatedMessage = translateSystemError(message)
+        NotifBannerController.show("Thông báo", translatedMessage)
     }
 
     fun showSuccess(title: String, message: String? = "") {
-        NotifBannerController.show(title, message ?: "", "SUCCESS")
+        val translatedMessage = translateSystemError(message)
+        NotifBannerController.show(title, translatedMessage, "SUCCESS")
     }
 
     fun showError(title: String, message: String? = "", detail: String? = null) {
-        val finalMessage = if (detail.isNullOrBlank()) (message ?: "") else "${message ?: ""}: $detail"
+        val translatedMessage = translateSystemError(message)
+        val translatedDetail = translateSystemError(detail)
+        val finalMessage = if (translatedDetail.isBlank()) translatedMessage else "$translatedMessage: $translatedDetail"
         NotifBannerController.show(title, finalMessage, "ERROR")
+    }
+
+    private fun translateSystemError(message: String?): String {
+        if (message == null || message.isBlank()) return ""
+        val msgLower = message.lowercase()
+        return when {
+            // Auth Errors
+            msgLower.contains("auth credential is incorrect") || msgLower.contains("invalid-credential") -> "Email hoặc mật khẩu không chính xác"
+            msgLower.contains("no user record") || msgLower.contains("user-not-found") -> "Tài khoản này không tồn tại"
+            msgLower.contains("password is invalid") || msgLower.contains("wrong-password") -> "Mật khẩu không chính xác"
+            msgLower.contains("email address is already in use") || msgLower.contains("email-already-in-use") -> "Email này đã được sử dụng"
+            msgLower.contains("email address is badly formatted") || msgLower.contains("invalid-email") -> "Định dạng email không hợp lệ"
+            msgLower.contains("too many unsuccessful login attempts") -> "Thử đăng nhập sai quá nhiều lần. Vui lòng quay lại sau"
+            msgLower.contains("user-disabled") -> "Tài khoản của bạn đã bị khóa"
+            msgLower.contains("operation-not-allowed") -> "Phương thức đăng nhập này chưa được kích hoạt"
+            
+            // SePay & Payment Errors
+            msgLower.contains("unauthenticated") -> "Phiên làm việc hết hạn. Vui lòng đăng nhập lại"
+            msgLower.contains("account not found") || msgLower.contains("merchant") -> "Lỗi cấu hình tài khoản thanh toán"
+            msgLower.contains("insufficient balance") -> "Số dư không đủ để thực hiện giao dịch"
+            msgLower.contains("invalid amount") -> "Số tiền giao dịch không hợp lệ"
+            msgLower.contains("payment reference") -> "Mã tham chiếu thanh toán không hợp lệ"
+            
+            // Common Errors
+            msgLower.contains("network error") || msgLower.contains("network-request-failed") || msgLower.contains("timeout") -> "Lỗi kết nối mạng. Vui lòng kiểm tra lại"
+            msgLower.contains("internal error") || msgLower.contains("500") -> "Lỗi hệ thống máy chủ. Vui lòng thử lại sau"
+            msgLower.contains("expired") -> "Phiên làm việc đã hết hạn hoặc mã đã hết hiệu lực"
+            msgLower.contains("permission-denied") -> "Bạn không có quyền thực hiện hành động này"
+            msgLower.contains("unavailable") -> "Dịch vụ hiện không khả dụng. Vui lòng thử lại sau"
+            
+            else -> message
+        }
     }
 
     fun isNetworkAvailable(context: Context): Boolean {
@@ -239,6 +284,14 @@ object AppUtil {
             .addOnSuccessListener {
                 updateStockAfterOrder(order)
                 clearCartInFirestore(order.userId)
+                
+                // Gửi thông báo tới các Admin
+                com.example.easyshop.services.FcmSender.sendToAdmins(
+                    title = "Đơn hàng mới 📦",
+                    body = "Đơn #${order.id.take(8).uppercase()} vừa được đặt bởi ${order.userName}",
+                    type = "NEW_ORDER"
+                )
+                
                 onSuccess()
             }
             .addOnFailureListener { e ->
@@ -411,5 +464,168 @@ object AppUtil {
             .addOnSuccessListener { token ->
                 saveFcmToken(token)
             }
+    }
+
+    /**
+     * Parse price string sang Double một cách an toàn.
+     * Xử lý định dạng Việt Nam: "80.000đ" -> 80000.0
+     * Xử lý dấu phẩy ngàn: "1,500,000" -> 1500000.0
+     * Xử lý thập phân: "15.50" -> 15.50
+     */
+    fun parsePrice(priceStr: String): Double {
+        // Loại bỏ ký tự tiền tệ và khoảng trắng
+        val cleaned = priceStr.replace(Regex("[đ₫$€£¥\\s]"), "").trim()
+        if (cleaned.isEmpty()) return 0.0
+
+        // Định dạng Việt Nam: dấu chấm ngăn hàng nghìn (vd: "80.000" hoặc "1.500.000")
+        val vnPattern = Regex("^\\d{1,3}(\\.\\d{3})+$")
+        if (vnPattern.matches(cleaned)) {
+            return cleaned.replace(".", "").toDoubleOrNull() ?: 0.0
+        }
+
+        // Dấu phẩy ngăn hàng nghìn (vd: "1,000,000" hoặc "1,500.50")
+        val commaThousandsPattern = Regex("^\\d{1,3}(,\\d{3})+(\\.\\d+)?$")
+        if (commaThousandsPattern.matches(cleaned)) {
+            return cleaned.replace(",", "").toDoubleOrNull() ?: 0.0
+        }
+
+        // Định dạng số thông thường (vd: "15.50", "1000")
+        return cleaned.replace(",", ".").toDoubleOrNull() ?: 0.0
+    }
+
+    /**
+     * Resize bitmap để vừa với maxSize mà giữ nguyên tỷ lệ.
+     * Giúp tránh OOM khi xử lý ảnh lớn từ camera/gallery.
+     *
+     * @param bitmap Ảnh gốc
+     * @param maxSize Kích thước cạnh lớn nhất cho phép (px), mặc định 1024
+     * @return Bitmap đã resize (hoặc gốc nếu đã nhỏ hơn maxSize)
+     */
+    fun resizeBitmap(bitmap: Bitmap, maxSize: Int = 1024): Bitmap {
+        val width = bitmap.width
+        val height = bitmap.height
+        if (width <= maxSize && height <= maxSize) return bitmap
+
+        val ratio = minOf(maxSize.toFloat() / width, maxSize.toFloat() / height)
+        val newWidth = (width * ratio).toInt()
+        val newHeight = (height * ratio).toInt()
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+    }
+
+    /**
+     * Sử dụng UTF-8 BOM để Excel hiển thị đúng tiếng Việt.
+     */
+    private fun escapeCSV(value: String?): String {
+        val str = value ?: ""
+        // Thay thế dấu " bằng "" và bao quanh toàn bộ bằng dấu "
+        return "\"" + str.replace("\"", "\"\"") + "\""
+    }
+
+    private fun formatCurrencyCSV(amount: Double): String {
+        val formatter = java.text.NumberFormat.getInstance(java.util.Locale("vi", "VN"))
+        return "${formatter.format(amount)} đồng"
+    }
+
+    /**
+     * Thay thế cấu trúc để thêm đơn giá và thành tiền, giúp báo cáo minh bạch hơn.
+     */
+    fun exportOrdersToCSV(
+        context: Context, 
+        orders: List<OrderModel>, 
+        productNames: Map<String, String> = emptyMap(),
+        productPrices: Map<String, Double> = emptyMap()
+    ) {
+        try {
+            val fileName = "EasyShop_Orders_${SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(java.util.Date())}.csv"
+            
+            // 1. Chuẩn bị dữ liệu CSV thành String
+            val csvBuilder = StringBuilder()
+            // Viết UTF-8 BOM để Excel nhận diện đúng font tiếng Việt
+            csvBuilder.append("\uFEFF")
+            
+            // Header
+            csvBuilder.append("Mã đơn hàng,Ngày đặt,Khách hàng,Tên Sản phẩm,Số lượng,Đơn giá,Thành tiền,Tổng hóa đơn,Trạng thái,Email,SĐT\n")
+            
+            // Data rows 
+            orders.forEach { order ->
+                val dateStr = formatDate(order.date)
+                order.items.forEach { (productId, qty) ->
+                    val productName = productNames[productId] ?: productId
+                    val unitPrice = productPrices[productId] ?: 0.0
+                    val itemTotal = unitPrice * qty
+                    
+                    val row = listOf(
+                        escapeCSV(order.id),
+                        escapeCSV(dateStr),
+                        escapeCSV(order.userName),
+                        escapeCSV(productName),
+                        qty.toString(),
+                        escapeCSV(formatCurrencyCSV(unitPrice)),
+                        escapeCSV(formatCurrencyCSV(itemTotal)),
+                        escapeCSV(formatCurrencyCSV(order.total)),
+                        escapeCSV(order.status),
+                        escapeCSV(order.userEmail),
+                        escapeCSV(order.userPhone)
+                    ).joinToString(",")
+                    csvBuilder.append("$row\n")
+                }
+            }
+
+            // 2. Lưu file vào máy
+            val contentResolver = context.contentResolver
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Cách lưu cho Android 10+ (Sử dụng MediaStore)
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                    put(MediaStore.MediaColumns.MIME_TYPE, "text/csv")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/EasyShop_Reports")
+                }
+
+                val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+                if (uri != null) {
+                    contentResolver.openOutputStream(uri)?.use { outputStream ->
+                        outputStream.write(csvBuilder.toString().toByteArray(Charsets.UTF_8))
+                    }
+                    
+                    // Thêm logic tự động mở file sau khi lưu (Android 10+)
+                    val openIntent = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(uri, "text/csv")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(openIntent)
+
+                    showSuccess("Lưu file thành công", "Báo cáo đã được lưu vào: Bộ nhớ máy/Download/EasyShop_Reports")
+                } else {
+                    throw Exception("Không thể tạo file qua MediaStore")
+                }
+            } else {
+                // Cách lưu cho các bản Android cũ hơn (Sử dụng File API truyền thống)
+                val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                val reportDir = File(downloadDir, "EasyShop_Reports")
+                if (!reportDir.exists()) reportDir.mkdirs()
+                
+                val file = File(reportDir, fileName)
+                FileOutputStream(file).use { outputStream ->
+                    outputStream.write(csvBuilder.toString().toByteArray(Charsets.UTF_8))
+                }
+                
+                // Thêm logic tự động mở file sau khi lưu (Android cũ)
+                val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                val openIntent = Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(uri, "text/csv")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(openIntent)
+
+                showSuccess("Lưu file thành công", "Báo cáo đã được lưu tại: Bộ nhớ máy/Download/EasyShop_Reports")
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            showError("Lỗi xuất file", e.message)
+        }
     }
 }

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
@@ -343,6 +344,23 @@ fun ProfilePage(
                             },
                             trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
                             modifier = Modifier.clickable { GlobalNavigation.navController.navigate("orders") }
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
+
+                        // Message with Shop
+                        ListItem(
+                            headlineContent = { Text("Nhắn tin với Shop", fontWeight = FontWeight.Medium) },
+                            supportingContent = { Text("Hỗ trợ, tư vấn đơn hàng") },
+                            leadingContent = {
+                                Box(
+                                    Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
+                                        .background(Color(0xFFFF9800).copy(alpha = 0.1f)),
+                                    contentAlignment = Alignment.Center
+                                ) { Icon(Icons.AutoMirrored.Filled.Message, null, tint = Color(0xFFFF9800), modifier = Modifier.size(22.dp)) }
+                            },
+                            trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                            modifier = Modifier.clickable { GlobalNavigation.navController.navigate("chat-with-shop") }
                         )
                     }
                 }

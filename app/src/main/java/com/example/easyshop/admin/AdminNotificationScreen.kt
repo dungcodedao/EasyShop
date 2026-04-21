@@ -148,9 +148,9 @@ fun AdminNotificationScreen(navController: NavController) {
     // Gửi thông báo cho user khi Admin cập nhật trạng thái đơn hàng từ popup
     fun notifyUserOrderStatus(order: OrderModel, newStatus: String) {
         val (title, body, type) = when (newStatus) {
-            "SHIPPING"  -> Triple("Đơn hàng đang vận chuyển 🚚", "Đơn #${order.id.take(8).uppercase()} đang trên giao đến bạn.", "SHIPPING")
-            "DELIVERED" -> Triple("Đơn hàng đã giao thành công ✅", "Đơn #${order.id.take(8).uppercase()} đã giao thành công. Cảm ơn bạn!", "DELIVERED")
-            "CANCELLED" -> Triple("Đơn hàng đã bị hủy ❌", "Đơn #${order.id.take(8).uppercase()} đã bị hủy.", "CANCELLED")
+            "SHIPPING"  -> Triple("Đơn hàng đang vận chuyển", "Đơn #${order.id.take(8).uppercase()} đang trên đường giao đến bạn.", "SHIPPING")
+            "DELIVERED" -> Triple("Đơn hàng đã giao thành công", "Đơn #${order.id.take(8).uppercase()} đã giao thành công. Cảm ơn bạn!", "DELIVERED")
+            "CANCELLED" -> Triple("Đơn hàng đã bị hủy", "Đơn #${order.id.take(8).uppercase()} đã bị hủy.", "CANCELLED")
             else -> Triple("Cập nhật đơn hàng", "Trạng thái mới: $newStatus", "ORDER_STATUS")
         }
         val notif = hashMapOf(
@@ -164,6 +164,14 @@ fun AdminNotificationScreen(navController: NavController) {
             "createdAt" to com.google.firebase.Timestamp.now()
         )
         db.collection("notifications").add(notif)
+
+        // Gửi FCM push notification tới điện thoại User (hoạt động kể cả khi app đã tắt)
+        com.example.easyshop.services.FcmSender.sendToUser(
+            userId = order.userId,
+            title = title,
+            body = body,
+            type = type
+        )
     }
 
     Scaffold(
@@ -269,8 +277,9 @@ fun AdminNotificationScreen(navController: NavController) {
         }
 
         if (selectedOrder != null) {
-            com.example.easyshop.admin.OrderDetailsDialog(
+           OrderDetailsDialog(
                 order = selectedOrder!!,
+                navController = navController,
                 onDismiss = { selectedOrder = null },
                 onUpdateStatus = { newStatus ->
                     db.collection("orders").document(selectedOrder!!.id).update("status", newStatus)

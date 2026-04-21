@@ -34,18 +34,18 @@ fun MBBankQRSection(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     
-    // Nhận paymentReference từ bên ngoài (thẩm thấu từ ViewModel)
-    val orderId = paymentReference.ifEmpty { "ES-" + System.currentTimeMillis().toString().takeLast(6) }
+    // Nhận paymentReference từ bên ngoài (mã này dùng để SePay nhận diện giao dịch)
+    val displayRef = paymentReference.ifEmpty { "ES" + System.currentTimeMillis().toString().takeLast(6) }
 
     // --- CẤU HÌNH TÀI KHOẢN ---
     val bankId = "MB"
-    val accountNo = "0969690132" // TODO: Thay đổi số tài khoản MBBank của bạn
+    val accountNo = "1520115052003"
     val accountName = "NGO VAN DUNG"
 
     // Link VietQR chuẩn
     val qrUrl = "https://img.vietqr.io/image/$bankId-$accountNo-compact2.png" +
             "?amount=${totalAmount.toLong()}" +
-            "&addInfo=${android.net.Uri.encode(orderId)}" +
+            "&addInfo=${android.net.Uri.encode(displayRef)}" +
             "&accountName=${android.net.Uri.encode(accountName)}"
 
     Column(
@@ -57,21 +57,39 @@ fun MBBankQRSection(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F0FE))
         ) {
-            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF0038A8)),
-                    contentAlignment = Alignment.Center
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF0038A8)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("MB", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Ngân hàng MBBank", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                        Text(accountNo, style = MaterialTheme.typography.bodySmall, color = Color.DarkGray)
+                        Text(accountName, style = MaterialTheme.typography.bodySmall, color = Color.DarkGray)
+                    }
+                    Surface(color = Color(0xFF0038A8).copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
+                        Text(AppUtil.formatPrice(totalAmount), modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp), fontWeight = FontWeight.Bold, color = Color(0xFF0038A8), fontSize = 13.sp)
+                    }
+                }
+                
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = Color(0xFF0038A8).copy(alpha = 0.2f))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("MB", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Ngân hàng MBBank", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                    Text(accountNo, style = MaterialTheme.typography.bodySmall, color = Color.DarkGray)
-                    Text(accountName, style = MaterialTheme.typography.bodySmall, color = Color.DarkGray)
-                }
-                Surface(color = Color(0xFF0038A8).copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
-                    Text(AppUtil.formatPrice(totalAmount), modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp), fontWeight = FontWeight.Bold, color = Color(0xFF0038A8), fontSize = 13.sp)
+                    Text("Nội dung chuyển khoản:", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    Text(
+                        displayRef,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFFE91E63) // Màu hồng đỏ nổi bật để khách chú ý
+                    )
                 }
             }
         }
@@ -150,7 +168,7 @@ fun MBBankQRSection(
             ) {
                 Text("🏦 Hướng dẫn chuyển khoản", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF0038A8))
                 Text("Bước 1: Quét mã QR hoặc chuyển khoản theo số tài khoản trên.", fontSize = 12.sp, color = Color.DarkGray)
-                Text("Bước 2: Đảm bảo nội dung chuyển khoản khớp với mã đơn hàng.", fontSize = 12.sp, color = Color.DarkGray)
+                Text("Bước 2: Đảm bảo nội dung chuyển khoản khớp với mã màu hồng ở trên.", fontSize = 12.sp, color = Color.DarkGray)
                 Text("Bước 3: Chờ 1-2 phút hệ thống SePay sẽ tự động xác nhận.", fontSize = 12.sp, color = Color.DarkGray)
             }
         }

@@ -80,11 +80,12 @@ fun NotificationsPage(navController: NavController) {
         if (uid != null) {
             val listener = db.collection("notifications")
                 .whereEqualTo("recipientRole", "user")
-                .whereEqualTo("userId", uid)
+                .whereIn("userId", listOf(uid, "broadcast"))
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .addSnapshotListener { snapshot, error ->
                     isLoading = false
                     if (error != null) {
+                        android.util.Log.e("NotificationsPage", "Query error: ${error.message}")
                         return@addSnapshotListener
                     }
                     if (snapshot != null) {

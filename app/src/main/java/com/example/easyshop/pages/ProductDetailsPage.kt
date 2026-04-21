@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -204,10 +205,34 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId: String) {
 
                                 Spacer(Modifier.height(24.dp))
 
-                                AddToCartButton(
-                                    inStock = product.inStock,
-                                    onAddToCart = { AppUtil.addItemToCart(context, productId, selectedQuantity) }
-                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    OutlinedIconButton(
+                                        onClick = { 
+                                            com.example.easyshop.util.GlobalNavigation.navController.navigate("chat-with-shop?message=Tôi muốn hỏi về sản phẩm: ${product.title}")
+                                        },
+                                        modifier = Modifier.size(56.dp),
+                                        shape = RoundedCornerShape(16.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                                    ) {
+                                        Icon(
+                                            Icons.AutoMirrored.Filled.Message, 
+                                            contentDescription = "Chat",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+
+                                    Box(modifier = Modifier.weight(1f)) {
+                                        AddToCartButton(
+                                            inStock = product.inStock,
+                                            onAddToCart = { AppUtil.addItemToCart(context, productId, selectedQuantity) }
+                                        )
+                                    }
+                                }
 
                                 Spacer(Modifier.height(24.dp))
 

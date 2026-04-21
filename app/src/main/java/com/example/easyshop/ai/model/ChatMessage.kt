@@ -9,5 +9,6 @@ data class ChatMessage(
     var id: String = "",
     var content: String = "",
     @get:PropertyName("isUser") @set:PropertyName("isUser") var isUser: Boolean = true,
-    var timestamp: Timestamp? = null
+    var timestamp: Timestamp? = null,
+    var imageUrl: String? = null
 )

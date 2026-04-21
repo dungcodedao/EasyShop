@@ -10,23 +10,31 @@ class FcmService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d("FcmService", "Refreshed token: $token")
-        // Lưu token vào Firestore để Server/Admin có thể gửi thông báo
+        // Luu token vao Firestore de Server/Admin co the gui thong bao
         AppUtil.saveFcmToken(token)
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
+        Log.d("FcmService", "From: ${remoteMessage.from}")
 
-        // Khi app ở trạng thái foreground, ta tự hiển thị thông báo
-        remoteMessage.notification?.let {
-            val title = it.title ?: "EasyShop"
-            val body = it.body ?: ""
-            val type = remoteMessage.data["type"] ?: "SYSTEM"
-            
-            NotificationHelper.show(applicationContext, title, body, type)
-            
-            // Có thể bắn thêm Banner Controller nếu muốn (để hiện in-app banner khi đang dùng)
-            // com.example.easyshop.components.NotifBannerController.show(title, body, type)
+        // Truong hop 1: Co notification payload (app foreground -> tu xu ly)
+        // Khi app o background, he thong tu dong hien notification nay
+        val notifTitle = remoteMessage.notification?.title
+        val notifBody = remoteMessage.notification?.body
+
+        // Truong hop 2: Co data payload
+        val dataTitle = remoteMessage.data["title"]
+        val dataBody = remoteMessage.data["body"]
+        val dataType = remoteMessage.data["type"] ?: "SYSTEM"
+
+        // Uu tien lay du lieu tu notification, fallback sang data
+        val title = notifTitle ?: dataTitle ?: "EasyShop"
+        val body = notifBody ?: dataBody ?: ""
+
+        if (title.isNotBlank() || body.isNotBlank()) {
+            NotificationHelper.show(applicationContext, title, body, dataType)
+            Log.d("FcmService", "Hien thong bao: $title - $body")
         }
     }
 }

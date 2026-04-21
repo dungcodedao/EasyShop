@@ -28,6 +28,8 @@ android {
     val beeknoeeBaseUrl = localProperties.getProperty("BEEKNOEE_BASE_URL") ?: "https://platform.beeknoee.com/api/v1"
     val beeknoeeModel = localProperties.getProperty("BEEKNOEE_MODEL") ?: "deepseek-chat"
     val sepayToken = localProperties.getProperty("SEPAY_TOKEN") ?: ""
+    val cloudinaryCloudName = localProperties.getProperty("CLOUDINARY_CLOUD_NAME") ?: ""
+    val cloudinaryUploadPreset = localProperties.getProperty("CLOUDINARY_UPLOAD_PRESET") ?: ""
 
     defaultConfig {
         applicationId = "com.example.easyshop"
@@ -43,6 +45,8 @@ android {
         buildConfigField("String", "BEEKNOEE_BASE_URL", "\"$beeknoeeBaseUrl\"")
         buildConfigField("String", "BEEKNOEE_MODEL", "\"$beeknoeeModel\"")
         buildConfigField("String", "SEPAY_TOKEN", "\"$sepayToken\"")
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"$cloudinaryCloudName\"")
+        buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"$cloudinaryUploadPreset\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -73,6 +77,21 @@ android {
             "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
         )
     }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE"
+            excludes += "META-INF/LICENSE.txt"
+            excludes += "META-INF/license.txt"
+            excludes += "META-INF/NOTICE"
+            excludes += "META-INF/NOTICE.txt"
+            excludes += "META-INF/notice.txt"
+            excludes += "META-INF/ASL2.0"
+            excludes += "META-INF/INDEX.LIST"
+        }
+    }
 }
 
 dependencies {
@@ -81,6 +100,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.appcompat)
+    
+    // Google Auth Library cho FCM V1
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.23.0")
 
     // Compose BOM
     implementation(platform(libs.androidx.compose.bom))
@@ -129,6 +151,9 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.firebase.appcheck.debug)
     implementation(libs.firebase.appcheck.playintegrity)
+    implementation(libs.androidx.compose.animation)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.runtime)
 
     // Testing
     testImplementation(libs.junit)

@@ -16,5 +16,6 @@ data class OrderModel(
     val total: Double = 0.0,                    // Final total amount
     val status: String = "ORDERED",             // ORDERED, SHIPPING, DELIVERED, CANCELLED
     val address: String = "",                   // Shipping address
-    val paymentMethod: String = "COD"           // Payment method
+    val paymentMethod: String = "COD",           // Payment method
+    val note: String = ""                       // Customer note to shop
 )

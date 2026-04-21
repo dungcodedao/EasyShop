@@ -39,27 +39,33 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    private fun initData() {
-        viewModelScope.launch {
-            _screenState.value = ScreenState.LOADING
-            try {
-                // Fetch banners and categories in parallel using coroutines
-                val bannersJob = firestore.collection("data").document("banners").get()
-                val categoriesJob = firestore.collection("data").document("stock").collection("categories").get()
-                
-                val bannersResult = bannersJob.await()
-                val categoriesResult = categoriesJob.await()
-                
-                @Suppress("UNCHECKED_CAST")
-                val bannerUrls = bannersResult.get("urls") as? List<String> ?: emptyList()
-                val categoryList = categoriesResult.documents.mapNotNull { it.toObject(CategoryModel::class.java) }
-                
-                _banners.value = bannerUrls
-                _categories.value = categoryList
-                _screenState.value = ScreenState.SUCCESS
-            } catch (e: Exception) {
-                _screenState.value = ScreenState.ERROR
-            }
+    private suspend fun initData() {
+        _screenState.value = ScreenState.LOADING
+        try {
+            // Fetch banners and categories in parallel using coroutines
+            val bannersJob = firestore.collection("data").document("banners").get()
+            val categoriesJob = firestore.collection("data").document("stock").collection("categories").get()
+            
+            val bannersResult = bannersJob.await()
+            val categoriesResult = categoriesJob.await()
+            
+            @Suppress("UNCHECKED_CAST")
+            val bannerUrls = bannersResult.get("urls") as? List<String> ?: emptyList()
+            val categoryList = categoriesResult.documents.mapNotNull { it.toObject(CategoryModel::class.java) }
+            
+            _banners.value = bannerUrls
+            _categories.value = categoryList
+            
+            // Cập nhật lại sản phẩm test với STK mới
+            firestore.collection("data").document("stock")
+                .collection("products").document("TEST_PROD_2K")
+                .update(mapOf(
+                    "images" to listOf("https://img.vietqr.io/image/MB-1520115052003-compact2.png")
+                ))
+            
+            _screenState.value = ScreenState.SUCCESS
+        } catch (e: Exception) {
+            _screenState.value = ScreenState.ERROR
         }
     }
 }

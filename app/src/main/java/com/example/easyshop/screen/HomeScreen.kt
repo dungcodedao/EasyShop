@@ -1,6 +1,9 @@
 package com.example.easyshop.screen
 
+import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -32,6 +35,9 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -75,6 +81,20 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavController) {
 
     var selectedIndex by rememberSaveable { mutableStateOf(0) }
     var isSearching by rememberSaveable { mutableStateOf(false) }
+    var showExitDialog by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    // Chặn phím Back để hiện Dialog xác nhận thoát
+    BackHandler(enabled = !isSearching) { // Chỉ hiện khi không ở chế độ tìm kiếm
+        showExitDialog = true
+    }
+
+    if (showExitDialog) {
+        ExitConfirmationDialog(
+            onConfirm = { (context as? Activity)?.finish() },
+            onDismiss = { showExitDialog = false }
+        )
+    }
 
     Scaffold(
         bottomBar = {
@@ -245,4 +265,48 @@ fun ContentScreen(
             3 -> ProfilePage(Modifier.fillMaxSize(), navController = navController)
         }
     }
+}
+
+@Composable
+fun ExitConfirmationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false
+        ),
+        title = {
+            Text(
+                "Thoát EasyShop?",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Text(
+                "Bạn có chắc chắn muốn đóng ứng dụng không? Giỏ hàng của bạn vẫn sẽ được lưu lại.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Thoát", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text("Hủy", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        shape = RoundedCornerShape(24.dp),
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 8.dp
+    )
 }

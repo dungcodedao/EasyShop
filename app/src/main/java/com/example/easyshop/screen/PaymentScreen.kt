@@ -79,6 +79,7 @@ fun PaymentScreen(
     subtotal: Double = 0.0,
     discount: Double = 0.0,
     promoCode: String = "",
+    note: String = "",
     viewModel: CheckoutViewModel = viewModel()
 ) {
     var selectedPaymentMethod by remember { mutableStateOf("") }
@@ -104,6 +105,9 @@ fun PaymentScreen(
 
     LaunchedEffect(Unit) {
         viewModel.fetchData()
+        if (promoCode.isNotEmpty() && discount > 0) {
+            viewModel.setDiscountInfo(promoCode, discount)
+        }
     }
 
     // Tự động bật/tắt quét thanh toán SePay
@@ -260,34 +264,38 @@ fun PaymentScreen(
                 .padding(horizontal = 16.dp, vertical = 2.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Chỉ hiện nút thanh toán cho các phương thức không phải QR hoặc khi MB đã nhận tiền
-            if (selectedPaymentMethod != "MoMo QR" && (selectedPaymentMethod != "MB" || isPaymentConfirmed)) {
+            // Luôn hiện nút thanh toán khi đã chọn phương thức
+            if (selectedPaymentMethod != "") {
                 Button(
                     onClick = {
                         if (!isNetworkAvailable) return@Button
                         when (selectedPaymentMethod) {
                             "MB" -> {
-                                if (isPaymentConfirmed) viewModel.placeOrder(selectedPaymentMethod)
+                                if (isPaymentConfirmed) {
+                                    viewModel.placeOrder(selectedPaymentMethod, note)
+                                } else {
+                                    // Chủ động kiểm tra thanh toán ngay lập tức
+                                    viewModel.verifySePayPayment(totalAmount)
+                                }
                             }
-                            "MoMo QR" -> viewModel.placeOrder(selectedPaymentMethod)
+                            "MoMo QR" -> viewModel.placeOrder(selectedPaymentMethod, note)
                             "Credit Card" -> {
                                 val isSuccess = cardNumber.replace(" ", "") == "4111111111111111"
-                                if (isSuccess) viewModel.placeOrder("Credit Card")
+                                if (isSuccess) viewModel.placeOrder("Credit Card", note)
                                 else AppUtil.showToast(context, context.getString(R.string.test_card_hint))
                             }
-                            else -> viewModel.placeOrder(selectedPaymentMethod)
+                            else -> viewModel.placeOrder(selectedPaymentMethod, note)
                         }
                     },
                     enabled = !isProcessing && !isPaymentChecking && isNetworkAvailable && 
-                        isFormValid(selectedPaymentMethod, cardNumber, cardName, expiryDate, cvv) &&
-                        (selectedPaymentMethod != "MB" || isPaymentConfirmed),
+                        isFormValid(selectedPaymentMethod, cardNumber, cardName, expiryDate, cvv),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
                         .padding(horizontal = 16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (selectedPaymentMethod == "MB" && !isPaymentConfirmed) 
-                            Color(0xFF94A3B8) else Color(0xFF4F46E5),
+                            Color(0xFF6366F1) else Color(0xFF4F46E5),
                         disabledContainerColor = Color(0xFFE2E8F0),
                         disabledContentColor = Color(0xFF64748B)
                     ),
@@ -297,7 +305,8 @@ fun PaymentScreen(
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                     } else {
                         val buttonText = when (selectedPaymentMethod) {
-                            "MB" -> if (isPaymentConfirmed) "Đã nhận tiền - Nhấn để Hoàn tất" else "Đang chờ thanh toán..."
+                            "MB" -> if (isPaymentConfirmed) "Đã nhận tiền - Nhấn để Hoàn tất" else "Kiểm tra thanh toán"
+                            "MoMo QR" -> "Xác nhận đã chuyển tiền"
                             else -> stringResource(R.string.payment) + " " + AppUtil.formatPrice(totalAmount)
                         }
                         Text(

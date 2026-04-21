@@ -10,7 +10,10 @@ data class PromoCodeModel (
     val expiryDate: Long = 0L,
     val active: Boolean = true,
     val usageLimit: Int = -1, // -1 = không giới hạn
-    val usedCount: Int = 0
+    val usedCount: Int = 0,
+    val isIssued: Boolean = false,
+    val issuedAt: Long = 0L,
+    val docId: String = "" // Trường này để lưu ID tài liệu Firestore
 )
 
 /**

@@ -46,10 +46,40 @@ fun ManagePromoCodesScreen(
         isLoading = true
         firestore.collection("promoCodes").get()
             .addOnSuccessListener { result ->
-                promoCodes = result.documents.mapNotNull { it.toObject(PromoCodeModel::class.java) }
+                promoCodes = result.documents.mapNotNull { it.toObject(PromoCodeModel::class.java)?.copy(docId = it.id) }
                 isLoading = false
             }
             .addOnFailureListener { isLoading = false }
+    }
+
+    // Hàm gửi thông báo quảng bá tới người dùng khi phát hành mã
+    fun broadcastPromoNotification(promo: PromoCodeModel) {
+        val title = "Ưu đãi mới từ EasyShop!"
+        val body = "Mã [${promo.code}] đã sẵn sàng. Nhận ngay ưu đãi: ${promo.description}"
+
+        val notif = hashMapOf(
+            "userId" to "broadcast",
+            "title" to title,
+            "body" to body,
+            "type" to "PROMO",
+            "isRead" to false,
+            "recipientRole" to "user",
+            "createdAt" to com.google.firebase.Timestamp.now()
+        )
+        firestore.collection("notifications").add(notif)
+            .addOnSuccessListener {
+                AppUtil.showSuccess("Đã phát hành và gửi thông báo tới người dùng!")
+            }
+            .addOnFailureListener { e ->
+                AppUtil.showError("Lỗi gửi thông báo: ${e.message}")
+            }
+
+        // Gửi FCM push tới tất cả user (hoạt động kể cả khi app đã tắt)
+        com.example.easyshop.services.FcmSender.sendToAllUsers(
+            title = title,
+            body = body,
+            type = "PROMO"
+        )
     }
 
     LaunchedEffect(Unit) { loadPromoCodes() }
@@ -94,17 +124,28 @@ fun ManagePromoCodesScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(items = promoCodes, key = { it.code }) { promo ->
+                    items(items = promoCodes, key = { it.docId.ifBlank { it.code } }) { promo ->
                         PromoCodeItem(
                             promo = promo,
                             onToggleActive = {
-                                firestore.collection("promoCodes").document(promo.code)
+                                firestore.collection("promoCodes").document(promo.docId)
                                     .update("active", !promo.active)
                                     .addOnSuccessListener { loadPromoCodes() }
                             },
+                            onPublish = {
+                                firestore.collection("promoCodes").document(promo.docId)
+                                    .update("isIssued", true, "issuedAt", System.currentTimeMillis())
+                                    .addOnSuccessListener {
+                                        loadPromoCodes()
+                                        broadcastPromoNotification(promo)
+                                    }
+                                    .addOnFailureListener { e ->
+                                        AppUtil.showError("Lỗi phát hành: ${e.message}")
+                                    }
+                            },
                             onEdit = { editingPromo = promo },
                             onDelete = {
-                                firestore.collection("promoCodes").document(promo.code).delete()
+                                firestore.collection("promoCodes").document(promo.docId).delete()
                                     .addOnSuccessListener {
                                         loadPromoCodes()
                                         AppUtil.showSuccess(context.getString(R.string.deleted_promo_msg, promo.code))
@@ -121,6 +162,7 @@ fun ManagePromoCodesScreen(
         AddPromoCodeDialog(
             onDismiss = { showAddDialog = false },
             onConfirm = { newPromo ->
+                // Sử dụng chính code làm ID tài liệu cho các mã mới để dữ liệu gọn gàng
                 firestore.collection("promoCodes").document(newPromo.code).set(newPromo)
                     .addOnSuccessListener {
                         showAddDialog = false; loadPromoCodes()
@@ -139,7 +181,7 @@ fun ManagePromoCodesScreen(
             promo = promo,
             onDismiss = { editingPromo = null },
             onConfirm = { updated ->
-                firestore.collection("promoCodes").document(promo.code)
+                firestore.collection("promoCodes").document(promo.docId)
                     .update(
                         mapOf(
                             "description" to updated.description,
@@ -154,10 +196,10 @@ fun ManagePromoCodesScreen(
                     .addOnSuccessListener {
                         editingPromo = null
                         loadPromoCodes()
-                        AppUtil.showSuccess("Cập nhật mã ${promo.code} thành công!")
+                        AppUtil.showSuccess(context.getString(R.string.updated_promo_msg, promo.code))
                     }
                     .addOnFailureListener {
-                        AppUtil.showError("Lỗi khi cập nhật")
+                        AppUtil.showError(context.getString(R.string.error_updating_promo))
                     }
             }
         )
@@ -168,6 +210,7 @@ fun ManagePromoCodesScreen(
 fun PromoCodeItem(
     promo: PromoCodeModel,
     onToggleActive: () -> Unit,
+    onPublish: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -230,6 +273,11 @@ fun PromoCodeItem(
                     colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF4CAF50), checkedTrackColor = Color(0xFF4CAF50).copy(alpha = 0.3f))
                 )
                 Row {
+                    if (!promo.isIssued) {
+                        IconButton(onClick = onPublish) {
+                            Icon(Icons.Default.Campaign, null, tint = Color(0xFFFF9800))
+                        }
+                    }
                     IconButton(onClick = onEdit) {
                         Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
                     }
@@ -300,7 +348,8 @@ fun AddPromoCodeDialog(onDismiss: () -> Unit, onConfirm: (PromoCodeModel) -> Uni
                     val expiryLong = if (expiryDays.isNotBlank()) System.currentTimeMillis() + (expiryDays.toLong() * 24 * 60 * 60 * 1000) else 0L
                     onConfirm(PromoCodeModel(code = code, type = type, value = value.toDoubleOrNull() ?: 0.0, description = description,
                         minOrder = minOrder.toDoubleOrNull() ?: 0.0, maxDiscount = maxDiscount.toDoubleOrNull() ?: 0.0,
-                        expiryDate = expiryLong, usageLimit = usageLimit.toIntOrNull() ?: -1, active = true))
+                        expiryDate = expiryLong, usageLimit = usageLimit.toIntOrNull() ?: -1, active = true, 
+                        isIssued = false, issuedAt = 0L))
                 },
                 shape = RoundedCornerShape(12.dp)
             ) { Text(stringResource(id = R.string.create_btn)) }
@@ -332,7 +381,7 @@ fun EditPromoCodeDialog(
         onDismissRequest = onDismiss,
         title = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Chinh sua ma giam gia", fontWeight = FontWeight.Bold)
+                Text(stringResource(id = R.string.edit_promo_code_title), fontWeight = FontWeight.Bold)
                 Surface(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
                     Text(promo.code, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
@@ -372,17 +421,17 @@ fun EditPromoCodeDialog(
                         modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp))
                 }
                 OutlinedTextField(value = expiryDays, onValueChange = { expiryDays = it },
-                    label = { Text("Gia han them (ngay)") },
+                    label = { Text(stringResource(id = R.string.extend_days_label)) },
                     supportingText = {
                         if (promo.expiryDate > 0)
-                            Text("HSD hien tai: ${dateFormat.format(Date(promo.expiryDate))}", style = MaterialTheme.typography.labelSmall)
+                            Text(stringResource(id = R.string.current_expiry_label, dateFormat.format(Date(promo.expiryDate))), style = MaterialTheme.typography.labelSmall)
                     },
                     modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp))
                 Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(10.dp)) {
                     Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Group, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.width(8.dp))
-                        Text("Da dung: ${promo.usedCount} luot (khong the sua)",
+                        Text(stringResource(id = R.string.used_count_readonly, promo.usedCount),
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
@@ -400,10 +449,12 @@ fun EditPromoCodeDialog(
                         minOrder = minOrder.toDoubleOrNull() ?: 0.0,
                         maxDiscount = maxDiscount.toDoubleOrNull() ?: 0.0,
                         usageLimit = usageLimit.toIntOrNull() ?: -1,
-                        expiryDate = newExpiry))
+                        expiryDate = newExpiry,
+                        isIssued = promo.isIssued,
+                        issuedAt = promo.issuedAt))
                 },
                 shape = RoundedCornerShape(12.dp)
-            ) { Text("Luu thay doi") }
+            ) { Text(stringResource(id = R.string.save_changes_btn)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(id = R.string.cancel)) } }
     )

@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.easyshop.R
+import com.example.easyshop.ScreenState
 import com.example.easyshop.model.ProductModel
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
@@ -49,22 +50,26 @@ fun SearchView(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var allProducts by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
     var filteredProducts by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
+    var screenState by remember { mutableStateOf(ScreenState.LOADING) }
 
     val gridState = rememberLazyGridState()
 
-    LaunchedEffect(key1 = Unit) {
-        isLoading = true
+    fun fetchSearchData() {
+        screenState = ScreenState.LOADING
         Firebase.firestore.collection("data")
             .document("stock")
             .collection("products")
             .get().addOnSuccessListener { snapshot ->
                 val list = snapshot.documents.mapNotNull { it.toObject(ProductModel::class.java) }
                 allProducts = list
-                isLoading = false
+                screenState = if (list.isEmpty()) ScreenState.EMPTY else ScreenState.SUCCESS
             }.addOnFailureListener {
-                isLoading = false
+                screenState = ScreenState.ERROR
             }
+    }
+
+    LaunchedEffect(key1 = Unit) {
+        fetchSearchData()
     }
 
     LaunchedEffect(searchQuery, allProducts) {
@@ -79,7 +84,7 @@ fun SearchView(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        // Search Bar
+        // Search Bar - Always Visible
         Surface(
             tonalElevation = 2.dp,
             shadowElevation = 2.dp,
@@ -111,42 +116,52 @@ fun SearchView(
             }
         }
 
-        if (isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            }
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.padding(horizontal = 8.dp),
-                state = gridState,
-                contentPadding = PaddingValues(bottom = 100.dp)
-            ) {
-                if (filteredProducts.isEmpty()) {
-                    item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().height(400.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    imageVector = Icons.Default.SearchOff,
-                                    contentDescription = null,
-                                    modifier = Modifier.height(72.dp).fillMaxWidth(0.25f),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                )
-                                Spacer(Modifier.height(16.dp))
-                                Text(
-                                    text = stringResource(id = R.string.no_products_found),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+        Box(modifier = Modifier.fillMaxSize()) {
+            when (screenState) {
+                ScreenState.LOADING -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+                ScreenState.ERROR -> {
+                    ErrorStateView(
+                        onRetry = { fetchSearchData() }
+                    )
+                }
+                else -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        state = gridState,
+                        contentPadding = PaddingValues(bottom = 100.dp)
+                    ) {
+                        if (filteredProducts.isEmpty()) {
+                            item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().height(400.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(
+                                            imageVector = Icons.Default.SearchOff,
+                                            contentDescription = null,
+                                            modifier = Modifier.height(72.dp).fillMaxWidth(0.25f),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                        )
+                                        Spacer(Modifier.height(16.dp))
+                                        Text(
+                                            text = stringResource(id = R.string.no_products_found),
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            items(filteredProducts, key = { it.id }) { product ->
+                                ProductItemView(product = product)
                             }
                         }
-                    }
-                } else {
-                    items(filteredProducts, key = { it.id }) { product ->
-                        ProductItemView(product = product)
                     }
                 }
             }

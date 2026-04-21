@@ -60,10 +60,10 @@ fun HeaderView(
                 avatarUrl = doc.getString("profileImg") ?: ""
             }
 
-        // Theo dõi số lượng thông báo chưa đọc
+        // Theo dõi số lượng thông báo chưa đọc (cả cá nhân và broadcast)
         Firebase.firestore.collection("notifications")
             .whereEqualTo("recipientRole", "user")
-            .whereEqualTo("userId", uid)
+            .whereIn("userId", listOf(uid, "broadcast"))
             .whereEqualTo("isRead", false)
             .addSnapshotListener { snapshot, _ ->
                 if (snapshot != null) {

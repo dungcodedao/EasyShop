@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Category
@@ -42,6 +43,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import com.example.easyshop.R
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -59,7 +61,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
-import com.example.easyshop.R
 import com.example.easyshop.model.AdminMenuItem
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -78,6 +79,7 @@ fun AdminDashboardScreen(
     var totalUsers by remember { mutableStateOf(0) }
     var totalCategories by remember { mutableStateOf(0) }
     var unreadNotifCount by remember { mutableIntStateOf(0) }
+    var unreadChatCount by remember { mutableIntStateOf(0) }
 
     val firestore = Firebase.firestore
     val currentUser = FirebaseAuth.getInstance().currentUser
@@ -124,6 +126,13 @@ fun AdminDashboardScreen(
             .addSnapshotListener { snap, _ ->
                 unreadNotifCount = snap?.size() ?: 0
             }
+
+        // Realtime lắng nghe tin nhắn chưa đọc
+        firestore.collection("chats")
+            .whereGreaterThan("unreadCountByAdmin", 0)
+            .addSnapshotListener { snap, _ ->
+                unreadChatCount = snap?.size() ?: 0
+            }
     }
 
     val menuItems = listOf(
@@ -132,6 +141,7 @@ fun AdminDashboardScreen(
         AdminMenuItem(stringResource(id = R.string.orders), Icons.Default.ShoppingBag, "orders-management", Color(0xFFFF9800), pendingOrders),
         AdminMenuItem(stringResource(id = R.string.categories), Icons.Default.Category, "manage-categories", Color(0xFF9C27B0), totalCategories),
         AdminMenuItem(stringResource(id = R.string.analytics), Icons.Default.Analytics, "analytics", Color(0xFF00BCD4)),
+        AdminMenuItem(stringResource(id = R.string.admin_chat_title), Icons.AutoMirrored.Filled.Message, "admin-chat-list", Color(0xFF2E7D32), unreadChatCount),
         AdminMenuItem(stringResource(id = R.string.users), Icons.Default.People, "manage-users", Color(0xFFE91E63), totalUsers),
         AdminMenuItem(stringResource(id = R.string.promo_codes), Icons.Default.ConfirmationNumber, "manage-promo-codes", Color(0xFF673AB7))
     )

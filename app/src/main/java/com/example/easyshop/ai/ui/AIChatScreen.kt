@@ -1,7 +1,23 @@
 package com.example.easyshop.ai.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.os.Build
+import android.provider.MediaStore
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.content.MediaType
+import androidx.compose.foundation.content.contentReceiver
+import androidx.compose.foundation.content.hasMediaType
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,7 +27,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,9 +45,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.FiberManualRecord
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicNone
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -62,15 +84,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.easyshop.ai.viewmodel.AIChatViewModel
 import com.google.firebase.Timestamp
 import java.text.SimpleDateFormat
@@ -87,16 +117,71 @@ fun AIChatScreen(
     navController: NavController,
     viewModel: AIChatViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val messages by viewModel.messages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isListening by viewModel.isListening.collectAsState()
     val error by viewModel.error.collectAsState()
     val typingMessage by viewModel.typingMessage.collectAsState()
+    val speechText by viewModel.speechText.collectAsState()
+
     var inputText by remember { mutableStateOf("") }
+    var selectedImage by remember { mutableStateOf<Bitmap?>(null) }
     val listState = rememberLazyListState()
 
-    LaunchedEffect(messages.size) {
+    // Anti-spam click state
+    var lastClickTime by remember { mutableStateOf(0L) }
+    val clickThrottleMs = 600L
+
+    fun navigateSafely(route: String, singleTop: Boolean = false) {
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastClickTime > clickThrottleMs) {
+            lastClickTime = currentTime
+            navController.navigate(route) {
+                if (singleTop) {
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(speechText) {
+        if (speechText.isNotBlank()) {
+            inputText = if (inputText.isBlank()) speechText else "$inputText $speechText"
+            viewModel.clearSpeechText()
+        }
+    }
+
+    LaunchedEffect(messages.size, typingMessage) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
+        }
+    }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            uri?.let {
+                try {
+                    val bitmap = if (Build.VERSION.SDK_INT < 28) {
+                        MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+                    } else {
+                        val source = ImageDecoder.createSource(context.contentResolver, it)
+                        ImageDecoder.decodeBitmap(source)
+                    }
+                    selectedImage = bitmap
+                } catch (e: Exception) {
+                    Log.e("AIChat", "Error loading image", e)
+                }
+            }
+        }
+    )
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.startListening(context)
         }
     }
 
@@ -104,8 +189,20 @@ fun AIChatScreen(
         containerColor = Color.Transparent,
         topBar = {
             ChatTopBar(
-                onBack = { navController.popBackStack() },
-                onClear = { viewModel.clearChat() }
+                onBack = {
+                    val currentTime = System.currentTimeMillis()
+                    if (currentTime - lastClickTime > clickThrottleMs) {
+                        lastClickTime = currentTime
+                        navController.popBackStack()
+                    }
+                },
+                onClear = {
+                    val currentTime = System.currentTimeMillis()
+                    if (currentTime - lastClickTime > clickThrottleMs) {
+                        lastClickTime = currentTime
+                        viewModel.clearChat()
+                    }
+                }
             )
         },
         bottomBar = {
@@ -120,13 +217,67 @@ fun AIChatScreen(
                         ErrorMessage(error!!) { viewModel.clearError() }
                     }
 
+                    AnimatedVisibility(visible = selectedImage != null) {
+                        Box(modifier = Modifier.padding(14.dp)) {
+                            selectedImage?.let {
+                                Image(
+                                    bitmap = it.asImageBitmap(),
+                                    contentDescription = "Selected",
+                                    modifier = Modifier
+                                        .size(100.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .border(2.dp, ChatAccentStart, RoundedCornerShape(12.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+                                IconButton(
+                                    onClick = { selectedImage = null },
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = 8.dp, y = (-8).dp)
+                                        .size(24.dp)
+                                        .background(Color.Red, CircleShape)
+                                ) {
+                                    Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                }
+                            }
+                        }
+                    }
+
                     ChatInput(
                         value = inputText,
                         onValueChange = { inputText = it },
                         isLoading = isLoading,
+                        isListening = isListening,
+                        onMicClick = {
+                            val currentTime = System.currentTimeMillis()
+                            if (currentTime - lastClickTime > clickThrottleMs) {
+                                lastClickTime = currentTime
+                                if (isListening) {
+                                    viewModel.stopListening()
+                                } else {
+                                    val permission = Manifest.permission.RECORD_AUDIO
+                                    if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
+                                        viewModel.startListening(context)
+                                    } else {
+                                        permissionLauncher.launch(permission)
+                                    }
+                                }
+                            }
+                        },
+                        onImageClick = {
+                            photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        },
+                        onImagePaste = { bitmap ->
+                            selectedImage = bitmap
+                        },
                         onSend = {
-                            if (inputText.isNotBlank() && !isLoading) {
-                                viewModel.sendMessage(inputText.trim())
+                            val textInput = inputText.trim()
+                            if (selectedImage != null) {
+                                viewModel.sendImageMessage(textInput, selectedImage!!)
+                                inputText = ""
+                                selectedImage = null
+                            } else if (textInput.isNotBlank() && !isLoading) {
+                                viewModel.sendMessage(textInput)
                                 inputText = ""
                             }
                         }
@@ -138,11 +289,7 @@ fun AIChatScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(ChatGradientTop, ChatGradientBottom)
-                    )
-                )
+                .background(Brush.verticalGradient(colors = listOf(ChatGradientTop, ChatGradientBottom)))
                 .padding(padding)
         ) {
             LazyColumn(
@@ -153,9 +300,19 @@ fun AIChatScreen(
             ) {
                 if (messages.isEmpty() && !isLoading) {
                     item { WelcomeHintCard() }
+                }
+
+                // Hiển thị gợi ý nhanh nếu chưa có tin nhắn nào từ phía USER
+                val hasUserMessage = messages.any { it.isUser }
+                if (!hasUserMessage && !isLoading) {
                     item {
                         SuggestionChips(onSuggestionClick = { suggestion ->
-                            viewModel.sendMessage(suggestion)
+                            val currentTime = System.currentTimeMillis()
+                            if (currentTime - lastClickTime > clickThrottleMs) {
+                                lastClickTime = currentTime
+                                inputText = "" // Đảm bảo xóa text khi click gợi ý
+                                viewModel.sendMessage(suggestion)
+                            }
                         })
                     }
                 }
@@ -164,7 +321,9 @@ fun AIChatScreen(
                     ChatBubble(
                         content = message.content,
                         isUser = message.isUser,
-                        timestamp = message.timestamp
+                        timestamp = message.timestamp,
+                        imageUrl = message.imageUrl,
+                        onProductClick = { navigateSafely("product-details/$it", true) }
                     )
                 }
 
@@ -176,7 +335,8 @@ fun AIChatScreen(
                             ChatBubble(
                                 content = typingMessage!! + " █",
                                 isUser = false,
-                                timestamp = null
+                                timestamp = null,
+                                onProductClick = { navigateSafely("product-details/$it", true) }
                             )
                         }
                     }
@@ -190,73 +350,38 @@ fun AIChatScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ChatTopBar(
-    onBack: () -> Unit,
-    onClear: () -> Unit
-) {
-    Surface(
-        shadowElevation = 8.dp,
-        tonalElevation = 2.dp,
-        color = MaterialTheme.colorScheme.surface
-    ) {
+private fun ChatTopBar(onBack: () -> Unit, onClear: () -> Unit) {
+    Surface(shadowElevation = 8.dp, tonalElevation = 2.dp, color = MaterialTheme.colorScheme.surface) {
         TopAppBar(
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
+                        modifier = Modifier.size(38.dp).clip(CircleShape)
                             .background(Brush.linearGradient(listOf(ChatAccentStart, ChatAccentEnd))),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            Icons.Default.AutoAwesome,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Icon(Icons.Default.AutoAwesome, null, tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
-                        Text(
-                            "Trợ lý AI",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                        )
+                        Text("Trợ lý AI", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.FiberManualRecord,
-                                contentDescription = null,
-                                tint = Color(0xFF22C55E),
-                                modifier = Modifier.size(8.dp)
-                            )
+                            Icon(Icons.Default.FiberManualRecord, null, tint = Color(0xFF22C55E), modifier = Modifier.size(8.dp))
                             Spacer(modifier = Modifier.width(5.dp))
-                            Text(
-                                "Đang online",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text("Đang online", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
             },
             navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                }
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
             },
             actions = {
                 IconButton(onClick = onClear) {
-                    Icon(
-                        Icons.Default.DeleteSweep,
-                        contentDescription = "Clear chat",
-                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
-                    )
+                    Icon(Icons.Default.DeleteSweep, "Clear chat", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f))
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent,
-                scrolledContainerColor = Color.Transparent
-            )
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
         )
     }
 }
@@ -270,145 +395,242 @@ private fun WelcomeHintCard() {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
-            Text(
-                text = "Tư vấn nhanh theo nhu cầu",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Text("Tư vấn nhanh theo nhu cầu", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = "Mô tả ngân sách, mục đích sử dụng, hoặc yêu cầu cấu hình. Mình sẽ đề xuất lựa chọn phù hợp.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 18.sp
-            )
+            Text("Hãy gửi tin nhắn, giọng nói hoặc hình ảnh sản phẩm để Shop tư vấn nhanh nhất cho bạn nhé!",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
 @Composable
-fun ChatBubble(content: String, isUser: Boolean, timestamp: Timestamp?) {
+fun ChatBubble(
+    content: String,
+    isUser: Boolean,
+    timestamp: Timestamp?,
+    imageUrl: String? = null,
+    onProductClick: (String) -> Unit
+) {
     val userBrush = Brush.linearGradient(colors = listOf(ChatAccentStart, ChatAccentEnd))
-    val aiBackground = MaterialTheme.colorScheme.surface
-    val aiBorder = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
-    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
-
     val alignment = if (isUser) Alignment.End else Alignment.Start
     val shape = RoundedCornerShape(
-        topStart = 18.dp,
-        topEnd = 18.dp,
+        topStart = 18.dp, topEnd = 18.dp,
         bottomStart = if (isUser) 18.dp else 8.dp,
         bottomEnd = if (isUser) 8.dp else 18.dp
     )
 
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = alignment
-    ) {
-        if (!isUser) {
-            Text(
-                text = "AI Tư Vấn",
-                style = MaterialTheme.typography.labelSmall,
-                color = onSurfaceVariantColor,
-                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
-            )
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = alignment) {
+        val baseMod = Modifier
+            .widthIn(max = 300.dp)
+            .shadow(if (isUser) 4.dp else 1.dp, shape)
+            .clip(shape)
+
+        val backgroundMod = if (isUser) {
+            baseMod.background(userBrush)
+        } else {
+            baseMod.background(MaterialTheme.colorScheme.surface)
+        }
+
+        val finalModifier = if (!isUser) {
+            backgroundMod.border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f), shape)
+        } else {
+            backgroundMod
         }
 
         Box(
-            modifier = Modifier
-                .widthIn(max = 330.dp)
-                .shadow(if (isUser) 3.dp else 1.dp, shape)
-                .clip(shape)
-                .then(
-                    if (isUser) {
-                        Modifier.background(userBrush)
-                    } else {
-                        Modifier
-                            .background(aiBackground)
-                            .border(1.dp, aiBorder, shape)
-                    }
-                )
-                .padding(horizontal = 14.dp, vertical = 10.dp)
+            modifier = finalModifier.padding(horizontal = 0.dp, vertical = 0.dp)
         ) {
-            MarkdownText(
-                text = content,
-                textColor = if (isUser) Color.White else MaterialTheme.colorScheme.onSurface
-            )
+            Column {
+                imageUrl?.let { url ->
+                    AsyncImage(
+                        model = url,
+                        contentDescription = "Chat Image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 240.dp)
+                            .padding(4.dp)
+                            .clip(RoundedCornerShape(14.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                if (content.isNotBlank()) {
+                    Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                        MarkdownText(
+                            text = content,
+                            textColor = if (isUser) Color.White else MaterialTheme.colorScheme.onSurface,
+                            onProductClick = onProductClick
+                        )
+                    }
+                }
+            }
         }
 
         timestamp?.let {
             val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(it.toDate())
-            Text(
-                text = time,
-                modifier = Modifier.padding(top = 4.dp, start = 4.dp, end = 4.dp),
-                style = MaterialTheme.typography.labelSmall,
-                color = onSurfaceVariantColor.copy(alpha = 0.7f)
-            )
+            Text(time, style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.7f),
+                modifier = Modifier.padding(top = 2.dp))
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChatInput(
     value: String,
     onValueChange: (String) -> Unit,
     isLoading: Boolean,
+    isListening: Boolean,
+    onMicClick: () -> Unit,
+    onImageClick: () -> Unit,
+    onImagePaste: (Bitmap) -> Unit,
     onSend: () -> Unit
 ) {
-    val canSend = value.isNotBlank() && !isLoading
+    val context = LocalContext.current
+    val clipboardManager = remember {
+        context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                as android.content.ClipboardManager
+    }
+
+    fun tryReadImageFromClipboard(): Boolean {
+        val clip = clipboardManager.primaryClip ?: run {
+            Log.d("AIChatPaste", "Clipboard trống")
+            return false
+        }
+        Log.d("AIChatPaste", "Clipboard có ${clip.itemCount} items, mimeTypes: ${
+            (0 until clip.description.mimeTypeCount).map { clip.description.getMimeType(it) }
+        }")
+
+        for (i in 0 until clip.itemCount) {
+            val uri = clip.getItemAt(i).uri
+            Log.d("AIChatPaste", "Item[$i] uri=$uri")
+            uri ?: continue
+            return try {
+                val bitmap: Bitmap = if (Build.VERSION.SDK_INT < 28) {
+                    @Suppress("DEPRECATION")
+                    MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                } else {
+                    val source = ImageDecoder.createSource(context.contentResolver, uri)
+                    ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                        decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                    }
+                }
+                Log.d("AIChatPaste", "✅ Bitmap decoded thành công: ${bitmap.width}x${bitmap.height}")
+                onImagePaste(bitmap)
+                true
+            } catch (e: Exception) {
+                Log.e("AIChatPaste", "❌ Lỗi decode: ${e.message}")
+                false
+            }
+        }
+        return false
+    }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier.weight(1f),
-            placeholder = { Text("Nhập tin nhắn...") },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
-            ),
-            shape = RoundedCornerShape(24.dp),
-            maxLines = 4,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-            keyboardActions = KeyboardActions(onSend = { onSend() })
-        )
+        IconButton(onClick = onImageClick, modifier = Modifier.size(36.dp)) {
+            Icon(Icons.Default.AddAPhoto, "Vision", tint = ChatAccentStart)
+        }
 
-        Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(4.dp))
+
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .onKeyEvent { keyEvent ->
+                    if (keyEvent.type == KeyEventType.KeyDown
+                        && keyEvent.key == Key.V
+                        && keyEvent.isCtrlPressed
+                    ) {
+                        Log.d("AIChatPaste", "Ctrl+V detected!")
+                        val handled = tryReadImageFromClipboard()
+                        Log.d("AIChatPaste", "Ctrl+V handled as image: $handled")
+                        handled // true = consume, false = pass xuống TextField (dán text)
+                    } else false
+                }
+        ) {
+            OutlinedTextField(
+                value = value,
+                onValueChange = onValueChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .contentReceiver { contentInfo ->
+                        Log.d("AIChatPaste", "contentReceiver triggered, hasImage: ${
+                            contentInfo.hasMediaType(MediaType.Image)
+                        }")
+                        if (contentInfo.hasMediaType(MediaType.Image)) {
+                            val clip = contentInfo.clipEntry.clipData
+                            for (i in 0 until clip.itemCount) {
+                                val uri = clip.getItemAt(i).uri ?: continue
+                                try {
+                                    val bitmap: Bitmap = if (Build.VERSION.SDK_INT < 28) {
+                                        @Suppress("DEPRECATION")
+                                        MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                                    } else {
+                                        val source = ImageDecoder.createSource(context.contentResolver, uri)
+                                        ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                                            decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                                        }
+                                    }
+                                    Log.d("AIChatPaste", "✅ contentReceiver: bitmap OK")
+                                    onImagePaste(bitmap)
+                                } catch (e: Exception) {
+                                    Log.e("AIChatPaste", "contentReceiver lỗi: ${e.message}")
+                                }
+                            }
+                            null // consume
+                        } else {
+                            contentInfo
+                        }
+                    },
+                placeholder = { Text(if (isListening) "Đang nghe..." else "Nhập tin nhắn...") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedBorderColor = if (isListening) Color.Red else ChatAccentStart.copy(0.5f)
+                ),
+                shape = RoundedCornerShape(24.dp),
+                maxLines = 4,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                keyboardActions = KeyboardActions(onSend = { onSend() })
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        IconButton(
+            onClick = onMicClick,
+            modifier = Modifier
+                .size(40.dp)
+                .background(
+                    if (isListening) Color.Red.copy(0.1f) else Color.Transparent,
+                    CircleShape
+                )
+        ) {
+            Icon(
+                if (isListening) Icons.Default.Mic else Icons.Default.MicNone,
+                "STT",
+                tint = if (isListening) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
         Button(
             onClick = onSend,
-            enabled = canSend,
+            enabled = (value.isNotBlank() || isLoading) && !isListening,
             shape = CircleShape,
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(44.dp),
             contentPadding = PaddingValues(0.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (canSend) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = if (canSend) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = if (canSend) 3.dp else 0.dp)
+            colors = ButtonDefaults.buttonColors(containerColor = ChatAccentStart)
         ) {
             if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White)
             } else {
-                Icon(
-                    Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Send",
-                    modifier = Modifier.size(19.dp)
-                )
+                Icon(Icons.AutoMirrored.Filled.Send, "Send", modifier = Modifier.size(20.dp))
             }
         }
     }
@@ -416,151 +638,80 @@ fun ChatInput(
 
 @Composable
 fun TypingIndicator() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Start
-    ) {
-        Surface(
-            color = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(16.dp),
-            tonalElevation = 1.dp,
-            shadowElevation = 1.dp,
-            modifier = Modifier.border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
-                shape = RoundedCornerShape(16.dp)
-            )
-        ) {
-            Text(
-                "AI đang tư vấn...",
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+    Surface(color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.padding(start = 4.dp).border(1.dp, MaterialTheme.colorScheme.outline.copy(0.1f), RoundedCornerShape(16.dp))) {
+        Text("AI đang nghĩ...", modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), style = MaterialTheme.typography.bodySmall)
     }
 }
 
 @Composable
 fun ErrorMessage(message: String, onDismiss: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = message,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onErrorContainer
-            )
-            IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
-                Text("x", color = MaterialTheme.colorScheme.onErrorContainer)
-            }
+    Card(modifier = Modifier.fillMaxWidth().padding(8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+        Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(message, modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall)
+            IconButton(onClick = onDismiss, modifier = Modifier.size(20.dp)) { Icon(Icons.Default.Close, null) }
         }
     }
 }
 
 @Composable
-fun MarkdownText(text: String, textColor: Color) {
+fun MarkdownText(text: String, textColor: Color, onProductClick: (String) -> Unit) {
     val productIds = remember(text) {
-        Regex("\\[(.*?)]")
-            .findAll(text)
+        Regex("\\[(.*?)]").findAll(text)
             .map { it.groupValues[1].trim().replace("PID_", "") }
             .filter { it.isNotBlank() }
             .distinct()
             .toList()
     }
 
-    val sanitizedLines = remember(text) {
-        text.split("\n")
-            .map { line ->
-                var output = line.trim()
-                output = output.replace(Regex("\\[(.*?)]"), "").trim()
-                if (output.startsWith("* ") || output.startsWith("- ")) {
-                    output = "- ${output.substring(2).trimStart()}"
-                }
-                output
-            }
-            .filter { it.isNotBlank() }
+    val contentWithoutPids = remember(text) {
+        text.replace(Regex("\\[(.*?)]"), "").trim()
     }
 
     Column {
-        sanitizedLines.forEach { line ->
-            val annotatedString = buildAnnotatedString {
-                val boldRegex = Regex("\\*\\*(.*?)\\*\\*")
-                var currentIndex = 0
-                var matchResult = boldRegex.find(line, currentIndex)
-
-                while (matchResult != null) {
-                    append(line.substring(currentIndex, matchResult.range.first))
-                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                        append(matchResult.groupValues[1])
-                    }
-                    currentIndex = matchResult.range.last + 1
-                    matchResult = boldRegex.find(line, currentIndex)
-                }
-
-                if (currentIndex < line.length) {
-                    append(line.substring(currentIndex))
-                }
-            }
-
-            Text(
-                text = annotatedString,
-                color = textColor,
-                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 21.sp),
-                modifier = Modifier.padding(vertical = 1.dp)
-            )
-        }
+        Text(
+            text = parseMarkdown(contentWithoutPids),
+            color = textColor,
+            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp)
+        )
 
         if (productIds.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(end = 4.dp)
+                modifier = Modifier.padding(top = 10.dp)
             ) {
                 items(productIds.take(3)) { productId ->
                     AssistChip(
-                        onClick = {
-                            com.example.easyshop.util.GlobalNavigation.navController.navigate("product-details/$productId")
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.ShoppingCart,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        },
-                        label = {
-                            Text(
-                                text = "Xem sản phẩm",
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        },
+                        onClick = { onProductClick(productId) },
+                        label = { Text("Xem sản phẩm", fontWeight = FontWeight.Bold) },
+                        leadingIcon = { Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(16.dp)) },
                         colors = AssistChipDefaults.assistChipColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
-                            labelColor = MaterialTheme.colorScheme.primary,
-                            leadingIconContentColor = MaterialTheme.colorScheme.primary
-                        ),
-                        shape = RoundedCornerShape(12.dp)
+                            labelColor = ChatAccentStart,
+                            leadingIconContentColor = ChatAccentStart
+                        )
                     )
                 }
             }
+        }
+    }
+}
 
-            if (productIds.size > 3) {
-                Text(
-                    text = "+${productIds.size - 3} sản phẩm khác",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
-                    modifier = Modifier.padding(top = 4.dp, start = 2.dp)
-                )
+@Composable
+private fun parseMarkdown(text: String): androidx.compose.ui.text.AnnotatedString {
+    val words = text.split(Regex("(?<=\\*\\*)|(?=\\*\\*)"))
+    return androidx.compose.ui.text.buildAnnotatedString {
+        var isBold = false
+        words.forEach { word ->
+            if (word == "**") {
+                isBold = !isBold
+            } else {
+                if (isBold) {
+                    pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold))
+                    append(word)
+                    pop()
+                } else {
+                    append(word)
+                }
             }
         }
     }
@@ -568,47 +719,10 @@ fun MarkdownText(text: String, textColor: Color) {
 
 @Composable
 fun SuggestionChips(onSuggestionClick: (String) -> Unit) {
-    val suggestions = listOf(
-        "Tư vấn laptop tầm 15 triệu",
-        "So sánh 2 mẫu gaming PC",
-        "Máy nào đang có deal tốt",
-        "Gợi ý cấu hình cho đồ họa",
-        "Nên mua iPhone nào hiện tại"
-    )
-
-    Column {
-        Text(
-            text = "Gợi ý nhanh",
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 2.dp, bottom = 8.dp)
-        )
-
-        LazyRow(
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(end = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(suggestions) { suggestion ->
-                AssistChip(
-                    onClick = { onSuggestionClick(suggestion) },
-                    label = { Text(suggestion, style = MaterialTheme.typography.labelMedium) },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                        labelColor = MaterialTheme.colorScheme.primary,
-                        leadingIconContentColor = MaterialTheme.colorScheme.primary
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
+    val suggestions = listOf("Laptop 15 triệu", "PC Gaming", "Deal tốt", "iPhone đời mới")
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        items(suggestions) { s ->
+            AssistChip(onClick = { onSuggestionClick(s) }, label = { Text(s) })
         }
     }
 }

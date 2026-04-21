@@ -18,11 +18,16 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.initialize
 
 class EasyShopApplication : Application(), ImageLoaderFactory {
+    companion object {
+        lateinit var instance: EasyShopApplication
+            private set
+    }
 
     private var notifListener: ListenerRegistration? = null
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
 
         // Khởi tạo Firebase App Check
         Firebase.initialize(this)

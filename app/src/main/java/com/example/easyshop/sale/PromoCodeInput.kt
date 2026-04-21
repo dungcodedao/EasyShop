@@ -73,11 +73,10 @@ fun PromoCodeInput(
                         onClick = {
                             val trimmedCode = promoCode.trim()
                             if (trimmedCode.isBlank()) {
-                                Toast.makeText(
+                                com.example.easyshop.AppUtil.showToast(
                                     context,
-                                    "Vui lòng nhập mã giảm giá",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                    "Vui lòng nhập mã giảm giá"
+                                )
                                 return@TextButton
                             }
 
@@ -89,20 +88,18 @@ fun PromoCodeInput(
                                         appliedPromo = result.promo
                                         isPromoError = false
                                         errorText = ""
-                                        Toast.makeText(
+                                        com.example.easyshop.AppUtil.showToast(
                                             context,
-                                            "Áp dụng mã thành công!",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                                            "Áp dụng mã thành công!"
+                                        )
                                     }
                                     is PromoResult.Error -> {
                                         isPromoError = true
                                         errorText = result.message
-                                        Toast.makeText(
+                                        com.example.easyshop.AppUtil.showToast(
                                             context,
-                                            result.message,
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                                            result.message
+                                        )
                                     }
                                 }
                             }

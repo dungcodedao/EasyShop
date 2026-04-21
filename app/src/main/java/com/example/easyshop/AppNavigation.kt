@@ -27,6 +27,9 @@ import com.example.easyshop.admin.ManagePromoCodesScreen
 import com.example.easyshop.admin.ManageUsersScreen
 import com.example.easyshop.admin.OrdersManagementScreen
 import com.example.easyshop.ai.ui.AIChatScreen
+import com.example.easyshop.admin.ui.AdminChatDetailScreen
+import com.example.easyshop.admin.ui.AdminChatListScreen
+import com.example.easyshop.chat.ui.ChatWithShopScreen
 import com.example.easyshop.model.UserModel
 import com.example.easyshop.components.LoadingView
 import com.example.easyshop.pages.AddProductPage
@@ -130,18 +133,23 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             }
 
             composable(
-                route = "payment/{totalAmount}/{subtotal}/{discount}/{promoCode}",
+                route = "payment/{totalAmount}/{subtotal}/{discount}/{promoCode}?note={note}",
                 arguments = listOf(
                     navArgument("totalAmount") { type = NavType.FloatType },
                     navArgument("subtotal") { type = NavType.FloatType },
                     navArgument("discount") { type = NavType.FloatType },
-                    navArgument("promoCode") { type = NavType.StringType }
+                    navArgument("promoCode") { type = NavType.StringType },
+                    navArgument("note") { 
+                        type = NavType.StringType
+                        defaultValue = ""
+                    }
                 )
             ) { backStackEntry ->
                 val totalAmount = backStackEntry.arguments?.getFloat("totalAmount") ?: 0.0f
                 val subtotal = backStackEntry.arguments?.getFloat("subtotal") ?: 0.0f
                 val discount = backStackEntry.arguments?.getFloat("discount") ?: 0.0f
                 val promoCode = backStackEntry.arguments?.getString("promoCode") ?: ""
+                val note = backStackEntry.arguments?.getString("note") ?: ""
                 
                 PaymentScreen(
                     modifier = modifier,
@@ -149,7 +157,8 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     totalAmount = totalAmount.toDouble(),
                     subtotal = subtotal.toDouble(),
                     discount = discount.toDouble(),
-                    promoCode = promoCode
+                    promoCode = promoCode,
+                    note = note
                 )
             }
 
@@ -235,6 +244,31 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             // User Profile (Giữ lại nếu cần cho luồng khác)
             composable("profile") {
                 ProfilePage(modifier, navController)
+            }
+
+            // --- CHAT WITH SHOP ROUTES ---
+            composable(
+                route = "chat-with-shop?message={message}",
+                arguments = listOf(navArgument("message") { 
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) { backStackEntry ->
+                val message = backStackEntry.arguments?.getString("message")
+                ChatWithShopScreen(navController, initialMessage = message)
+            }
+
+            composable("admin-chat-list") {
+                AdminChatListScreen(navController)
+            }
+
+            composable(
+                route = "admin-chat-detail/{userId}",
+                arguments = listOf(navArgument("userId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getString("userId") ?: ""
+                AdminChatDetailScreen(navController, userId)
             }
             }
 
