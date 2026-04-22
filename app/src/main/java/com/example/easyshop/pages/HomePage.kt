@@ -87,7 +87,7 @@ fun HomePage(
                         Spacer(Modifier.height(20.dp))
 
                         // Banner
-                        BannerView(viewModel = viewModel, modifier = Modifier.height(160.dp))
+                        BannerView(viewModel = viewModel)
 
                         Spacer(Modifier.height(24.dp))
 

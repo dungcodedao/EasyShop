@@ -30,19 +30,21 @@ fun FavoritePage(
     val isLoading by viewModel.isLoading.collectAsState()
     val screenState by viewModel.screenState.collectAsState()
 
+    LaunchedEffect(Unit) {
+        viewModel.fetchFavorites()
+    }
+
     Scaffold(
         topBar = {
-            if (screenState == ScreenState.SUCCESS) {
-                TopAppBar(
-                    title = {
-                        Text(
-                            stringResource(id = R.string.favorites),
-                            fontWeight = FontWeight.Bold
-                        )
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
-                )
-            }
+            TopAppBar(
+                title = {
+                    Text(
+                        stringResource(id = R.string.favorites),
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+            )
         }
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {

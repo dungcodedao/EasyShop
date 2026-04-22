@@ -52,8 +52,11 @@ fun CategoriesView(
             }
         }
     } else {
-        // Lưới 2 hàng x 3 cột
-        val rows = remember(categoryList) { categoryList.chunked(3) }
+        // Lưới 2 hàng x 3 cột, lọc bỏ danh mục "Test"
+        val filteredList = remember(categoryList) { 
+            categoryList.filter { !it.name.equals("Test", ignoreCase = true) } 
+        }
+        val rows = remember(filteredList) { filteredList.chunked(3) }
         Column(
             modifier = modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp)

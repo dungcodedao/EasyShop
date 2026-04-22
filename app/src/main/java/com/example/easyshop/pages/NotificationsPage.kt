@@ -26,9 +26,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.easyshop.AppUtil
+import com.example.easyshop.components.PromoSection
 import com.example.easyshop.model.NotificationModel
+import com.example.easyshop.model.PromoCodeModel
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import java.text.SimpleDateFormat
@@ -72,8 +76,11 @@ fun NotificationsPage(navController: NavController) {
     val db = FirebaseFirestore.getInstance()
 
     var notifications by remember { mutableStateOf<List<NotificationModel>>(emptyList()) }
+    var promos by remember { mutableStateOf<List<PromoCodeModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var unreadCount by remember { mutableIntStateOf(0) }
+
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     // Load data from Firestore
     LaunchedEffect(uid) {
@@ -100,6 +107,30 @@ fun NotificationsPage(navController: NavController) {
         } else {
             isLoading = false
         }
+
+        // Load promos
+        db.collection("promoCodes")
+            .whereEqualTo("active", true)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                promos = snapshot.documents.mapNotNull { it.toObject(PromoCodeModel::class.java) }
+            }
+    }
+
+    // Function to save promo code
+    fun savePromoCode(code: String) {
+        if (uid == null) {
+            AppUtil.showToast(context, "Vui lòng đăng nhập để lưu mã")
+            return
+        }
+        db.collection("users").document(uid)
+            .update("savedPromoCodes", FieldValue.arrayUnion(code))
+            .addOnSuccessListener {
+                AppUtil.showSuccess("Đã lưu mã giảm giá vào ví!")
+            }
+            .addOnFailureListener {
+                AppUtil.showError("Lỗi", "Không thể lưu mã giảm giá")
+            }
     }
 
     // Hàm đánh dấu 1 thông báo đã đọc
@@ -195,7 +226,18 @@ fun NotificationsPage(navController: NavController) {
                                 totalCount = notifications.size,
                                 unreadCount = unreadCount
                             )
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(16.dp))
+                        }
+
+                        // Promo Section in Notifications
+                        item {
+                            if (promos.isNotEmpty()) {
+                                PromoSection(
+                                    promos = promos,
+                                    onCollect = { code -> savePromoCode(code) }
+                                )
+                                Spacer(Modifier.height(8.dp))
+                            }
                         }
 
                         items(notifications, key = { it.id }) { notif ->

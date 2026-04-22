@@ -15,12 +15,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.easyshop.model.PromoCodeModel
+import com.example.easyshop.components.VoucherSelectionSheet
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
+import androidx.compose.material.icons.filled.ConfirmationNumber
 
 @Composable
 fun PromoCodeInput(
     subtotal: Float,
+    savedVouchers: List<PromoCodeModel> = emptyList(),
     onDiscountApplied: (Float, String) -> Unit, // Bây giờ trả về cả số tiền và mã code
     modifier: Modifier = Modifier
 ) {
@@ -30,6 +33,7 @@ fun PromoCodeInput(
     var isPromoError by remember { mutableStateOf(false) }
     var errorText by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    var showVoucherSheet by remember { mutableStateOf(false) }
 
     // Calculate discount based on applied promo
     val discountAmount: Float = appliedPromo?.let { promo ->
@@ -67,6 +71,15 @@ fun PromoCodeInput(
             placeholder = { Text("Nhập mã tại đây") },
             modifier = Modifier.fillMaxWidth(),
             isError = isPromoError,
+            leadingIcon = {
+                IconButton(onClick = { showVoucherSheet = true }) {
+                    Icon(
+                        Icons.Default.ConfirmationNumber,
+                        contentDescription = "Ví Voucher",
+                        tint = if (savedVouchers.isNotEmpty()) Color(0xFF4F46E5) else Color.Gray
+                    )
+                }
+            },
             trailingIcon = {
                 if (appliedPromo == null) {
                     TextButton(
@@ -187,6 +200,22 @@ fun PromoCodeInput(
                 }
             }
         }
+    }
+
+    if (showVoucherSheet) {
+        VoucherSelectionSheet(
+            vouchers = savedVouchers,
+            subtotal = subtotal.toDouble(),
+            selectedCode = appliedPromo?.code ?: "",
+            onDismissed = { showVoucherSheet = false },
+            onVoucherSelected = { voucher ->
+                appliedPromo = voucher
+                promoCode = voucher.code
+                isPromoError = false
+                errorText = ""
+                showVoucherSheet = false
+            }
+        )
     }
 }
 

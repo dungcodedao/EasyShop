@@ -26,14 +26,15 @@ class FavoriteViewModel : ViewModel() {
     val screenState: StateFlow<ScreenState> = _screenState.asStateFlow()
 
     fun fetchFavorites() {
-        if (userId == null) {
+        val currentUserId = Firebase.auth.currentUser?.uid
+        if (currentUserId == null) {
             _screenState.value = ScreenState.ERROR
             return
         }
         _isLoading.value = true
         _screenState.value = ScreenState.LOADING
         
-        firestore.collection("users").document(userId)
+        firestore.collection("users").document(currentUserId)
             .collection("favorites")
             .get()
             .addOnSuccessListener { result ->

@@ -32,6 +32,7 @@ import java.util.UUID
 object AppUtil {
     private const val PREFS_NAME = "easyshop_prefs"
     private const val FAVORITES_KEY = "favorite_ids"
+    private const val ONBOARDING_COMPLETED_KEY = "onboarding_completed"
 
     private fun appContext(): Context = FirebaseAuth.getInstance().app.applicationContext
 
@@ -46,6 +47,18 @@ object AppUtil {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .putStringSet(FAVORITES_KEY, ids)
+            .apply()
+    }
+
+    fun isOnboardingCompleted(context: Context): Boolean {
+        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(ONBOARDING_COMPLETED_KEY, false)
+    }
+
+    fun setOnboardingCompleted(context: Context) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(ONBOARDING_COMPLETED_KEY, true)
             .apply()
     }
 
@@ -143,6 +156,12 @@ object AppUtil {
         if (timestamp == null) return ""
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
         return sdf.format(timestamp.toDate())
+    }
+
+    fun formatDate(millis: Long): String {
+        if (millis <= 0L) return ""
+        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        return sdf.format(java.util.Date(millis))
     }
 
     fun formatData(timestamp: Timestamp?): String = formatDate(timestamp)

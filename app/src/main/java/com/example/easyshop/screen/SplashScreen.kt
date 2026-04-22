@@ -41,12 +41,25 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.easyshop.viewmodel.OnboardingViewModel
+import androidx.compose.runtime.collectAsState
+import coil.compose.AsyncImage
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 
 @Composable
-fun SplashScreen(navController: NavController) {
+fun SplashScreen(navController: NavController, viewModel: OnboardingViewModel = viewModel()) {
     val auth = FirebaseAuth.getInstance()
     val primaryIndigo = Color(0xFF4F46E5)
     val skyBlue = Color(0xFF0EA5E9)
+    val context = LocalContext.current
+
+    val urls by viewModel.onboardingUrls.collectAsState()
+    val screenState by viewModel.screenState.collectAsState()
+    val logoUrl = urls.firstOrNull()
 
     // Animation States
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -98,6 +111,11 @@ fun SplashScreen(navController: NavController) {
         }
         progress = 1f
         
+        // Chờ thêm nếu Firebase đang tải URL ảnh
+        while (viewModel.screenState.value == com.example.easyshop.ScreenState.LOADING) {
+            delay(100)
+        }
+
         val role = roleDeferred.await()
         
         if (role != null) {
@@ -106,8 +124,14 @@ fun SplashScreen(navController: NavController) {
                 popUpTo("splash") { inclusive = true }
             }
         } else {
-            navController.navigate("onboarding") {
-                popUpTo("splash") { inclusive = true }
+            if (com.example.easyshop.AppUtil.isOnboardingCompleted(context)) {
+                navController.navigate("auth") {
+                    popUpTo("splash") { inclusive = true }
+                }
+            } else {
+                navController.navigate("onboarding") {
+                    popUpTo("splash") { inclusive = true }
+                }
             }
         }
     }
@@ -115,78 +139,47 @@ fun SplashScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(primaryIndigo, skyBlue)
-                )
-            ),
+            .background(Color(0xFF4F46E5)), // Fallback background
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .alpha(alphaAnim)
-                .scale(scale)
-        ) {
-            // Logo Icon
-            Surface(
-                modifier = Modifier.size(90.dp),
-                shape = androidx.compose.foundation.shape.CircleShape,
-                color = Color.White.copy(alpha = 0.15f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    androidx.compose.material3.Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Default.ShoppingCart,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(48.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "EasyShop",
-                color = Color.White,
-                style = MaterialTheme.typography.displayMedium,
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 1.sp
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = "Mua sắm dễ dàng • Tiết kiệm tối đa",
-                color = Color.White.copy(alpha = 0.8f),
-                style = MaterialTheme.typography.bodyLarge,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
+        if (logoUrl != null) {
+            AsyncImage(
+                model = logoUrl,
+                contentDescription = "Splash Screen Flow",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(alphaAnim)
+                    .scale(scale)
             )
 
-            Spacer(modifier = Modifier.height(48.dp))
-
-            // Progress Bar
+            // Progress Bar overlay
             androidx.compose.material3.LinearProgressIndicator(
                 progress = { progress },
                 modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 80.dp)
                     .padding(horizontal = 64.dp)
                     .height(6.dp)
                     .fillMaxWidth(),
                 color = Color.White,
-                trackColor = Color.White.copy(alpha = 0.2f),
+                trackColor = Color.White.copy(alpha = 0.3f),
                 strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
             )
+        } else {
+            if (screenState == com.example.easyshop.ScreenState.LOADING) {
+                androidx.compose.material3.CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(48.dp)
+                )
+            } else {
+                androidx.compose.material3.Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Default.ShoppingCart,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(64.dp)
+                )
+            }
         }
-        
-        // Bottom Footer
-        Text(
-            text = "Version 1.0.0",
-            color = Color.White.copy(alpha = 0.5f),
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 40.dp),
-            style = MaterialTheme.typography.labelMedium
-        )
     }
 }

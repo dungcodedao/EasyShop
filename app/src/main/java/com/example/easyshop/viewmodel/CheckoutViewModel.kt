@@ -68,6 +68,9 @@ class CheckoutViewModel : ViewModel() {
     private val _note = MutableStateFlow("")
     val note: StateFlow<String> = _note.asStateFlow()
 
+    private val _savedVouchers = MutableStateFlow<List<PromoCodeModel>>(emptyList())
+    val savedVouchers: StateFlow<List<PromoCodeModel>> = _savedVouchers.asStateFlow()
+
     fun updateNote(newNote: String) {
         _note.value = newNote
     }
@@ -103,6 +106,20 @@ class CheckoutViewModel : ViewModel() {
                     }
                 }
                 
+                // Tải thông tin chi tiết voucher trong ví
+                user?.savedPromoCodes?.filter { it.isNotBlank() }?.let { promoIds ->
+                    if (promoIds.isNotEmpty()) {
+                        val promoSnapshots = mutableListOf<PromoCodeModel>()
+                        promoIds.chunked(30).forEach { chunk ->
+                            val result = db.collection("promoCodes")
+                                .whereIn(com.google.firebase.firestore.FieldPath.documentId(), chunk)
+                                .get().await()
+                            promoSnapshots.addAll(result.toObjects(PromoCodeModel::class.java))
+                        }
+                        _savedVouchers.value = promoSnapshots
+                    }
+                }
+
                 // Khởi tạo mã tham chiếu thanh toán duy nhất cho phiên này
                 if (_paymentReference.value.isEmpty()) {
                     _paymentReference.value = "ES" + System.currentTimeMillis().toString().takeLast(6)

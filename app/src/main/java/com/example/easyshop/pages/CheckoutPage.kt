@@ -243,8 +243,11 @@ fun CheckoutPage(
                         PriceRow(stringResource(id = R.string.subtotal), subTotal.toFloat())
                         Spacer(Modifier.height(8.dp))
 
+                        val savedVouchers by viewModel.savedVouchers.collectAsState()
+
                         PromoCodeInput(
                             subtotal = subTotal.toFloat(),
+                            savedVouchers = savedVouchers,
                             onDiscountApplied = { _, code -> 
                                  if (code.isNotEmpty()) {
                                      com.google.firebase.firestore.FirebaseFirestore.getInstance()
