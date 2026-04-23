@@ -34,20 +34,32 @@ fun FavoritePage(
         viewModel.fetchFavorites()
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        stringResource(id = R.string.favorites),
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
-            )
+    Column(
+        modifier = modifier.fillMaxSize()
+    ) {
+        // Favorites Header
+        Surface(
+            tonalElevation = 2.dp,
+            shadowElevation = 2.dp,
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.favorites),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
-    ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+
+        Box(modifier = Modifier.weight(1f).fillMaxSize()) {
             if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {

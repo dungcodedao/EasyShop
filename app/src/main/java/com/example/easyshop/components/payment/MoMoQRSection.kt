@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.easyshop.AppUtil
+import com.example.easyshop.R
 import com.example.easyshop.util.ImageSaver
 import kotlinx.coroutines.launch
 
@@ -33,6 +35,7 @@ fun MoMoQRSection(totalAmount: Double) {
     val accountNo = "0969690132"
     val accountName = "NGO VAN DUNG"
     val orderId = remember { "EasyShop-" + System.currentTimeMillis().toString().takeLast(6) }
+    val saveQrMsg = stringResource(id = R.string.save_qr_msg)
 
     val qrUrl = "https://img.vietqr.io/image/$bankId-$accountNo-compact2.png" +
             "?amount=${totalAmount.toLong()}" +
@@ -100,7 +103,7 @@ fun MoMoQRSection(totalAmount: Double) {
                         AppUtil.showToast(context, "Đang tải mã QR...")
                         val success = ImageSaver.saveQrToGallery(context, qrUrl)
                         if (success) {
-                            AppUtil.showToast(context, context.getString(com.example.easyshop.R.string.save_qr_msg))
+                            AppUtil.showToast(context, saveQrMsg)
                         } else {
                             AppUtil.showToast(context, "Lỗi khi lưu ảnh, vui lòng thử lại")
                         }

@@ -84,9 +84,15 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavController) {
     var showExitDialog by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
 
-    // Chặn phím Back để hiện Dialog xác nhận thoát
-    BackHandler(enabled = !isSearching) { // Chỉ hiện khi không ở chế độ tìm kiếm
-        showExitDialog = true
+    // Chặn phím Back:
+    // - Nếu đang ở tab Trang chủ (index 0) và không đang tìm kiếm → hiện dialog thoát
+    // - Nếu đang ở tab khác → quay về tab Trang chủ
+    BackHandler(enabled = !isSearching) {
+        if (selectedIndex == 0) {
+            showExitDialog = true
+        } else {
+            selectedIndex = 0
+        }
     }
 
     if (showExitDialog) {
@@ -132,7 +138,9 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavController) {
         val favoriteViewModel: FavoriteViewModel = viewModel()
 
         ContentScreen(
-            modifier = Modifier.padding(innerPadding).fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = innerPadding.calculateBottomPadding()), // Chỉ padding bên dưới
             selectedIndex = selectedIndex,
             navController = navController,
             onNavigateToProfile = { selectedIndex = 3 },

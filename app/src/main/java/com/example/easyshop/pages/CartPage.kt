@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -61,6 +63,12 @@ fun CartPage(
     var isLoading by remember { mutableStateOf(true) }
     var showIncompleteProfileDialog by remember { mutableStateOf(false) }
     val productsMap = remember { mutableStateOf<Map<String, ProductModel>>(emptyMap()) }
+    
+    // Chuẩn bị chuỗi ở đầu hàm để tránh lỗi IDE trong lambda và giúp code đẹp hơn
+    val profilesIncompleteTitle = stringResource(R.string.profiles_incomplete_title)
+    val profilesIncompleteMsg = stringResource(R.string.profiles_incomplete_msg)
+    val goToProfileLabel = stringResource(R.string.go_to_profile)
+    val cancelLabel = stringResource(R.string.cancel)
 
     DisposableEffect(Unit) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
@@ -101,6 +109,7 @@ fun CartPage(
         onDispose { listener?.remove() }
     }
 
+
     Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         // Toolbar gọn gàng nhưng vẫn có độ cao chuẩn và viền (Khôi phục)
         Surface(
@@ -113,7 +122,7 @@ fun CartPage(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (navController != null && navController.previousBackStackEntry != null) {
@@ -166,19 +175,19 @@ fun CartPage(
         if (showIncompleteProfileDialog) {
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { showIncompleteProfileDialog = false },
-                title = { Text(stringResource(R.string.profiles_incomplete_title)) },
-                text = { Text(stringResource(R.string.profiles_incomplete_msg)) },
+                title = { Text(profilesIncompleteTitle) },
+                text = { Text(profilesIncompleteMsg) },
                 confirmButton = {
                     Button(onClick = {
                         showIncompleteProfileDialog = false
                         GlobalNavigation.navController.navigate("profile")
                     }) {
-                        Text(stringResource(R.string.go_to_profile))
+                        Text(goToProfileLabel)
                     }
                 },
                 dismissButton = {
                     androidx.compose.material3.TextButton(onClick = { showIncompleteProfileDialog = false }) {
-                        Text(stringResource(R.string.cancel))
+                        Text(cancelLabel)
                     }
                 }
             )
@@ -277,7 +286,8 @@ private fun CartContent(
 
         Column(
             modifier = Modifier
-                .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 2.dp)
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 4.dp)
+                .navigationBarsPadding()
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {

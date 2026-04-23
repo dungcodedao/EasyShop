@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -290,12 +291,17 @@ fun AIChatScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Brush.verticalGradient(colors = listOf(ChatGradientTop, ChatGradientBottom)))
-                .padding(padding)
+                .padding(bottom = padding.calculateBottomPadding())
         ) {
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 14.dp),
+                contentPadding = PaddingValues(
+                    start = 14.dp, 
+                    end = 14.dp, 
+                    top = padding.calculateTopPadding() + 8.dp, 
+                    bottom = 14.dp
+                ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 if (messages.isEmpty() && !isLoading) {
@@ -351,8 +357,14 @@ fun AIChatScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ChatTopBar(onBack: () -> Unit, onClear: () -> Unit) {
-    Surface(shadowElevation = 8.dp, tonalElevation = 2.dp, color = MaterialTheme.colorScheme.surface) {
+    Surface(
+        shadowElevation = 8.dp, 
+        tonalElevation = 2.dp, 
+        color = MaterialTheme.colorScheme.surface,
+        modifier = Modifier.fillMaxWidth()
+    ) {
         TopAppBar(
+            modifier = Modifier.statusBarsPadding(),
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(

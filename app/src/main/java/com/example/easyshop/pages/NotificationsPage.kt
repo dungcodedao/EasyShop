@@ -108,9 +108,10 @@ fun NotificationsPage(navController: NavController) {
             isLoading = false
         }
 
-        // Load promos
+        // Load promos: chỉ lấy các mã đang active VÀ đã được Admin phát hành (isIssued = true)
         db.collection("promoCodes")
             .whereEqualTo("active", true)
+            .whereEqualTo("isIssued", true)
             .get()
             .addOnSuccessListener { snapshot ->
                 promos = snapshot.documents.mapNotNull { it.toObject(PromoCodeModel::class.java) }

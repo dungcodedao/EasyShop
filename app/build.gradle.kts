@@ -154,6 +154,7 @@ dependencies {
     implementation(libs.androidx.compose.animation)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.runtime)
+    implementation(libs.androidx.compose.foundation.layout)
 
     // Testing
     testImplementation(libs.junit)

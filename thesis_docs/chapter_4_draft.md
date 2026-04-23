@@ -59,12 +59,13 @@ Xử lý logic tập trung vào việc tính toán tổng chi phí, áp dụng m
 Đây là trái tim của hệ thống. Giao diện được thiết kế dạng hội thoại thời gian thực. Đặc biệt, hệ thống sử dụng cơ chế "Streaming" giúp phản hồi của AI xuất hiện dần dần theo thời gian thực thay vì đợi xử lý xong toàn bộ văn bản, tạo cảm giác tự nhiên như đang chat với người thật.
 - **Hình 4.4: Giao diện Trợ lý AI tư vấn sản phẩm.**
 
-### 4.2.5. Module Quản trị & Thống kê (Admin & Analytics)
-Hệ thống cung cấp một bảng điều hành (Dashboard) chuyên sâu dành cho quản trị viên, giúp theo dõi sát sao tình hình kinh doanh:
-- **Thống kê thời gian thực:** Hiển thị tổng doanh thu, số đơn đã giao và tỉ lệ đơn bị hủy.
-- **Biểu đồ tăng trưởng:** Sử dụng biểu đồ cột (Bar Chart) để trực quan hóa doanh thu trong 7 ngày gần nhất và biểu đồ tròn (Pie Chart) cho tỉ lệ trạng thái đơn hàng.
-- **Quản lý đơn hàng:** Cho phép Admin duyệt đơn, cập nhật trạng thái vận chuyển. Đặc biệt, mỗi khi trạng thái thay đổi, hệ thống sẽ tự động gửi thông báo (Notification) đến ứng dụng của người mua.
-- **Hình 4.5: Giao diện Dashboard thống kê doanh thu và Quản lý đơn hàng.**
+### 4.2.6. Phân hệ Chat trực tuyến với Shop (Live Chat)
+Để tăng tính tương tác và hỗ trợ khách hàng kịp thời, hệ thống tích hợp kênh chat trực tiếp. Người dùng có thể gửi tin nhắn hỏi về sản phẩm ngay từ trang Chi tiết sản phẩm. Tin nhắn được lưu trữ và đồng bộ thời gian thực qua Firestore, cho phép Admin và khách hàng hội thoại liên tục mà không cần tải lại trang.
+- **Hình 4.6: Giao diện Chat giữa khách hàng và quản trị viên Shop.**
+
+### 4.2.7. Hệ thống Mã giảm giá & Ví Voucher (Promos & Vouchers)
+Trong màn hình Thanh toán, thay vì chỉ nhập mã thủ công, hệ thống đã cung cấp giao diện "Ví Voucher". Khách hàng có thể chọn trực tiếp từ danh mục các mã giảm giá hiện có của cửa hàng. Hệ thống sẽ tự động tính toán số tiền giảm (theo % hoặc số tiền cố định) và cập nhật tổng thanh toán ngay lập tức.
+- **Hình 4.7: Giao diện chọn Voucher từ danh sách khả dụng.**
 
 ## 4.3. Mã nguồn và Thuật toán tiêu biểu
 
@@ -90,10 +91,15 @@ Phần này phân tích các khối mã nguồn cốt lõi, đóng vai trò là 
 *   **Nội dung:** Hàm `createNotificationForUser`.
 *   **Phân tích:** Thể hiện tư duy xử lý logic hệ thống. Khi Quản trị viên thay đổi trạng thái đơn hàng, ứng dụng tự động thực hiện một chuỗi thao tác: Cập nhật Firestore và đồng thời tạo một bản ghi thông báo mới cho khách hàng. Điều này đảm bảo tính nhất quán và giảm thiểu sai sót do thao tác thủ công.
 
-### 4.3.5. Biểu đồ thông minh & Giao diện tùy biến (Custom UI & BI)
-*   **Vị trí:** Tệp `AnalyticsScreen.kt` (Dòng 109 - 154 và 505 - 535)
-*   **Nội dung:** Khối xử lý dữ liệu doanh thu và vẽ biểu đồ `PremiumBarChart`.
-*   **Phân tích:** Kết hợp giữa khoa học dữ liệu và nghệ thuật giao diện. Mã nguồn cho thấy cách trích xuất, phân loại doanh thu từ Firestore và dùng `Canvas` để vẽ biểu đồ hoạt ảnh. Đây là phần giao diện cao cấp, giúp chủ cửa hàng có cái nhìn trực quan về tình hình kinh doanh mà không cần công cụ phân tích bên thứ ba.
+### 4.3.5. Logic áp dụng Mã giảm giá & Tự động tính toán
+*   **Vị trí:** Tệp `CheckoutViewModel.kt` (Dòng 151 - 167)
+*   **Nội dung:** Hàm `applyPromoCode()` và `removePromoCode()`.
+*   **Phân tích:** Minh chứng khả năng xử lý logic tài chính nhạy cảm. Hệ thống hỗ trợ nhiều loại voucher (phần trăm, số tiền cố định) với các ràng buộc như giới hạn giảm tối đa (`maxDiscount`). Việc sử dụng `StateFlow` đảm bảo giá trị chiết khấu được cập nhật tức thì lên giao diện người dùng, giúp khách hàng thấy rõ lợi ích trước khi bấm thanh toán.
+
+### 4.3.6. Đồng bộ hóa Hội thoại thời gian thực (Chat Sync)
+*   **Vị trí:** Tệp `ChatViewModel.kt`
+*   **Nội dung:** Cơ chế lắng nghe tin nhắn qua `SnapshotListener` của Firestore.
+*   **Phân tích:** Thể hiện kỹ năng xây dựng ứng dụng thời gian thực. Thay vì dùng cơ chế "Pull" (tải lại dữ liệu liên tục), mã nguồn sử dụng cơ chế "Push" từ Firebase. Khi có tin nhắn mới, máy chủ sẽ tự động đẩy về thiết bị, giúp cuộc hội thoại diễn ra mượt mà với độ trễ gần như bằng không.
 
 ## 4.4. Kiểm thử và Thực nghiệm
 
@@ -116,7 +122,8 @@ Hệ thống được kiểm thử qua các nhóm chức năng cốt lõi với 
 | **4** | **Thanh toán** | Chọn thanh toán QR MoMo | Hệ thống hiển thị mã QR kèm đúng tổng số tiền đơn hàng | Đạt |
 | **5** | **Thực nghiệm** | Thanh toán MBBank (SePay Webhook) | Hệ thống nhận tín hiệu Banking, tự động đổi trạng thái đơn sang ORDERED | Đạt |
 | **6** | **Quản trị** | Admin xóa một danh mục đang chứa sản phẩm | Hệ thống từ chối và yêu cầu xóa sản phẩm trước (Ràng buộc dữ liệu) | Đạt |
-| **7** | **Thống kê** | Kiểm tra biểu đồ doanh thu ngày hiện tại | Số liệu trùng khớp với tổng tiền các đơn giao thành công (Delivered) | Đạt |
+| **7** | **Chat Shop** | Khách gửi tin nhắn và Admin phản hồi | Tin nhắn xuất hiện tức thì trên cả hai thiết bị | Đạt |
+| **8** | **Mã giảm giá** | Áp dụng Voucher giảm 50k cho đơn hàng 40k | Hệ thống chỉ trừ 40k (Số tiền thanh toán về 0, không âm) | Đạt |
 
 ### 4.4.3. Đánh giá kết quả thực nghiệm và Hiệu năng
 

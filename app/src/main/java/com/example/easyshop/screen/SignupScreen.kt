@@ -3,10 +3,8 @@ package com.example.easyshop.screen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -46,6 +44,7 @@ fun SignupScreen(
     var adminCode by remember { mutableStateOf("") }
     var isAdminFieldVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    val signUpErrorMsg = stringResource(id = R.string.something_went_wrong)
     val context = LocalContext.current
 
     fun isEmailValid(email: String) = android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
@@ -59,6 +58,7 @@ fun SignupScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .safeDrawingPadding()
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
@@ -71,11 +71,11 @@ fun SignupScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Spacer(Modifier.height(48.dp))
+            Spacer(Modifier.height(16.dp))
 
             // Header
             Text(
@@ -234,7 +234,7 @@ fun SignupScreen(
                             val destination = if (role == "admin") "admin-dashboard" else "home"
                             navController.navigate(destination) { popUpTo("auth") { inclusive = true } }
                         } else {
-                            AppUtil.showToast(context, errorMessage ?: context.getString(R.string.something_went_wrong))
+                            AppUtil.showToast(context, errorMessage ?: signUpErrorMsg)
                         }
                     }
                 },
@@ -277,7 +277,7 @@ fun SignupScreen(
                 )
             }
 
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(16.dp))
         }
     }
 }

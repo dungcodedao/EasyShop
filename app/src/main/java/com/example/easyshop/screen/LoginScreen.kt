@@ -12,12 +12,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
@@ -78,12 +77,14 @@ fun LoginScreen(
     var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val isFormValid = email.isNotBlank() && password.isNotBlank()
-
+    val loginFailedMsg = stringResource(id = R.string.login_failed)
+    
     val primaryIndigo = Color(0xFF4F46E5)
 
     Box(
         modifier = modifier
             .fillMaxSize()
+            .safeDrawingPadding()
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
@@ -96,11 +97,11 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Spacer(Modifier.height(60.dp))
+            Spacer(Modifier.height(24.dp))
 
             // Banner Image
             Image(
@@ -215,7 +216,7 @@ fun LoginScreen(
                                 launchSingleTop = true
                             }
                         } else {
-                            AppUtil.showToast(context, errorMessage ?: context.getString(R.string.login_failed))
+                            AppUtil.showToast(context, errorMessage ?: loginFailedMsg)
                         }
                     }
                 },
@@ -307,7 +308,7 @@ fun LoginScreen(
                 }
             }
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(24.dp))
 
             Row(
                 horizontalArrangement = Arrangement.Center,
@@ -323,7 +324,7 @@ fun LoginScreen(
                 )
             }
 
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(16.dp))
         }
     }
 }

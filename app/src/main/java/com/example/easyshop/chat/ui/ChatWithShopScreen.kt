@@ -205,6 +205,10 @@ fun ChatWithShopScreen(
 
 @Composable
 fun SimpleChatBubble(message: ShopChatMessage, isUser: Boolean) {
+    // Chỉ hiển thị nếu tin nhắn có nội dung (văn bản hoặc ảnh)
+    val hasContent = message.text.isNotBlank() || !message.imageUrl.isNullOrEmpty()
+    if (!hasContent) return
+
     val alignment = if (isUser) Alignment.End else Alignment.Start
     val bubbleColor = if (isUser) ShopAccent else Color.White
     val textColor = if (isUser) Color.White else Color.Black

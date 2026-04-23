@@ -2,13 +2,14 @@ package com.example.easyshop.pages
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -60,6 +61,7 @@ import coil.compose.AsyncImage
 import com.example.easyshop.AppUtil
 import com.example.easyshop.R
 import com.example.easyshop.model.ProductModel
+import com.example.easyshop.model.UserModel
 import com.example.easyshop.sale.PromoCodeInput
 import com.example.easyshop.util.GlobalNavigation
 import com.example.easyshop.util.clickableOnce
@@ -89,6 +91,7 @@ fun CheckoutPage(
     val addressSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     
     val note by viewModel.note.collectAsState()
+    val noInternetMsg = stringResource(R.string.no_internet)
 
     LaunchedEffect(Unit) {
         if (com.google.firebase.auth.FirebaseAuth.getInstance().currentUser == null) {
@@ -116,7 +119,7 @@ fun CheckoutPage(
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(top = padding.calculateTopPadding())
+                .padding(padding)
         ) {
             // --- Scrollable Content Section ---
             Column(
@@ -225,7 +228,8 @@ fun CheckoutPage(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .padding(bottom = 2.dp),
+                    .navigationBarsPadding()
+                    .padding(bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -293,7 +297,7 @@ fun CheckoutPage(
                                   selectedAddress!!.detailedAddress.isNotBlank())
                     ) {
                         if (!AppUtil.isNetworkAvailable(context)) {
-                            AppUtil.showToast(context, context.getString(R.string.no_internet))
+                            AppUtil.showToast(context, noInternetMsg)
                         } else {
                             val pCode = promoCodeUsed.ifEmpty { "NONE" }
                             val encodedNote = java.net.URLEncoder.encode(note, "UTF-8")
@@ -303,115 +307,39 @@ fun CheckoutPage(
                     modifier = Modifier
                         .width(220.dp)
                         .height(48.dp),
+                    shape = RoundedCornerShape(24.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4F46E5)
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        disabledContainerColor = Color.LightGray.copy(alpha = 0.5f)
                     ),
-                    shape = RoundedCornerShape(24.dp)
+                    elevation = ButtonDefaults.buttonElevation(4.dp)
                 ) {
                     Text(
-                        stringResource(id = R.string.pay_now),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold
+                        text = stringResource(id = R.string.pay_now),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
                 }
-                
-                Spacer(modifier = Modifier.height(4.dp))
             }
         }
-    }
 
-    // TikTok-style Address Selector Sheet
-    if (showAddressSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showAddressSheet = false },
-            sheetState = addressSheetState,
-            dragHandle = { BottomSheetDefaults.DragHandle() },
-            containerColor = Color.White,
-            modifier = Modifier.fillMaxHeight()
-        ) {
-            Column(modifier = Modifier.fillMaxSize().padding(16.dp).padding(bottom = 32.dp)) {
-                Text("Địa chỉ của bạn", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(20.dp))
-                
-                val addressList = userModel?.addressList ?: emptyList()
-                if (addressList.isEmpty()) {
-                    Text("Chưa có địa chỉ nào. Hãy vào Profile để thêm.")
-                } else {
-                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                        addressList.sortedByDescending { it.isDefault }.forEachIndexed { index, addr ->
-                            val isSelected = selectedAddress?.id == addr.id
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickableOnce { 
-                                        viewModel.setSelectedAddress(addr)
-                                        showAddressSheet = false 
-                                    }
-                                    .padding(vertical = 12.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Icon(
-                                        Icons.Default.LocationOn,
-                                        null,
-                                        tint = if (isSelected) Color(0xFF4F46E5) else Color.Gray,
-                                        modifier = Modifier.size(20.dp).padding(top = 2.dp)
-                                    )
-                                    Spacer(Modifier.width(12.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = "${addr.fullName} (+84)${addr.phone.removePrefix("0")}",
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = if (isSelected) Color(0xFF4F46E5) else Color.Black
-                                        )
-                                        Spacer(Modifier.height(4.dp))
-                                        Text(
-                                            text = addr.detailedAddress.trim(),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = if (isSelected) Color(0xFF4F46E5).copy(alpha = 0.8f) else Color.Black.copy(alpha = 0.7f),
-                                            lineHeight = 20.sp,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        if (addr.isDefault) {
-                                            Spacer(Modifier.height(6.dp))
-                                            Surface(
-                                                color = Color(0xFF4F46E5).copy(alpha = 0.1f),
-                                                shape = RoundedCornerShape(2.dp),
-                                                border = androidx.compose.foundation.BorderStroke(0.5.dp, Color(0xFF4F46E5))
-                                            ) {
-                                                Text(
-                                                    "Mặc định",
-                                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = Color(0xFF4F46E5),
-                                                    fontSize = 10.sp
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
-                        }
-                    }
-                }
-                
-                Spacer(Modifier.height(24.dp))
-                OutlinedButton(
-                    onClick = { 
+        // --- Address Selection Sheet ---
+        if (showAddressSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showAddressSheet = false },
+                sheetState = addressSheetState,
+                dragHandle = { BottomSheetDefaults.DragHandle() },
+                containerColor = MaterialTheme.colorScheme.surface
+            ) {
+                AddressSelectionContent(
+                    userModel = userModel ?: UserModel(),
+                    onAddressSelected = {
+                        viewModel.setSelectedAddress(it)
                         showAddressSheet = false
-                        // Chuyển hướng đến Profile để quản lý
-                        AppUtil.showToast(Firebase.auth.app.applicationContext, "Vào Profile để thêm/sửa địa chỉ")
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Thay đổi/Quản lý địa chỉ")
-                }
+                    onClose = { showAddressSheet = false }
+                )
             }
         }
     }
@@ -419,62 +347,114 @@ fun CheckoutPage(
 
 @Composable
 fun CheckoutProductItem(product: ProductModel, qty: Long) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
     ) {
-        // Thumbnail
-        AsyncImage(
-            model = product.images.firstOrNull(),
-            contentDescription = null,
-            modifier = Modifier
-                .size(60.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentScale = ContentScale.Crop
-        )
-
-        Spacer(Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = product.title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = product.images.firstOrNull(),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop
             )
+            Spacer(Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = product.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "${AppUtil.formatPrice(product.actualPrice.toDouble())} x $qty",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+            }
             Text(
-                text = "${AppUtil.formatPrice(product.actualPrice)} x $qty",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = AppUtil.formatPrice(product.actualPrice.toDouble() * qty),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold
             )
         }
+    }
+}
 
-        val itemTotal = (product.actualPrice.replace(Regex("[^0-9]"), "").toDoubleOrNull() ?: 0.0) * qty
+@Composable
+fun PriceRow(label: String, price: Float, isDiscount: Boolean = false) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
         Text(
-            text = AppUtil.formatPrice(itemTotal.toFloat()),
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
+            text = (if (isDiscount) "- " else "") + AppUtil.formatPrice(price.toDouble()),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = if (isDiscount) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
         )
     }
 }
 
 @Composable
-fun PriceRow(title: String, value: Float, isDiscount: Boolean = false) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+fun AddressSelectionContent(
+    userModel: UserModel,
+    onAddressSelected: (com.example.easyshop.model.AddressModel) -> Unit,
+    onClose: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .padding(bottom = 32.dp)
     ) {
-        Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(
-            text = "${if (isDiscount) "-" else ""}${AppUtil.formatPrice(value)}",
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium,
-            color = if (isDiscount) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+            "Chọn địa chỉ giao hàng",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
         )
+        
+        if (userModel.addressList.isEmpty()) {
+            Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                Text("Bạn chưa có địa chỉ nào. Hãy thêm trong Hồ sơ!", color = Color.Gray)
+            }
+        } else {
+            userModel.addressList.forEach { address ->
+                Surface(
+                    onClick = { onAddressSelected(address) },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                ) {
+                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(address.fullName, fontWeight = FontWeight.Bold)
+                            Text(address.phone, style = MaterialTheme.typography.bodySmall)
+                            Text(address.detailedAddress, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+            }
+        }
+        
+        Spacer(Modifier.height(16.dp))
+        OutlinedButton(
+            onClick = onClose,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text("Đóng")
+        }
     }
 }

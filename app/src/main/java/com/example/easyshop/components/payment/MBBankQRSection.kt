@@ -41,6 +41,7 @@ fun MBBankQRSection(
     val bankId = "MB"
     val accountNo = "1520115052003"
     val accountName = "NGO VAN DUNG"
+    val saveQrMsg = stringResource(id = R.string.save_qr_msg)
 
     // Link VietQR chuẩn
     val qrUrl = "https://img.vietqr.io/image/$bankId-$accountNo-compact2.png" +
@@ -127,7 +128,7 @@ fun MBBankQRSection(
                         AppUtil.showToast(context, "Đang tải mã QR...")
                         val success = ImageSaver.saveQrToGallery(context, qrUrl)
                         if (success) {
-                            AppUtil.showToast(context, context.getString(R.string.save_qr_msg))
+                            AppUtil.showToast(context, saveQrMsg)
                         } else {
                             AppUtil.showToast(context, "Lỗi khi lưu ảnh, vui lòng thử lại")
                         }

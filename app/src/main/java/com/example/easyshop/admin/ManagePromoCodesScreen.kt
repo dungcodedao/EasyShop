@@ -40,6 +40,7 @@ fun ManagePromoCodesScreen(
     var isLoading by remember { mutableStateOf(true) }
     var showAddDialog by remember { mutableStateOf(false) }
     var editingPromo by remember { mutableStateOf<PromoCodeModel?>(null) }
+    var publishingPromo by remember { mutableStateOf<PromoCodeModel?>(null) }
     val firestore = Firebase.firestore
 
     fun loadPromoCodes() {
@@ -50,6 +51,14 @@ fun ManagePromoCodesScreen(
                 isLoading = false
             }
             .addOnFailureListener { isLoading = false }
+    }
+
+    // Tải lại dữ liệu âm thầm (không hiện loading toàn màn hình) dùng cho toggle/unpublish
+    fun silentReload() {
+        firestore.collection("promoCodes").get()
+            .addOnSuccessListener { result ->
+                promoCodes = result.documents.mapNotNull { it.toObject(PromoCodeModel::class.java)?.copy(docId = it.id) }
+            }
     }
 
     // Hàm gửi thông báo quảng bá tới người dùng khi phát hành mã
@@ -130,17 +139,17 @@ fun ManagePromoCodesScreen(
                             onToggleActive = {
                                 firestore.collection("promoCodes").document(promo.docId)
                                     .update("active", !promo.active)
-                                    .addOnSuccessListener { loadPromoCodes() }
+                                    .addOnSuccessListener { silentReload() }
                             },
                             onPublish = {
+                                publishingPromo = promo
+                            },
+                            onUnpublish = {
                                 firestore.collection("promoCodes").document(promo.docId)
-                                    .update("isIssued", true, "issuedAt", System.currentTimeMillis())
+                                    .update("isIssued", false)
                                     .addOnSuccessListener {
-                                        loadPromoCodes()
-                                        broadcastPromoNotification(promo)
-                                    }
-                                    .addOnFailureListener { e ->
-                                        AppUtil.showError("Lỗi phát hành: ${e.message}")
+                                        silentReload()
+                                        AppUtil.showSuccess("Đã thu hồi mã [${promo.code}]")
                                     }
                             },
                             onEdit = { editingPromo = promo },
@@ -175,7 +184,7 @@ fun ManagePromoCodesScreen(
         )
     }
 
-    // Edit dialog
+    // ── Dialog chỉnh sửa mã giảm giá ─────────────────────────────────────────
     editingPromo?.let { promo ->
         EditPromoCodeDialog(
             promo = promo,
@@ -204,6 +213,42 @@ fun ManagePromoCodesScreen(
             }
         )
     }
+
+    // ── Dialog xác nhận phát hành ─────────────────────────────────────────────
+    publishingPromo?.let { promo ->
+        AlertDialog(
+            onDismissRequest = { publishingPromo = null },
+            title = { Text("Xác nhận phát hành") },
+            text = { Text("Bạn có chắc chắn muốn phát hành mã giảm giá ${promo.code} tới tất cả người dùng không? Sau khi phát hành, mã sẽ xuất hiện trong Thông báo của User.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val p = publishingPromo ?: return@Button
+                        publishingPromo = null // Đóng dialog ngay
+                        firestore.collection("promoCodes").document(p.docId)
+                            .update("isIssued", true, "issuedAt", System.currentTimeMillis())
+                            .addOnSuccessListener {
+                                loadPromoCodes()
+                                broadcastPromoNotification(p)
+                            }
+                            .addOnFailureListener { e ->
+                                AppUtil.showError("Lỗi phát hành: ${e.message}")
+                            }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Phát hành ngay", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { publishingPromo = null }) {
+                    Text("Hủy")
+                }
+            },
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
 }
 
 @Composable
@@ -211,6 +256,7 @@ fun PromoCodeItem(
     promo: PromoCodeModel,
     onToggleActive: () -> Unit,
     onPublish: () -> Unit,
+    onUnpublish: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -276,6 +322,10 @@ fun PromoCodeItem(
                     if (!promo.isIssued) {
                         IconButton(onClick = onPublish) {
                             Icon(Icons.Default.Campaign, null, tint = Color(0xFFFF9800))
+                        }
+                    } else {
+                        IconButton(onClick = onUnpublish) { // Nút Thu hồi
+                            Icon(Icons.Default.VolumeOff, null, tint = Color(0xFF757575))
                         }
                     }
                     IconButton(onClick = onEdit) {

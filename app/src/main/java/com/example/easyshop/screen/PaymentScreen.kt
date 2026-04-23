@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,7 +20,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -52,24 +51,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Wallet
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.example.easyshop.AppUtil
 import com.example.easyshop.R
 import com.example.easyshop.components.VirtualCreditCard
 import com.example.easyshop.components.payment.MBBankQRSection
 import com.example.easyshop.components.payment.MoMoQRSection
 import com.example.easyshop.util.ConnectivityObserver
-import com.example.easyshop.util.ImageSaver
 import com.example.easyshop.util.NetworkConnectivityObserver
 import com.example.easyshop.viewmodel.CheckoutResult
 import com.example.easyshop.viewmodel.CheckoutViewModel
-import kotlinx.coroutines.launch
 
 @Composable
 fun PaymentScreen(
@@ -89,6 +81,10 @@ fun PaymentScreen(
     var cvv by remember { mutableStateOf("") }
     var isProcessing by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
+    
+    // Đưa chuỗi ra ngoài Composable để tránh lỗi IDE trong lambda
+    val testCardHint = stringResource(R.string.test_card_hint)
+    val paymentLabel = stringResource(R.string.payment)
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -138,7 +134,7 @@ fun PaymentScreen(
         }
     }
 
-    Column(modifier = modifier.fillMaxSize().statusBarsPadding()) {
+    Column(modifier = modifier.fillMaxSize().safeDrawingPadding()) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             tonalElevation = 1.dp
@@ -261,7 +257,7 @@ fun PaymentScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 2.dp),
+                .padding(horizontal = 16.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Luôn hiện nút thanh toán khi đã chọn phương thức
@@ -282,7 +278,7 @@ fun PaymentScreen(
                             "Credit Card" -> {
                                 val isSuccess = cardNumber.replace(" ", "") == "4111111111111111"
                                 if (isSuccess) viewModel.placeOrder("Credit Card", note)
-                                else AppUtil.showToast(context, context.getString(R.string.test_card_hint))
+                                else AppUtil.showToast(context, testCardHint)
                             }
                             else -> viewModel.placeOrder(selectedPaymentMethod, note)
                         }
@@ -307,7 +303,7 @@ fun PaymentScreen(
                         val buttonText = when (selectedPaymentMethod) {
                             "MB" -> if (isPaymentConfirmed) "Đã nhận tiền - Nhấn để Hoàn tất" else "Kiểm tra thanh toán"
                             "MoMo QR" -> "Xác nhận đã chuyển tiền"
-                            else -> stringResource(R.string.payment) + " " + AppUtil.formatPrice(totalAmount)
+                            else -> paymentLabel + " " + AppUtil.formatPrice(totalAmount)
                         }
                         Text(
                             text = buttonText,
