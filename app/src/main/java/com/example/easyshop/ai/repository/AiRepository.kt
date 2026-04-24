@@ -284,8 +284,7 @@ class AiRepository {
                 val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
                 "HSD: ${sdf.format(java.util.Date(promo.expiryDate))}"
             } else "Không giới hạn thời gian"
-            val usageText = if (promo.usageLimit > 0) "Còn ${promo.usageLimit - promo.usedCount} lượt" else "Không giới hạn lượt"
-            "- Mã: ${promo.code} | $discountText | $minOrderText | $expiryText | $usageText | Mô tả: ${promo.description}"
+            "- Mã: ${promo.code} | $discountText | $minOrderText | $expiryText"
         }
     }
 
