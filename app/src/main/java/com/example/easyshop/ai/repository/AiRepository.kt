@@ -5,6 +5,9 @@ import com.example.easyshop.BuildConfig
 import com.example.easyshop.ai.model.ChatMessage
 import com.example.easyshop.model.OrderModel
 import com.example.easyshop.model.ProductModel
+import com.example.easyshop.model.PromoCodeModel
+import com.example.easyshop.model.isExpired
+import com.example.easyshop.model.isUsageLimitReached
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
@@ -55,6 +58,11 @@ class AiRepository {
     private var cachedProducts: List<ProductModel> = emptyList()
     private var lastProductsFetchTimeMs: Long = 0L
     private val productsCacheTtlMs = 120_000L // 2 phút
+
+    // Cache cho Mã giảm giá
+    private var cachedPromoCodes: List<PromoCodeModel> = emptyList()
+    private var lastPromoFetchTimeMs: Long = 0L
+    private val promoCacheTtlMs = 120_000L // 2 phút
 
     private fun getMessagesCollection() = auth.currentUser?.uid?.let { uid ->
         db.collection("chats").document(uid).collection("messages")
@@ -121,13 +129,14 @@ class AiRepository {
         // 1. Lưu tin nhắn User
         collection.add(ChatMessage(content = userMessage, isUser = true, timestamp = Timestamp.now())).await()
 
-        // 2. Thu thập dữ liệu ngữ cảnh (Products + User Context)
+        // 2. Thu thập dữ liệu ngữ cảnh (Products + User Context + Promo Codes)
         val allProducts = fetchAllProducts()
         val relevantProducts = selectRelevantProducts(userMessage, history, allProducts).take(12)
         val userContext = fetchUserContext(uid, allProducts.associateBy { it.id })
+        val activePromos = fetchActivePromoCodes()
         
         val intent = detectIntent(userMessage)
-        val systemInstruction = buildComplexInstruction(intent, userContext, relevantProducts)
+        val systemInstruction = buildComplexInstruction(intent, userContext, relevantProducts, activePromos)
 
         // 3. Gọi AI với cơ chế Beeknoee là Primary
         var aiResponse = ""
@@ -172,6 +181,32 @@ class AiRepository {
         }
     }
 
+    /**
+     * Lấy danh sách mã giảm giá đang hoạt động từ Firestore (có cache)
+     */
+    private suspend fun fetchActivePromoCodes(): List<PromoCodeModel> {
+        val now = System.currentTimeMillis()
+        if (cachedPromoCodes.isNotEmpty() && (now - lastPromoFetchTimeMs) < promoCacheTtlMs) {
+            return cachedPromoCodes
+        }
+        return try {
+            val docs = db.collection("promoCodes")
+                .whereEqualTo("active", true)
+                .whereEqualTo("isIssued", true)
+                .get().await()
+            val list = docs.mapNotNull { doc ->
+                doc.toObject(PromoCodeModel::class.java)?.copy(docId = doc.id)
+            }.filter { !it.isExpired() && !it.isUsageLimitReached() }
+            cachedPromoCodes = list
+            lastPromoFetchTimeMs = now
+            Log.d("AI_CHAT", "Fetched ${list.size} active promo codes")
+            list
+        } catch (e: Exception) {
+            Log.e("AI_CHAT", "Fetch promo codes failed", e)
+            cachedPromoCodes
+        }
+    }
+
     private val STOP_WORDS = setOf("co", "khong", "shop", "ban", "mat", "hang", "mua", "gia", "tim", "xem", "loai", "nao", "giup", "voi", "cho", "em")
 
     private fun selectRelevantProducts(query: String, history: List<ChatMessage>, all: List<ProductModel>): List<ProductModel> {
@@ -200,8 +235,9 @@ class AiRepository {
         } catch (e: Exception) { "Khách hàng mới" }
     }
 
-    private fun buildComplexInstruction(intent: String, userContext: String, products: List<ProductModel>): String {
+    private fun buildComplexInstruction(intent: String, userContext: String, products: List<ProductModel>, promoCodes: List<PromoCodeModel> = emptyList()): String {
         val productListInfo = formatProductsForAI(products)
+        val promoListInfo = formatPromosForAI(promoCodes)
         return """
             BẠN LÀ CHUYÊN VIÊN TƯ VẤN CỦA EASYSHOP.
             NGỮ CẢNH KHÁCH HÀNG:
@@ -209,6 +245,9 @@ class AiRepository {
             
             DANH SÁCH SẢN PHẨM KHẢ DỤNG:
             $productListInfo
+            
+            MÃ GIẢM GIÁ / VOUCHER HIỆN ĐANG CÓ:
+            $promoListInfo
             
             Ý ĐỊNH NGƯỜI DÙNG: $intent
             
@@ -223,6 +262,29 @@ class AiRepository {
         }
     }
 
+    private fun formatPromosForAI(promos: List<PromoCodeModel>): String {
+        if (promos.isEmpty()) return "Hiện tại shop chưa phát hành mã giảm giá nào."
+        return promos.joinToString("\n") { promo ->
+            val discountText = if (promo.type == "percentage") {
+                "Giảm ${promo.value.toInt()}%" + if (promo.maxDiscount > 0) " (tối đa ${formatVND(promo.maxDiscount)})" else ""
+            } else {
+                "Giảm ${formatVND(promo.value)}"
+            }
+            val minOrderText = if (promo.minOrder > 0) "đơn tối thiểu ${formatVND(promo.minOrder)}" else "không yêu cầu đơn tối thiểu"
+            val expiryText = if (promo.expiryDate > 0) {
+                val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+                "HSD: ${sdf.format(java.util.Date(promo.expiryDate))}"
+            } else "Không giới hạn thời gian"
+            val usageText = if (promo.usageLimit > 0) "Còn ${promo.usageLimit - promo.usedCount} lượt" else "Không giới hạn lượt"
+            "- Mã: ${promo.code} | $discountText | $minOrderText | $expiryText | $usageText | Mô tả: ${promo.description}"
+        }
+    }
+
+    private fun formatVND(amount: Double): String {
+        val formatter = java.text.DecimalFormat("#,###")
+        return "${formatter.format(amount.toLong())}₫"
+    }
+
     private fun getCommonRules(): String {
         return """
             QUY TẮC PHẢN HỒI BẮT BUỘC:
@@ -231,8 +293,14 @@ class AiRepository {
                Thẻ này dùng để hiển thị nút bấm ngầm, người dùng sẽ không thấy thẻ này.
                Ví dụ: "Bạn có thể tham khảo mẫu Laptop Gaming [PID_abc123] này ạ!"
             3. TRƯỜNG HỢP HẾT HÀNG: Nếu sản phẩm khách hỏi đã hết hàng, hãy thông báo lịch sự và chủ động gợi ý sản phẩm thay thế có gắn [PID_...].
-            4. PHONG CÁCH: Thân thiện, chuyên nghiệp (Xưng hô: Shop - Bạn).
-            5. NGÔN NGỮ: Tiếng Việt.
+            4. MÃ GIẢM GIÁ / VOUCHER: 
+               - Khi khách hỏi về mã giảm giá, voucher, khuyến mãi, ưu đãi → PHẢI trả lời dựa trên danh sách "MÃ GIẢM GIÁ HIỆN ĐANG CÓ" phía trên.
+               - Liệt kê RÕ RÀNG mã code, mức giảm, điều kiện áp dụng.
+               - Nếu không có mã nào → thông báo "Shop hiện chưa có mã giảm giá nào" và gợi ý khách theo dõi thông báo.
+               - Hướng dẫn khách nhập mã ở trang Thanh toán (Checkout).
+               - KHÔNG bịa ra mã giảm giá không có trong danh sách.
+            5. PHONG CÁCH: Thân thiện, chuyên nghiệp (Xưng hô: Shop - Bạn).
+            6. NGÔN NGỮ: Tiếng Việt.
         """.trimIndent()
     }
 
@@ -497,10 +565,17 @@ class AiRepository {
         }
     }
 
-    private fun detectIntent(msg: String): String = when {
-        msg.contains("so sanh", true) -> "comparison"
-        msg.contains("gia", true) || msg.contains("re", true) -> "budget"
-        else -> "advice"
+    private fun detectIntent(msg: String): String {
+        val normalized = foldText(msg)
+        return when {
+            normalized.contains("ma giam gia") || normalized.contains("voucher") ||
+            normalized.contains("khuyen mai") || normalized.contains("uu dai") ||
+            normalized.contains("giam gia") || normalized.contains("coupon") ||
+            normalized.contains("promo") -> "promo"
+            normalized.contains("so sanh") -> "comparison"
+            normalized.contains("gia") || normalized.contains("re") -> "budget"
+            else -> "advice"
+        }
     }
 
     private fun foldText(text: String): String = Normalizer.normalize(text.lowercase(), Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "")
