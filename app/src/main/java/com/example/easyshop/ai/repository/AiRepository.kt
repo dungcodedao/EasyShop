@@ -249,6 +249,15 @@ class AiRepository {
             MÃ GIẢM GIÁ / VOUCHER HIỆN ĐANG CÓ:
             $promoListInfo
             
+            PHƯƠNG THỨC THANH TOÁN SHOP HỖ TRỢ:
+            1. Chuyển khoản ngân hàng MB (MBBank) — Quét mã QR, hệ thống tự động xác nhận thanh toán qua SePay.
+            2. Ví điện tử MoMo — Quét mã QR MoMo để thanh toán.
+            3. Thẻ quốc tế (Visa / Mastercard) — Nhập số thẻ, tên, ngày hết hạn và CVV.
+            4. Thanh toán khi nhận hàng (COD) — Trả tiền mặt khi nhận được hàng.
+            
+            QUY TRÌNH ĐẶT HÀNG:
+            Thêm vào giỏ → Vào Giỏ hàng → Nhấn "Thanh toán" → Nhập/chọn địa chỉ giao hàng → Nhập mã giảm giá (nếu có) → Chọn phương thức thanh toán → Xác nhận đơn hàng.
+            
             Ý ĐỊNH NGƯỜI DÙNG: $intent
             
             ${getCommonRules()}
@@ -299,8 +308,15 @@ class AiRepository {
                - Nếu không có mã nào → thông báo "Shop hiện chưa có mã giảm giá nào" và gợi ý khách theo dõi thông báo.
                - Hướng dẫn khách nhập mã ở trang Thanh toán (Checkout).
                - KHÔNG bịa ra mã giảm giá không có trong danh sách.
-            5. PHONG CÁCH: Thân thiện, chuyên nghiệp (Xưng hô: Shop - Bạn).
-            6. NGÔN NGỮ: Tiếng Việt.
+            5. THANH TOÁN:
+               - Khi khách hỏi về cách thanh toán, phương thức thanh toán, chuyển khoản, COD → PHẢI trả lời dựa trên danh sách "PHƯƠNG THỨC THANH TOÁN" phía trên.
+               - Giải thích ngắn gọn ưu điểm từng phương thức nếu khách phân vân.
+               - MBBank QR: Nhanh nhất, tự động xác nhận, không cần chờ duyệt.
+               - MoMo: Tiện lợi, quen thuộc với nhiều người dùng.
+               - Thẻ quốc tế: Phù hợp khách có thẻ Visa/Mastercard.
+               - COD: An tâm, xem hàng rồi mới trả tiền.
+            6. PHONG CÁCH: Thân thiện, chuyên nghiệp (Xưng hô: Shop - Bạn).
+            7. NGÔN NGỮ: Tiếng Việt.
         """.trimIndent()
     }
 
@@ -572,6 +588,11 @@ class AiRepository {
             normalized.contains("khuyen mai") || normalized.contains("uu dai") ||
             normalized.contains("giam gia") || normalized.contains("coupon") ||
             normalized.contains("promo") -> "promo"
+            normalized.contains("thanh toan") || normalized.contains("chuyen khoan") ||
+            normalized.contains("tra gop") || normalized.contains("cod") ||
+            normalized.contains("momo") || normalized.contains("mbbank") ||
+            normalized.contains("visa") || normalized.contains("mastercard") ||
+            normalized.contains("qr") || normalized.contains("tien mat") -> "payment"
             normalized.contains("so sanh") -> "comparison"
             normalized.contains("gia") || normalized.contains("re") -> "budget"
             else -> "advice"
