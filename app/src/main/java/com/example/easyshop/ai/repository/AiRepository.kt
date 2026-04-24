@@ -238,8 +238,19 @@ class AiRepository {
     private fun buildComplexInstruction(intent: String, userContext: String, products: List<ProductModel>, promoCodes: List<PromoCodeModel> = emptyList()): String {
         val productListInfo = formatProductsForAI(products)
         val promoListInfo = formatPromosForAI(promoCodes)
+        
+        val focusInstruction = when(intent) {
+            "promo" -> "TRỌNG TÂM: Khách đang hỏi về khuyến mãi. Hãy liệt kê mã giảm giá rõ ràng, KHÔNG tư vấn sản phẩm trừ khi khách hỏi kèm."
+            "payment" -> "TRỌNG TÂM: Khách đang hỏi về thanh toán. Giải đáp các phương thức thanh toán, KHÔNG lan man sang khuyến mãi hay sản phẩm."
+            "comparison" -> "TRỌNG TÂM: So sánh sản phẩm. Phân tích ưu nhược điểm các sản phẩm khách quan tâm."
+            "budget" -> "TRỌNG TÂM: Tư vấn giá. Tìm sản phẩm phù hợp ngân sách của khách."
+            else -> "TRỌNG TÂM: Tư vấn mua hàng/hỗ trợ chung."
+        }
+
         return """
             BẠN LÀ CHUYÊN VIÊN TƯ VẤN CỦA EASYSHOP.
+            $focusInstruction
+            
             NGỮ CẢNH KHÁCH HÀNG:
             $userContext
             
@@ -314,8 +325,12 @@ class AiRepository {
                - MoMo: Tiện lợi, quen thuộc với nhiều người dùng.
                - Thẻ quốc tế: Phù hợp khách có thẻ Visa/Mastercard.
                - COD: An tâm, xem hàng rồi mới trả tiền.
-            6. PHONG CÁCH: Thân thiện, chuyên nghiệp (Xưng hô: Shop - Bạn).
-            7. NGÔN NGỮ: Tiếng Việt.
+            6. TRẢ LỜI ĐÚNG TRỌNG TÂM: Đây là quy tắc cực kỳ quan trọng. 
+               - Nếu khách hỏi về Voucher -> Chỉ tập trung vào Voucher.
+               - Nếu khách hỏi về Thanh toán -> Chỉ tập trung về Thanh toán.
+               - KHÔNG tự ý gợi ý sản phẩm thay thế hoặc quảng cáo lan man trừ khi khách hỏi "có món nào hay không" hoặc đang trong bối cảnh tư vấn mua sắm chung (advice).
+            7. PHONG CÁCH: Thân thiện, ngắn gọn, chuyên nghiệp (Xưng hô: Shop - Bạn).
+            8. NGÔN NGỮ: Tiếng Việt.
         """.trimIndent()
     }
 
