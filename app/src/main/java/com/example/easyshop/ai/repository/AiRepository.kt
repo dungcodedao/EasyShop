@@ -49,7 +49,7 @@ class AiRepository {
     private val beeknoeeApiKey = BuildConfig.BEEKNOEE_API_KEY
     private val beeknoeeBaseUrl = BuildConfig.BEEKNOEE_BASE_URL.trim().trim('"').trimEnd('/')
     private val beeknoeeModel = BuildConfig.BEEKNOEE_MODEL.ifBlank { "gemini-2.5-flash-lite" }
-    
+
     // Config Cloudinary
     private val cloudinaryCloudName = BuildConfig.CLOUDINARY_CLOUD_NAME
     private val cloudinaryUploadPreset = BuildConfig.CLOUDINARY_UPLOAD_PRESET
@@ -108,7 +108,8 @@ class AiRepository {
     }
 
     /**
-     * Xóa chat
+     * Xóa chat — dùng flag để tránh race condition với Firestore snapshot listener.
+     * Đợi batch delete hoàn tất 300ms trước khi thêm welcome message mới.
      */
     suspend fun clearChat() {
         val collection = getMessagesCollection() ?: return
@@ -116,6 +117,9 @@ class AiRepository {
         db.runBatch { batch ->
             snapshot.documents.forEach { batch.delete(it.reference) }
         }.await()
+        // Delay nhỏ để Firestore local cache kịp propagate xóa
+        // trước khi checkAndShowWelcomeMessage thêm tin nhắn mới
+        kotlinx.coroutines.delay(300)
         checkAndShowWelcomeMessage()
     }
 
@@ -130,12 +134,18 @@ class AiRepository {
         collection.add(ChatMessage(content = userMessage, isUser = true, timestamp = Timestamp.now())).await()
 
         // 2. Thu thập dữ liệu ngữ cảnh (Products + User Context + Promo Codes)
+        val intent = detectIntent(userMessage)
+
+        // Với intent promo/payment không cần danh sách sản phẩm → tiết kiệm ~1000 token/request
+        val needsProducts = intent !in setOf("promo", "payment")
         val allProducts = fetchAllProducts()
-        val relevantProducts = selectRelevantProducts(userMessage, history, allProducts).take(12)
+        val relevantProducts = if (needsProducts) {
+            selectRelevantProducts(userMessage, history, allProducts).take(12)
+        } else emptyList()
+
         val userContext = fetchUserContext(uid, allProducts.associateBy { it.id })
         val activePromos = fetchActivePromoCodes()
-        
-        val intent = detectIntent(userMessage)
+
         val systemInstruction = buildComplexInstruction(intent, userContext, relevantProducts, activePromos)
 
         // 3. Gọi AI với cơ chế Beeknoee là Primary
@@ -212,9 +222,26 @@ class AiRepository {
     private fun selectRelevantProducts(query: String, history: List<ChatMessage>, all: List<ProductModel>): List<ProductModel> {
         val normalizedQuery = foldText(query)
         val queryTokens = getSearchTokens(normalizedQuery)
-        
+
+        // Mở rộng token từ lịch sử hội thoại gần nhất (4 tin nhắn User)
+        // Giúp xử lý các câu hỏi tham chiếu như "cái đó giá bao nhiêu?" hay "còn hàng không?"
+        val historyTokens = history.takeLast(8)
+            .filter { it.isUser }
+            .takeLast(4)
+            .flatMap { getSearchTokens(foldText(it.content)) }
+            .distinct()
+
+        // Query hiện tại có độ ưu tiên cao hơn (weight x2), history bổ sung thêm
+        val allTokens = queryTokens + historyTokens
+
+        // Nếu query hiện tại quá ngắn/mơ hồ (< 2 token có nghĩa), dùng thêm history để bù
+        val effectiveQuery = if (queryTokens.size < 2 && historyTokens.isNotEmpty()) {
+            foldText(history.takeLast(8).filter { it.isUser }.takeLast(2)
+                .joinToString(" ") { it.content })
+        } else normalizedQuery
+
         return all.map { product ->
-            product to calculateProductScore(product, normalizedQuery, queryTokens)
+            product to calculateProductScore(product, effectiveQuery, allTokens, queryTokens)
         }.filter { it.second > 0 }
             .sortedByDescending { it.second }
             .map { it.first }
@@ -226,7 +253,7 @@ class AiRepository {
             val name = userDoc.getString("name") ?: "Khách hàng"
             val cartItems = userDoc.get("cartItems") as? Map<String, Long> ?: emptyMap()
             val cartStr = cartItems.entries.joinToString(", ") { "${productsById[it.key]?.title ?: it.key} x${it.value}" }
-            
+
             val orders = db.collection("orders").whereEqualTo("userId", uid).limit(5).get().await()
                 .documents.mapNotNull { doc -> doc.toObject(OrderModel::class.java) }
             val orderSummary = orders.joinToString("; ") { "${it.id.take(5)}:${it.status}:${it.total}" }
@@ -238,7 +265,7 @@ class AiRepository {
     private fun buildComplexInstruction(intent: String, userContext: String, products: List<ProductModel>, promoCodes: List<PromoCodeModel> = emptyList()): String {
         val productListInfo = formatProductsForAI(products)
         val promoListInfo = formatPromosForAI(promoCodes)
-        
+
         val focusInstruction = when(intent) {
             "promo" -> "TRỌNG TÂM: Khách đang hỏi về khuyến mãi. Hãy liệt kê mã giảm giá rõ ràng, KHÔNG tư vấn sản phẩm trừ khi khách hỏi kèm."
             "payment" -> "TRỌNG TÂM: Khách đang hỏi về thanh toán. Giải đáp các phương thức thanh toán, KHÔNG lan man sang khuyến mãi hay sản phẩm."
@@ -335,7 +362,7 @@ class AiRepository {
     }
 
     private suspend fun requestGeminiWithFallback(sys: String, history: List<ChatMessage>, user: String): String {
-        val models = listOf(geminiModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash").distinct()
+        val models = listOf(geminiModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite").distinct()
         var lastErr: Exception? = null
         for (m in models) {
             try {
@@ -372,7 +399,7 @@ class AiRepository {
         // 3. Thu thập dữ liệu ngữ cảnh
         val allProducts = fetchAllProducts()
         val userContext = fetchUserContext(uid, allProducts.associateBy { it.id })
-        
+
         // Hướng dẫn đặc biệt cho Vision
         val visionSystemInstruction = """
             BẠN LÀ CHUYÊN VIÊN TƯ VẤN THỊ GIÁC CỦA EASYSHOP.
@@ -419,7 +446,7 @@ class AiRepository {
     }
 
     private suspend fun requestGeminiVisionWithFallback(sys: String, history: List<ChatMessage>, user: String, base64Image: String): String {
-        val models = listOf(geminiModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash").distinct()
+        val models = listOf(geminiModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite").distinct()
         var lastErr: Exception? = null
         for (m in models) {
             try {
@@ -436,13 +463,13 @@ class AiRepository {
     }
 
     private suspend fun callGeminiApi(
-        model: String, 
-        sys: String, 
-        history: List<ChatMessage>, 
+        model: String,
+        sys: String,
+        history: List<ChatMessage>,
         user: String,
         base64Image: String? = null
     ): String = withContext(Dispatchers.IO) {
-        val contents = history.takeLast(6).map { 
+        val contents = history.takeLast(6).map {
             mapOf("role" to if(it.isUser) "user" else "model", "parts" to listOf(mapOf("text" to it.content)))
         }.toMutableList()
 
@@ -450,7 +477,7 @@ class AiRepository {
         val currentParts = mutableListOf<Map<String, Any>>(
             mapOf("text" to user)
         )
-        
+
         // Nếu có ảnh, thêm vào parts dưới dạng inline_data
         base64Image?.let {
             currentParts.add(
@@ -481,25 +508,37 @@ class AiRepository {
     }
 
     private suspend fun requestBeeknoeeReply(
-        sys: String, 
-        history: List<ChatMessage>, 
+        sys: String,
+        history: List<ChatMessage>,
         user: String,
         base64Image: String? = null
     ): String = withContext(Dispatchers.IO) {
         val messages = mutableListOf<Map<String, Any>>()
-        
+
         // 1. System Instruction
         if (sys.isNotBlank()) {
             messages.add(mapOf("role" to "system", "content" to sys))
         }
 
         // 2. Chuyển đổi lịch sử & Lọc tin nhắn trống (Tránh lỗi 400)
-        val chatHistory = history.takeLast(10).mapNotNull { msg ->
+        val rawHistory = history.takeLast(10).mapNotNull { msg ->
             val role = if (msg.isUser) "user" else "assistant"
             val text = msg.content.trim()
-            if (text.isNotEmpty()) {
-                mapOf("role" to role, "content" to text)
-            } else null
+            if (text.isNotEmpty()) mapOf("role" to role, "content" to text) else null
+        }
+
+        // Loại bỏ các tin nhắn có role liên tiếp giống nhau (user→user hoặc assistant→assistant)
+        // vì một số model sẽ trả lỗi 400 với sequence không hợp lệ
+        val chatHistory = mutableListOf<Map<String, Any>>()
+        for (msg in rawHistory) {
+            if (chatHistory.isEmpty() || chatHistory.last()["role"] != msg["role"]) {
+                chatHistory.add(msg)
+            } else {
+                // Merge nội dung vào tin nhắn cuối cùng cùng role thay vì bỏ qua
+                val last = chatHistory.last().toMutableMap()
+                last["content"] = "${last["content"]}\n${msg["content"]}"
+                chatHistory[chatHistory.lastIndex] = last
+            }
         }
         messages.addAll(chatHistory)
 
@@ -515,7 +554,7 @@ class AiRepository {
             val finalBase64 = if (!base64Image.startsWith("data:image")) {
                 "data:image/jpeg;base64,$base64Image"
             } else base64Image
-            
+
             content.add(mapOf(
                 "type" to "image_url",
                 "image_url" to mapOf("url" to finalBase64)
@@ -558,9 +597,9 @@ class AiRepository {
 
     private suspend fun uploadImageToCloudinary(base64Image: String): String? = withContext(Dispatchers.IO) {
         if (cloudinaryCloudName.isBlank()) return@withContext null
-        
+
         val url = "https://api.cloudinary.com/v1_1/$cloudinaryCloudName/image/upload"
-        
+
         // Cloudinary có thể nhận base64 trực tiếp kèm prefix
         val finalBase64 = if (!base64Image.startsWith("data:image")) {
             "data:image/jpeg;base64,$base64Image"
@@ -599,14 +638,14 @@ class AiRepository {
         val normalized = foldText(msg)
         return when {
             normalized.contains("ma giam gia") || normalized.contains("voucher") ||
-            normalized.contains("khuyen mai") || normalized.contains("uu dai") ||
-            normalized.contains("giam gia") || normalized.contains("coupon") ||
-            normalized.contains("promo") -> "promo"
+                    normalized.contains("khuyen mai") || normalized.contains("uu dai") ||
+                    normalized.contains("giam gia") || normalized.contains("coupon") ||
+                    normalized.contains("promo") -> "promo"
             normalized.contains("thanh toan") || normalized.contains("chuyen khoan") ||
-            normalized.contains("tra gop") || normalized.contains("cod") ||
-            normalized.contains("momo") || normalized.contains("mbbank") ||
-            normalized.contains("visa") || normalized.contains("mastercard") ||
-            normalized.contains("qr") || normalized.contains("tien mat") -> "payment"
+                    normalized.contains("tra gop") || normalized.contains("cod") ||
+                    normalized.contains("momo") || normalized.contains("mbbank") ||
+                    normalized.contains("visa") || normalized.contains("mastercard") ||
+                    normalized.contains("qr") || normalized.contains("tien mat") -> "payment"
             normalized.contains("so sanh") -> "comparison"
             normalized.contains("gia") || normalized.contains("re") -> "budget"
             else -> "advice"
@@ -620,18 +659,36 @@ class AiRepository {
             .filter { it.isNotBlank() && it !in STOP_WORDS }
     }
 
-    private fun calculateProductScore(product: ProductModel, query: String, queryTokens: List<String>): Int {
+    /**
+     * @param query          Câu query đã normalize (dùng để match nguyên cụm)
+     * @param allTokens      Tất cả token = query hiện tại + history (dùng để match từng từ)
+     * @param primaryTokens  Chỉ token từ query hiện tại (điểm cao hơn history tokens)
+     */
+    private fun calculateProductScore(
+        product: ProductModel,
+        query: String,
+        allTokens: List<String>,
+        primaryTokens: List<String> = allTokens
+    ): Int {
         var score = 0
         val titleFolded = foldText(product.title)
-        
-        // Match nguyên câu (ưu tiên cao)
+        val categoryFolded = foldText(product.category.ifBlank { "" })
+
+        // Match nguyên câu — ưu tiên tuyệt đối
         if (titleFolded.contains(query)) score += 10
-        
-        // Match từng từ
-        queryTokens.forEach { token ->
-            if (titleFolded.contains(token)) score += 2
+
+        // Match token từ query hiện tại — ưu tiên cao
+        primaryTokens.forEach { token ->
+            if (titleFolded.contains(token)) score += 3
+            if (categoryFolded.contains(token)) score += 1
         }
-        
+
+        // Match token bổ sung từ history — ưu tiên thấp hơn
+        val historyOnlyTokens = allTokens - primaryTokens.toSet()
+        historyOnlyTokens.forEach { token ->
+            if (titleFolded.contains(token)) score += 1
+        }
+
         return score
     }
 }

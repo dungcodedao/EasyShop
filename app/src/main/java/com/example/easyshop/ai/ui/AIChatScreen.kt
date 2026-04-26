@@ -249,6 +249,7 @@ fun AIChatScreen(
                         onValueChange = { inputText = it },
                         isLoading = isLoading,
                         isListening = isListening,
+                        selectedImageAttached = selectedImage != null,
                         onMicClick = {
                             val currentTime = System.currentTimeMillis()
                             if (currentTime - lastClickTime > clickThrottleMs) {
@@ -297,9 +298,9 @@ fun AIChatScreen(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    start = 14.dp, 
-                    end = 14.dp, 
-                    top = padding.calculateTopPadding() + 8.dp, 
+                    start = 14.dp,
+                    end = 14.dp,
+                    top = padding.calculateTopPadding() + 8.dp,
                     bottom = 14.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -358,8 +359,8 @@ fun AIChatScreen(
 @Composable
 private fun ChatTopBar(onBack: () -> Unit, onClear: () -> Unit) {
     Surface(
-        shadowElevation = 8.dp, 
-        tonalElevation = 2.dp, 
+        shadowElevation = 8.dp,
+        tonalElevation = 2.dp,
         color = MaterialTheme.colorScheme.surface,
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -494,6 +495,7 @@ fun ChatInput(
     onValueChange: (String) -> Unit,
     isLoading: Boolean,
     isListening: Boolean,
+    selectedImageAttached: Boolean = false,
     onMicClick: () -> Unit,
     onImageClick: () -> Unit,
     onImagePaste: (Bitmap) -> Unit,
@@ -633,7 +635,7 @@ fun ChatInput(
 
         Button(
             onClick = onSend,
-            enabled = (value.isNotBlank() || isLoading) && !isListening,
+            enabled = (value.isNotBlank() || selectedImageAttached) && !isLoading && !isListening,
             shape = CircleShape,
             modifier = Modifier.size(44.dp),
             contentPadding = PaddingValues(0.dp),
@@ -669,15 +671,16 @@ fun ErrorMessage(message: String, onDismiss: () -> Unit) {
 @Composable
 fun MarkdownText(text: String, textColor: Color, onProductClick: (String) -> Unit) {
     val productIds = remember(text) {
-        Regex("\\[(.*?)]").findAll(text)
-            .map { it.groupValues[1].trim().replace("PID_", "") }
+        // Chỉ match đúng pattern [PID_xxx], tránh bắt nhầm [Còn hàng], [...] trong Markdown
+        Regex("\\[PID_([^\\]]+)]").findAll(text)
+            .map { it.groupValues[1].trim() }
             .filter { it.isNotBlank() }
             .distinct()
             .toList()
     }
 
     val contentWithoutPids = remember(text) {
-        text.replace(Regex("\\[(.*?)]"), "").trim()
+        text.replace(Regex("\\[PID_[^\\]]+]"), "").trim()
     }
 
     Column {
