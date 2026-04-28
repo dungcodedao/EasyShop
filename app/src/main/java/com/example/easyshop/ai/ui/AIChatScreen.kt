@@ -125,6 +125,7 @@ fun AIChatScreen(
     val error by viewModel.error.collectAsState()
     val typingMessage by viewModel.typingMessage.collectAsState()
     val speechText by viewModel.speechText.collectAsState()
+    val partialSpeechText by viewModel.partialSpeechText.collectAsState()
 
     var inputText by remember { mutableStateOf("") }
     var selectedImage by remember { mutableStateOf<Bitmap?>(null) }
@@ -146,6 +147,7 @@ fun AIChatScreen(
         }
     }
 
+    // Chỉ append vào inputText khi có kết quả CUỐI (onResults), không phải partial
     LaunchedEffect(speechText) {
         if (speechText.isNotBlank()) {
             inputText = if (inputText.isBlank()) speechText else "$inputText $speechText"
@@ -250,6 +252,7 @@ fun AIChatScreen(
                         isLoading = isLoading,
                         isListening = isListening,
                         selectedImageAttached = selectedImage != null,
+                        partialSpeechText = partialSpeechText,
                         onMicClick = {
                             val currentTime = System.currentTimeMillis()
                             if (currentTime - lastClickTime > clickThrottleMs) {
@@ -496,6 +499,7 @@ fun ChatInput(
     isLoading: Boolean,
     isListening: Boolean,
     selectedImageAttached: Boolean = false,
+    partialSpeechText: String = "",
     onMicClick: () -> Unit,
     onImageClick: () -> Unit,
     onImagePaste: (Bitmap) -> Unit,
@@ -602,7 +606,15 @@ fun ChatInput(
                             contentInfo
                         }
                     },
-                placeholder = { Text(if (isListening) "Đang nghe..." else "Nhập tin nhắn...") },
+                placeholder = {
+                    Text(
+                        when {
+                            partialSpeechText.isNotBlank() -> partialSpeechText  // Preview text đang nói
+                            isListening -> "Đang nghe..."
+                            else -> "Nhập tin nhắn..."
+                        }
+                    )
+                },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
