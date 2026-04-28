@@ -1,10 +1,13 @@
 package com.example.easyshop.admin.viewmodel
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.easyshop.model.ChatSession
 import com.example.easyshop.model.ShopChatMessage
 import com.example.easyshop.repository.ChatRepository
+import com.example.easyshop.util.CloudinaryUploader
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.*
@@ -27,6 +30,10 @@ class AdminChatViewModel : ViewModel() {
 
     private val _selectedUserId = MutableStateFlow<String?>(null)
     val selectedUserId: StateFlow<String?> = _selectedUserId.asStateFlow()
+
+    /** Trạng thái đang upload ảnh */
+    private val _isUploadingImage = MutableStateFlow(false)
+    val isUploadingImage: StateFlow<Boolean> = _isUploadingImage.asStateFlow()
 
     private val userCache = mutableMapOf<String, com.example.easyshop.model.UserModel>()
 
@@ -97,6 +104,43 @@ class AdminChatViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Gửi tin nhắn ảnh (đã có URL)
+     */
+    fun sendImageMessage(imageUrl: String) {
+        val userId = _selectedUserId.value ?: return
+        val adminName = currentUser?.displayName ?: "Admin"
+
+        viewModelScope.launch {
+            val message = ShopChatMessage(
+                senderId = currentUser?.uid ?: "admin",
+                senderName = adminName,
+                text = "",
+                imageUrl = imageUrl,
+                timestamp = Timestamp.now()
+            )
+            repository.sendMessage(message, userId, "User", isAdmin = true)
+        }
+    }
+
+    /**
+     * Upload ảnh từ URI lên Cloudinary rồi gửi tin nhắn ảnh.
+     */
+    fun uploadAndSendImage(context: Context, uri: Uri) {
+        if (_selectedUserId.value == null) return
+        viewModelScope.launch {
+            _isUploadingImage.value = true
+            try {
+                val imageUrl = CloudinaryUploader.uploadFromUri(context, uri, folder = "chat_images")
+                if (imageUrl != null) {
+                    sendImageMessage(imageUrl)
+                }
+            } finally {
+                _isUploadingImage.value = false
+            }
+        }
+    }
+
     fun deleteChatSession(userId: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             repository.deleteChatSession(userId)
@@ -104,4 +148,3 @@ class AdminChatViewModel : ViewModel() {
         }
     }
 }
-

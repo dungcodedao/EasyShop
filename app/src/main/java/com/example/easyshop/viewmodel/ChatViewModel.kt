@@ -1,9 +1,12 @@
 package com.example.easyshop.viewmodel
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.easyshop.model.ShopChatMessage
 import com.example.easyshop.repository.ChatRepository
+import com.example.easyshop.util.CloudinaryUploader
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +25,10 @@ class ChatViewModel : ViewModel() {
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    /** Trạng thái đang upload ảnh */
+    private val _isUploadingImage = MutableStateFlow(false)
+    val isUploadingImage: StateFlow<Boolean> = _isUploadingImage.asStateFlow()
 
     init {
         currentUser?.uid?.let { uid ->
@@ -60,7 +67,7 @@ class ChatViewModel : ViewModel() {
             val message = ShopChatMessage(
                 senderId = currentUser.uid,
                 senderName = currentUser.displayName ?: "Khách hàng",
-                text = "Đã gửi một hình ảnh",
+                text = "",
                 imageUrl = imageUrl,
                 timestamp = Timestamp.now()
             )
@@ -71,6 +78,24 @@ class ChatViewModel : ViewModel() {
                 isAdmin = false,
                 userProfileImage = currentUser.photoUrl?.toString()
             )
+        }
+    }
+
+    /**
+     * Upload ảnh từ URI lên Cloudinary rồi gửi tin nhắn ảnh.
+     */
+    fun uploadAndSendImage(context: Context, uri: Uri) {
+        if (currentUser == null) return
+        viewModelScope.launch {
+            _isUploadingImage.value = true
+            try {
+                val imageUrl = CloudinaryUploader.uploadFromUri(context, uri, folder = "chat_images")
+                if (imageUrl != null) {
+                    sendImageMessage(imageUrl)
+                }
+            } finally {
+                _isUploadingImage.value = false
+            }
         }
     }
 
