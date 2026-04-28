@@ -225,15 +225,20 @@ fun AppNavigation(modifier: Modifier = Modifier) {
 
             // Receipt
             composable(
-                route = "receipt/{amount}/{orderId}",
+                route = "receipt/{amount}/{orderId}?fromAdmin={fromAdmin}",
                 arguments = listOf(
                     navArgument("amount") { type = NavType.FloatType },
-                    navArgument("orderId") { type = NavType.StringType }
+                    navArgument("orderId") { type = NavType.StringType },
+                    navArgument("fromAdmin") { 
+                        type = NavType.BoolType
+                        defaultValue = false
+                    }
                 )
             ) { backStackEntry ->
                 val amount = backStackEntry.arguments?.getFloat("amount") ?: 0.0f
                 val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
-                ReceiptScreen(navController, amount.toDouble(), orderId)
+                val fromAdmin = backStackEntry.arguments?.getBoolean("fromAdmin") ?: false
+                ReceiptScreen(navController, amount.toDouble(), orderId, fromAdmin)
             }
 
             // 🛡️ Admin Profile (Trang riêng cho Quản trị viên)
@@ -264,11 +269,21 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             }
 
             composable(
-                route = "admin-chat-detail/{userId}",
-                arguments = listOf(navArgument("userId") { type = NavType.StringType })
+                route = "admin-chat-detail/{userId}?userName={userName}&userAvatar={userAvatar}",
+                arguments = listOf(
+                    androidx.navigation.navArgument("userId") { type = androidx.navigation.NavType.StringType },
+                    androidx.navigation.navArgument("userName") { type = androidx.navigation.NavType.StringType; nullable = true; defaultValue = null },
+                    androidx.navigation.navArgument("userAvatar") { type = androidx.navigation.NavType.StringType; nullable = true; defaultValue = null }
+                )
             ) { backStackEntry ->
                 val userId = backStackEntry.arguments?.getString("userId") ?: ""
-                AdminChatDetailScreen(navController, userId)
+                val userNameArg = backStackEntry.arguments?.getString("userName")
+                val userName = if (userNameArg != null) java.net.URLDecoder.decode(userNameArg, "UTF-8") else null
+                
+                val userAvatarArg = backStackEntry.arguments?.getString("userAvatar")
+                val userAvatar = if (userAvatarArg != null && userAvatarArg != "null") java.net.URLDecoder.decode(userAvatarArg, "UTF-8") else null
+                
+                AdminChatDetailScreen(navController, userId, userName, userAvatar)
             }
             }
 

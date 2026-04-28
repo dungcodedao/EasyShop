@@ -104,6 +104,7 @@ fun CheckoutPage(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(id = R.string.checkout), fontWeight = FontWeight.Bold) },

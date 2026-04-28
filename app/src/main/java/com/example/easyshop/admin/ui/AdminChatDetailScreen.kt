@@ -27,12 +27,18 @@ import com.example.easyshop.chat.ui.SimpleChatBubble
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.ui.res.stringResource
 import com.example.easyshop.R
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminChatDetailScreen(
     navController: NavController,
     userId: String,
+    userName: String? = null,
+    userAvatar: String? = null,
     viewModel: AdminChatViewModel = viewModel()
 ) {
     val messages by viewModel.messages.collectAsState()
@@ -52,10 +58,77 @@ fun AdminChatDetailScreen(
         }
     }
 
+    val chatSessions by viewModel.chatSessions.collectAsState()
+    val chatSession = chatSessions.find { it.userId == userId }
+    val lastTimestamp = chatSession?.lastTimestamp
+
+    val displayUserName = chatSession?.userName?.takeIf { it.isNotBlank() } ?: userName ?: "Khách hàng"
+    val displayUserAvatar = chatSession?.userProfileImage?.takeIf { it.isNotBlank() } ?: userAvatar
+
+    var statusText by remember { mutableStateOf("Đang tải...") }
+    LaunchedEffect(lastTimestamp) {
+        while (true) {
+            if (lastTimestamp != null) {
+                val now = System.currentTimeMillis() / 1000
+                val diff = now - lastTimestamp.seconds
+                statusText = when {
+                    diff < 60 -> "Đang hoạt động"
+                    diff < 3600 -> "Hoạt động ${diff / 60} phút trước"
+                    diff < 86400 -> "Hoạt động ${diff / 3600} giờ trước"
+                    else -> "Hoạt động ${diff / 86400} ngày trước"
+                }
+            } else {
+                statusText = "Đang tải thông tin..."
+            }
+            kotlinx.coroutines.delay(60000) // update every minute
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Đang trả lời khách hàng", style = MaterialTheme.typography.titleMedium) },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (!displayUserAvatar.isNullOrEmpty()) {
+                            AsyncImage(
+                                model = displayUserAvatar,
+                                contentDescription = "User Avatar",
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.LightGray),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = displayUserName.takeIf { it.isNotBlank() }?.take(1)?.uppercase() ?: "K",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                        }
+                        Column {
+                            Text(
+                                text = displayUserName,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = statusText,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (statusText == "Đang hoạt động") Color(0xFF4CAF50) else Color.Gray
+                            )
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")

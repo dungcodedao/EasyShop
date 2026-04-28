@@ -37,6 +37,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -283,7 +284,33 @@ fun OrderDetailsPage(modifier: Modifier = Modifier, orderId: String) {
                                         scope.launch {
                                             Firebase.firestore.collection("orders").document(orderId)
                                                 .update("status", "CANCELLED")
-                                                .addOnSuccessListener { order = order?.copy(status = "CANCELLED"); showCancelDialog = false }
+                                                .addOnSuccessListener { 
+                                                    // --- HOÀN KHO KHI USER HỦY ĐƠN ---
+                                                    android.util.Log.d("EasyShop_User", "Người dùng đã hủy đơn #${orderId.take(8)}. Tiến hành hoàn kho...")
+                                                    order?.let { AppUtil.restoreStock(it.items) }
+                                                    
+                                                    val updatedOrder = order?.copy(status = "CANCELLED")
+                                                    order = updatedOrder
+                                                    showCancelDialog = false 
+                                                    
+                                                    // Thông báo cho Admin
+                                                    val adminNotif = hashMapOf(
+                                                        "title" to "Đơn hàng đã bị hủy",
+                                                        "body" to "Khách hàng ${order?.userName} vừa hủy đơn #${orderId.take(8).uppercase()}",
+                                                        "type" to "CANCELLED",
+                                                        "orderId" to orderId,
+                                                        "isRead" to false,
+                                                        "recipientRole" to "admin",
+                                                        "createdAt" to com.google.firebase.Timestamp.now()
+                                                    )
+                                                    Firebase.firestore.collection("notifications").add(adminNotif)
+                                                    
+                                                    com.example.easyshop.services.FcmSender.sendToAdmins(
+                                                        title = "Đơn hàng bị hủy",
+                                                        body = "Khách hàng ${order?.userName} vừa hủy đơn #${orderId.take(8).uppercase()}",
+                                                        type = "CANCELLED"
+                                                    )
+                                                }
                                         }
                                     }) { Text(stringResource(id = R.string.yes_cancel), color = MaterialTheme.colorScheme.error) }
                                 },

@@ -112,6 +112,13 @@ fun OrdersManagementScreen(
         scope.launch {
             try {
                 Firebase.firestore.collection("orders").document(order.id).update("status", newStatus).await()
+                
+                // --- LOGIC HOÀN KHO KHI HỦY ĐƠN ---
+                if (newStatus == "CANCELLED") {
+                    android.util.Log.d("EasyShop_Admin", "Admin đã hủy đơn #${order.id.take(8)}. Tiến hành hoàn kho...")
+                    AppUtil.restoreStock(order.items)
+                }
+                
                 createNotificationForUser(order, newStatus)
                 AppUtil.showSuccess(context.getString(R.string.order_updated_msg, order.id.take(8).uppercase()))
                 loadOrders()
@@ -800,9 +807,60 @@ fun OrderDetailsDialog(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
+                // Subtotal row
+                val subtotalVal = if (order.subtotal > 0) order.subtotal else order.total
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.subtotal),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = currencyFormat.format(subtotalVal),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                // Discount row (chỉ hiện khi có giảm giá)
+                if (order.discount > 0) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(id = R.string.discount),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            if (order.promoCode.isNotBlank()) {
+                                Text(
+                                    text = "Mã: ${order.promoCode}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
+                        Text(
+                            text = "- ${currencyFormat.format(order.discount)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
+
+                // Total row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = stringResource(id = R.string.total_amount),
@@ -811,8 +869,8 @@ fun OrderDetailsDialog(
                     )
                     Text(
                         text = currencyFormat.format(order.total),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -866,7 +924,7 @@ fun OrderDetailsDialog(
 
                 Button(
                     onClick = {
-                        navController.navigate("receipt/${order.total}/${order.id}")
+                        navController.navigate("receipt/${order.total}/${order.id}?fromAdmin=true")
                     },
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                     shape = RoundedCornerShape(12.dp),

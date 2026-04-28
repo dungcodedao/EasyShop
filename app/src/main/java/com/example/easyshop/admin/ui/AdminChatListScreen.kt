@@ -72,7 +72,9 @@ fun AdminChatListScreen(
             LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
                 items(sessions) { session ->
                     ChatSessionItem(session) {
-                        navController.navigate("admin-chat-detail/${session.userId}")
+                        val encodedName = java.net.URLEncoder.encode(session.userName.ifBlank { "Khách hàng" }, "UTF-8")
+                        val encodedAvatar = session.userProfileImage?.let { java.net.URLEncoder.encode(it, "UTF-8") } ?: "null"
+                        navController.navigate("admin-chat-detail/${session.userId}?userName=$encodedName&userAvatar=$encodedAvatar")
                     }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = Color.LightGray)
                 }

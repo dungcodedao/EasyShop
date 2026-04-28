@@ -82,13 +82,12 @@ fun NotificationsPage(navController: NavController) {
 
     val context = androidx.compose.ui.platform.LocalContext.current
 
-    // Load data from Firestore
-    LaunchedEffect(uid) {
-        if (uid != null) {
-            val listener = db.collection("notifications")
+    // Lắng nghe dữ liệu realtime (Sử dụng DisposableEffect để tránh memory leak)
+    DisposableEffect(uid) {
+        val listener = if (uid != null) {
+            db.collection("notifications")
                 .whereEqualTo("recipientRole", "user")
                 .whereIn("userId", listOf(uid, "broadcast"))
-                .orderBy("createdAt", Query.Direction.DESCENDING)
                 .addSnapshotListener { snapshot, error ->
                     isLoading = false
                     if (error != null) {
@@ -100,14 +99,21 @@ fun NotificationsPage(navController: NavController) {
                             val notif = it.toObject(NotificationModel::class.java)
                             notif?.copy(id = it.id)
                         }
-                        notifications = list
+                        notifications = list.sortedByDescending { it.createdAt }
                         unreadCount = notifications.count { !it.isRead }
                     }
                 }
         } else {
             isLoading = false
+            null
         }
 
+        onDispose {
+            listener?.remove()
+        }
+    }
+
+    LaunchedEffect(uid) {
         // Load promos: chỉ lấy các mã đang active VÀ đã được Admin phát hành (isIssued = true)
         db.collection("promoCodes")
             .whereEqualTo("active", true)

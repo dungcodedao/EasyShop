@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -42,8 +41,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import com.example.easyshop.R
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -54,13 +53,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import androidx.compose.ui.layout.ContentScale
+import com.example.easyshop.R
 import com.example.easyshop.model.AdminMenuItem
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -81,8 +81,43 @@ fun AdminDashboardScreen(
     var unreadNotifCount by remember { mutableIntStateOf(0) }
     var unreadChatCount by remember { mutableIntStateOf(0) }
 
+    var showExitDialog by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    androidx.activity.compose.BackHandler {
+        showExitDialog = true
+    }
+
+    if (showExitDialog) {
+        com.example.easyshop.screen.ExitConfirmationDialog(
+            onConfirm = { (context as? android.app.Activity)?.finish() },
+            onDismiss = { showExitDialog = false }
+        )
+    }
+
     val firestore = Firebase.firestore
     val currentUser = FirebaseAuth.getInstance().currentUser
+
+    // Lắng nghe dữ liệu realtime (Thoát màn hình thì ngắt kết nối để tránh memory leak)
+    DisposableEffect(key1 = Unit) {
+        val notifListener = firestore.collection("notifications")
+            .whereEqualTo("recipientRole", "admin")
+            .whereEqualTo("isRead", false)
+            .addSnapshotListener { snap, _ ->
+                unreadNotifCount = snap?.size() ?: 0
+            }
+
+        val chatListener = firestore.collection("chats")
+            .whereGreaterThan("unreadCountByAdmin", 0)
+            .addSnapshotListener { snap, _ ->
+                unreadChatCount = snap?.size() ?: 0
+            }
+
+        onDispose {
+            notifListener.remove()
+            chatListener.remove()
+        }
+    }
 
     LaunchedEffect(key1 = Unit) {
         currentUser?.let { user ->
@@ -118,21 +153,6 @@ fun AdminDashboardScreen(
             }
         firestore.collection("data").document("stock").collection("categories").get()
             .addOnSuccessListener { totalCategories = it.size() }
-
-        // Realtime lắng nghe thông báo chưa đọc của admin
-        firestore.collection("notifications")
-            .whereEqualTo("recipientRole", "admin")
-            .whereEqualTo("isRead", false)
-            .addSnapshotListener { snap, _ ->
-                unreadNotifCount = snap?.size() ?: 0
-            }
-
-        // Realtime lắng nghe tin nhắn chưa đọc
-        firestore.collection("chats")
-            .whereGreaterThan("unreadCountByAdmin", 0)
-            .addSnapshotListener { snap, _ ->
-                unreadChatCount = snap?.size() ?: 0
-            }
     }
 
     val menuItems = listOf(

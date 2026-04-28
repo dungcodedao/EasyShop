@@ -148,21 +148,30 @@ class AiRepository {
 
         val systemInstruction = buildComplexInstruction(intent, userContext, relevantProducts, activePromos)
 
-        // 3. Gọi AI với cơ chế Beeknoee là Primary
+        // 3. Gọi AI — Gemini trước (miễn phí), Beeknoee là fallback (tiết kiệm credit)
+        // Nếu Gemini hết quota/503 → tự động chuyển sang Beeknoee
         var aiResponse = ""
-        try {
-            if (beeknoeeApiKey.isNotBlank()) {
-                Log.d("AI_CHAT", "Calling Beeknoee (Primary)...")
-                aiResponse = requestBeeknoeeReply(systemInstruction, history, userMessage)
+        val geminiQuotaError = runCatching {
+            aiResponse = requestGeminiWithFallback(systemInstruction, history, userMessage)
+        }.exceptionOrNull()
+
+        if (aiResponse.isBlank()) {
+            val isQuota = geminiQuotaError?.message?.contains("bận") == true
+                    || geminiQuotaError?.message?.contains("429") == true
+                    || geminiQuotaError?.message?.contains("503") == true
+                    || geminiQuotaError?.message?.contains("RESOURCE_EXHAUSTED") == true
+                    || geminiQuotaError?.message?.contains("UNAVAILABLE") == true
+
+            if (isQuota && beeknoeeApiKey.isNotBlank()) {
+                Log.w("AI_CHAT", "Gemini quota/unavailable → switching to Beeknoee fallback...")
+                try {
+                    aiResponse = requestBeeknoeeReply(systemInstruction, history, userMessage)
+                } catch (be: Exception) {
+                    Log.e("AI_CHAT", "Beeknoee also failed: ${be.message}")
+                    throw Exception("Shop đang bận, bạn vui lòng thử lại sau vài giây nhé! 🙏")
+                }
             } else {
-                throw Exception("Beeknoee Key missing")
-            }
-        } catch (e: Exception) {
-            Log.w("AI_CHAT", "Beeknoee failed: ${e.message}. Using Gemini Fallback...")
-            try {
-                aiResponse = requestGeminiWithFallback(systemInstruction, history, userMessage)
-            } catch (ge: Exception) {
-                throw ge
+                throw geminiQuotaError ?: Exception("Không thể kết nối AI lúc này.")
             }
         }
 
@@ -362,8 +371,12 @@ class AiRepository {
     }
 
     private suspend fun requestGeminiWithFallback(sys: String, history: List<ChatMessage>, user: String): String {
-        val models = listOf(geminiModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite").distinct()
+        // gemini-2.0-flash-lite và gemini-1.5-flash đều không có free tier quota → loại khỏi danh sách
+        // Chỉ giữ các model có free tier hợp lệ
+        val models = listOf(geminiModel, "gemini-2.5-flash", "gemini-2.0-flash").distinct()
         var lastErr: Exception? = null
+        var allQuotaExhausted = true
+
         for (m in models) {
             try {
                 Log.d("AI_CHAT", "Trying Gemini: $m")
@@ -371,11 +384,23 @@ class AiRepository {
             } catch (e: Exception) {
                 lastErr = e
                 Log.w("AI_CHAT", "Gemini $m failed: ${e.message}")
-                if (e.message?.contains("quota") == true || e.message?.contains("429") == true) continue
-                if (m == models.last()) throw e
+                val isQuotaError = e.message?.contains("429") == true
+                        || e.message?.contains("quota") == true
+                        || e.message?.contains("RESOURCE_EXHAUSTED") == true
+                if (isQuotaError) {
+                    continue // thử model tiếp theo
+                } else {
+                    allQuotaExhausted = false
+                    throw e // lỗi khác (404, 400...) → throw ngay, không retry
+                }
             }
         }
-        throw lastErr ?: Exception("Gemini Error")
+
+        // Tất cả model đều bị quota → hiện thông báo thân thiện thay vì JSON thô
+        if (allQuotaExhausted) {
+            throw Exception("Shop đang bận, bạn vui lòng thử lại sau vài giây nhé! 🙏")
+        }
+        throw lastErr ?: Exception("Không thể kết nối AI lúc này.")
     }
 
     /**
@@ -418,21 +443,28 @@ class AiRepository {
             ${getCommonRules()}
         """.trimIndent()
 
-        // 4. Gọi AI Vision (Beeknoee Primary)
+        // 4. Gọi AI Vision — Gemini trước (miễn phí), Beeknoee fallback khi Gemini hết quota
         var aiResponse = ""
-        try {
-            if (beeknoeeApiKey.isNotBlank()) {
-                Log.d("AI_CHAT", "Calling Beeknoee Vision (Primary)...")
-                aiResponse = requestBeeknoeeReply(visionSystemInstruction, history, userMessage, base64Image)
+        val geminiVisionError = runCatching {
+            aiResponse = requestGeminiVisionWithFallback(visionSystemInstruction, history, userMessage, base64Image)
+        }.exceptionOrNull()
+
+        if (aiResponse.isBlank()) {
+            val isQuota = geminiVisionError?.message?.contains("bận") == true
+                    || geminiVisionError?.message?.contains("429") == true
+                    || geminiVisionError?.message?.contains("503") == true
+                    || geminiVisionError?.message?.contains("RESOURCE_EXHAUSTED") == true
+                    || geminiVisionError?.message?.contains("UNAVAILABLE") == true
+
+            if (isQuota && beeknoeeApiKey.isNotBlank()) {
+                Log.w("AI_CHAT", "Gemini Vision quota/unavailable → switching to Beeknoee Vision fallback...")
+                try {
+                    aiResponse = requestBeeknoeeReply(visionSystemInstruction, history, userMessage, base64Image)
+                } catch (be: Exception) {
+                    Log.e("AI_CHAT", "All AI providers failed: ${be.message}")
+                    aiResponse = "Xin lỗi, mình gặp trục trặc khi kết nối với máy chủ AI. Bạn vui lòng thử lại sau nhé!"
+                }
             } else {
-                throw Exception("Beeknoee Key missing")
-            }
-        } catch (e: Exception) {
-            Log.w("AI_CHAT", "Beeknoee Vision failed: ${e.message}. Using Gemini Vision Fallback...")
-            try {
-                aiResponse = requestGeminiVisionWithFallback(visionSystemInstruction, history, userMessage, base64Image)
-            } catch (ge: Exception) {
-                Log.e("AI_CHAT", "All AI providers failed", ge)
                 aiResponse = "Xin lỗi, mình gặp trục trặc khi kết nối với máy chủ AI. Bạn vui lòng thử lại sau nhé!"
             }
         }
@@ -446,8 +478,10 @@ class AiRepository {
     }
 
     private suspend fun requestGeminiVisionWithFallback(sys: String, history: List<ChatMessage>, user: String, base64Image: String): String {
-        val models = listOf(geminiModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite").distinct()
+        val models = listOf(geminiModel, "gemini-2.5-flash", "gemini-2.0-flash").distinct()
         var lastErr: Exception? = null
+        var allQuotaExhausted = true
+
         for (m in models) {
             try {
                 Log.d("AI_CHAT", "Trying Gemini Vision: $m")
@@ -455,11 +489,22 @@ class AiRepository {
             } catch (e: Exception) {
                 lastErr = e
                 Log.w("AI_CHAT", "Gemini Vision $m failed: ${e.message}")
-                if (e.message?.contains("quota") == true || e.message?.contains("429") == true) continue
-                if (m == models.last()) throw e
+                val isQuotaError = e.message?.contains("429") == true
+                        || e.message?.contains("quota") == true
+                        || e.message?.contains("RESOURCE_EXHAUSTED") == true
+                if (isQuotaError) {
+                    continue
+                } else {
+                    allQuotaExhausted = false
+                    throw e
+                }
             }
         }
-        throw lastErr ?: Exception("Gemini Vision Error")
+
+        if (allQuotaExhausted) {
+            throw Exception("Shop đang bận, bạn vui lòng thử lại sau vài giây nhé! 🙏")
+        }
+        throw lastErr ?: Exception("Không thể kết nối AI lúc này.")
     }
 
     private suspend fun callGeminiApi(

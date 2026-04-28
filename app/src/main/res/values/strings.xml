@@ -11,6 +11,7 @@
     <!-- Profile Page -->
     <string name="profile">Hồ sơ</string>
     <string name="address">Địa chỉ</string>
+    <string name="back_nav">Quay lại</string>
     <string name="email">Email</string>
     <string name="cart_items">Giỏ hàng</string>
     <string name="your_cart">Giỏ hàng của bạn</string>

@@ -166,12 +166,19 @@ class CheckoutViewModel : ViewModel() {
         _discount.value = 0.0
     }
 
-    fun setDiscountInfo(promoCode: String, discount: Double) {
+    fun setDiscountInfo(promoCode: String, discount: Double, subtotal: Double? = null) {
         _promoCode.value = promoCode
         _discount.value = discount
+        subtotal?.let { _subtotal.value = it }
     }
 
-    fun placeOrder(paymentMethod: String, note: String = "") {
+    fun placeOrder(
+        paymentMethod: String, 
+        note: String = "",
+        manualSubtotal: Double? = null,
+        manualDiscount: Double? = null,
+        manualPromoCode: String? = null
+    ) {
         val user = _userModel.value ?: return
         val address = _selectedAddress.value
         if (address == null) {
@@ -186,7 +193,14 @@ class CheckoutViewModel : ViewModel() {
 
         viewModelScope.launch {
             val orderId = "ORD" + UUID.randomUUID().toString().replace("-", "").take(8).uppercase()
-            val total = (_subtotal.value - _discount.value).coerceAtLeast(0.0)
+            
+            // Use manual values if provided (e.g. from Navigation args in PaymentScreen),
+            // otherwise fallback to ViewModel state.
+            val subtotalToUse = manualSubtotal ?: _subtotal.value
+            val discountToUse = manualDiscount ?: _discount.value
+            val promoCodeToUse = manualPromoCode ?: _promoCode.value
+            
+            val total = (subtotalToUse - discountToUse).coerceAtLeast(0.0)
             
             val order = OrderModel(
                 id = orderId,
@@ -195,9 +209,9 @@ class CheckoutViewModel : ViewModel() {
                 userEmail = user.email,
                 userPhone = address.phone,
                 items = user.cartItems,
-                subtotal = _subtotal.value,
-                discount = _discount.value,
-                promoCode = _promoCode.value,
+                subtotal = subtotalToUse,
+                discount = discountToUse,
+                promoCode = promoCodeToUse,
                 total = total,
                 status = "ORDERED",
                 address = "${address.label}: ${address.detailedAddress}",
@@ -216,15 +230,18 @@ class CheckoutViewModel : ViewModel() {
                         productRef to transaction.get(productRef)
                     }
 
-                    val promoSnap = if (_promoCode.value.isNotEmpty()) {
-                        val promoRef = db.collection("promoCodes").document(_promoCode.value)
+                    val promoSnap = if (promoCodeToUse.isNotEmpty() && promoCodeToUse != "NONE") {
+                        val promoRef = db.collection("promoCodes").document(promoCodeToUse)
                         promoRef to transaction.get(promoRef)
                     } else null
 
                     // --- GIAI ĐOẠN 2: KIỂM TRA & GHI (WRITES) ---
+                    android.util.Log.d("EasyShop_Checkout", "--- Bắt đầu cập nhật kho hàng ---")
                     productSnapshots.forEach { (productRef, snapshot) ->
                         val qty = user.cartItems[snapshot.id] ?: 0L
                         val stock = snapshot.getLong("stockCount") ?: 0L
+                        
+                        android.util.Log.d("EasyShop_Checkout", "Kiểm tra SP: ${snapshot.getString("title")} | Cần: $qty | Kho: $stock")
                         
                         if (stock < qty) {
                             throw Exception("Sản phẩm ${snapshot.getString("title")} đã hết hàng hoặc không đủ số lượng")
@@ -238,6 +255,7 @@ class CheckoutViewModel : ViewModel() {
                     }
 
                     promoSnap?.let { (promoRef, snapshot) ->
+                        android.util.Log.d("EasyShop_Checkout", "Đang áp dụng mã giảm giá: $promoCodeToUse")
                         if (!snapshot.exists() || snapshot.getBoolean("active") == false) {
                             throw Exception("Mã giảm giá không còn khả dụng")
                         }
@@ -249,12 +267,33 @@ class CheckoutViewModel : ViewModel() {
                         transaction.update(promoRef, "usedCount", usedCount + 1)
                     }
 
+                    android.util.Log.d("EasyShop_Checkout", "Lưu đơn hàng $orderId và xóa giỏ hàng...")
+
                     // Lưu đơn hàng và xóa giỏ hàng
                     transaction.set(db.collection("orders").document(orderId), order)
                     transaction.update(db.collection("users").document(uid), "cartItems", emptyMap<String, Long>())
                 }.await()
 
                 _checkoutResult.value = CheckoutResult.Success(orderId, total)
+
+                // --- TẠO THÔNG BÁO CHO ADMIN ---
+                val adminNotif = hashMapOf(
+                    "title" to "Có đơn hàng mới!",
+                    "body" to "Khách hàng ${user.name} vừa đặt đơn #${orderId.take(8).uppercase()} trị giá ${com.example.easyshop.AppUtil.formatPrice(total)}",
+                    "type" to "NEW_ORDER",
+                    "orderId" to orderId,
+                    "isRead" to false,
+                    "recipientRole" to "admin",
+                    "createdAt" to com.google.firebase.Timestamp.now()
+                )
+                db.collection("notifications").add(adminNotif)
+
+                // Gửi push notification cho các admin (hoạt động kể cả khi app admin đang tắt)
+                com.example.easyshop.services.FcmSender.sendToAdmins(
+                    title = "Đơn hàng mới!",
+                    body = "Khách hàng ${user.name} vừa đặt đơn #${orderId.take(8).uppercase()}",
+                    type = "NEW_ORDER"
+                )
             } catch (e: Exception) {
                 _checkoutResult.value = CheckoutResult.Error(e.message ?: "Có lỗi xảy ra khi đặt hàng")
             }
@@ -285,11 +324,10 @@ class CheckoutViewModel : ViewModel() {
                 )
 
                 if (response.status == 200) {
-                    // Kiểm tra xem có giao dịch nào khớp chính xác không
                     val successTransaction = response.transactions.find { it.transactionContent?.contains(_paymentReference.value, ignoreCase = true) == true }
                     
                     if (successTransaction != null) {
-                        // Thanh toán thành công -> Tiến hành đặt hàng
+                        // Thanh toán thành công -> Tiến hành đặt hàng.
                         placeOrder("MB")
                     } else {
                         // Chưa tìm thấy giao dịch

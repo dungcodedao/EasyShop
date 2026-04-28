@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material3.Button
@@ -62,7 +63,8 @@ import java.util.Locale
 fun ReceiptScreen(
     navController: NavController,
     amount: Double,
-    orderId: String
+    orderId: String,
+    fromAdmin: Boolean = false
 ) {
     val scrollState = rememberScrollState()
     val firestore = Firebase.firestore
@@ -97,6 +99,7 @@ fun ReceiptScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(stringResource(id = R.string.invoice_title_promax), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) },
@@ -151,18 +154,33 @@ fun ReceiptScreen(
                         Text(stringResource(id = R.string.print_save_pdf))
                     }
 
+                    val canGoBack = navController.previousBackStackEntry != null
+                    
                     Button(
                         onClick = {
-                            navController.navigate("home") {
-                                popUpTo("home") { inclusive = true }
+                            // Quay lại screen gần nhất
+                            val popped = navController.popBackStack()
+                            if (!popped) {
+                                // Nếu không còn gì để quay lại (ví dụ sau khi payment), chuyển về dashboard tương ứng
+                                val destination = if (fromAdmin) "admin-dashboard" else "home"
+                                navController.navigate(destination) {
+                                    popUpTo(destination) { inclusive = true }
+                                }
                             }
                         },
                         modifier = Modifier.weight(1f).height(56.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Icon(Icons.Default.Home, null)
+                        Icon(
+                            imageVector = if (canGoBack) Icons.Default.ArrowBack else Icons.Default.Home, 
+                            contentDescription = null
+                        )
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(id = R.string.back_to_home))
+                        Text(
+                            text = if (canGoBack) stringResource(id = R.string.back_nav) 
+                                   else if (fromAdmin) stringResource(id = R.string.admin_dashboard_title) 
+                                   else stringResource(id = R.string.back_to_home)
+                        )
                     }
                 }
             }

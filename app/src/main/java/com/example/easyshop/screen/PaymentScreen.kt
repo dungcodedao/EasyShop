@@ -102,7 +102,10 @@ fun PaymentScreen(
     LaunchedEffect(Unit) {
         viewModel.fetchData()
         if (promoCode.isNotEmpty() && discount > 0) {
-            viewModel.setDiscountInfo(promoCode, discount)
+            viewModel.setDiscountInfo(promoCode, discount, subtotal)
+        } else {
+            // Even if no discount, we should sync the subtotal to the new VM instance
+            viewModel.setDiscountInfo("", 0.0, subtotal)
         }
     }
 
@@ -134,7 +137,7 @@ fun PaymentScreen(
         }
     }
 
-    Column(modifier = modifier.fillMaxSize().safeDrawingPadding()) {
+    Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding()) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             tonalElevation = 1.dp
@@ -268,19 +271,45 @@ fun PaymentScreen(
                         when (selectedPaymentMethod) {
                             "MB" -> {
                                 if (isPaymentConfirmed) {
-                                    viewModel.placeOrder(selectedPaymentMethod, note)
+                                    viewModel.placeOrder(
+                                    selectedPaymentMethod, 
+                                    note,
+                                    manualSubtotal = subtotal,
+                                    manualDiscount = discount,
+                                    manualPromoCode = promoCode
+                                )
                                 } else {
                                     // Chủ động kiểm tra thanh toán ngay lập tức
                                     viewModel.verifySePayPayment(totalAmount)
                                 }
                             }
-                            "MoMo QR" -> viewModel.placeOrder(selectedPaymentMethod, note)
+                            "MoMo QR" -> viewModel.placeOrder(
+                                selectedPaymentMethod, 
+                                note,
+                                manualSubtotal = subtotal,
+                                manualDiscount = discount,
+                                manualPromoCode = promoCode
+                            )
                             "Credit Card" -> {
                                 val isSuccess = cardNumber.replace(" ", "") == "4111111111111111"
-                                if (isSuccess) viewModel.placeOrder("Credit Card", note)
+                                if (isSuccess) {
+                                    viewModel.placeOrder(
+                                        "Credit Card", 
+                                        note,
+                                        manualSubtotal = subtotal,
+                                        manualDiscount = discount,
+                                        manualPromoCode = promoCode
+                                    )
+                                }
                                 else AppUtil.showToast(context, testCardHint)
                             }
-                            else -> viewModel.placeOrder(selectedPaymentMethod, note)
+                            else -> viewModel.placeOrder(
+                                selectedPaymentMethod, 
+                                note,
+                                manualSubtotal = subtotal,
+                                manualDiscount = discount,
+                                manualPromoCode = promoCode
+                            )
                         }
                     },
                     enabled = !isProcessing && !isPaymentChecking && isNetworkAvailable && 

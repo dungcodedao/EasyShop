@@ -1,5 +1,6 @@
 package com.example.easyshop.admin
 
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -114,19 +115,28 @@ fun AdminNotificationScreen(navController: NavController) {
 
     val unreadCount = notifications.count { !it.isRead }
 
-    // Lắng nghe realtime từ Firestore
-    LaunchedEffect(Unit) {
-        db.collection("notifications")
+    // Lắng nghe realtime từ Firestore (Sử dụng DisposableEffect để gỡ bỏ listener khi thoát màn hình)
+    DisposableEffect(Unit) {
+        val listener = db.collection("notifications")
             .whereEqualTo("recipientRole", "admin")
-            .orderBy("createdAt", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, _ ->
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    android.util.Log.e("AdminNotification", "Lỗi tải thông báo: ${error.message}")
+                    isLoading = false
+                    return@addSnapshotListener
+                }
                 if (snapshot != null) {
-                    notifications = snapshot.documents.mapNotNull { doc ->
+                    val list = snapshot.documents.mapNotNull { doc ->
                         doc.toObject(NotificationModel::class.java)?.copy(id = doc.id)
                     }
+                    notifications = list.sortedByDescending { it.createdAt }
                 }
                 isLoading = false
             }
+
+        onDispose {
+            listener.remove()
+        }
     }
 
     // Hàm đánh dấu 1 thông báo đã đọc
@@ -137,11 +147,23 @@ fun AdminNotificationScreen(navController: NavController) {
         }
     }
 
-    // Hàm đánh dấu tất cả đã đọc
+    // Hàm đánh dấu tất cả đã đọc bằng Batch để tối ưu hiệu năng
     fun markAllAsRead() {
-        notifications.filter { !it.isRead }.forEach { notif ->
-            db.collection("notifications").document(notif.id)
-                .update("isRead", true)
+        val unread = notifications.filter { !it.isRead }
+        if (unread.isEmpty()) return
+        val batch = db.batch()
+        unread.forEach { notif ->
+            batch.update(db.collection("notifications").document(notif.id), "isRead", true)
+        }
+        batch.commit()
+    }
+
+    // Tự động đánh dấu đã đọc sau 1.5 giây khi Admin mở danh sách (giống bên User)
+    LaunchedEffect(notifications) {
+        val hasUnread = notifications.any { !it.isRead }
+        if (hasUnread && !isLoading) {
+            kotlinx.coroutines.delay(1500)
+            markAllAsRead()
         }
     }
 
@@ -284,6 +306,11 @@ fun AdminNotificationScreen(navController: NavController) {
                 onUpdateStatus = { newStatus ->
                     db.collection("orders").document(selectedOrder!!.id).update("status", newStatus)
                         .addOnSuccessListener {
+                            // --- HOÀN KHO KHI HỦY ĐƠN ---
+                            if (newStatus == "CANCELLED") {
+                                com.example.easyshop.AppUtil.restoreStock(selectedOrder!!.items)
+                            }
+                            
                             selectedOrder = selectedOrder!!.copy(status = newStatus)
                             notifyUserOrderStatus(selectedOrder!!, newStatus)
                             com.example.easyshop.AppUtil.showSuccess("Đã cập nhật trạng thái đơn hàng!")

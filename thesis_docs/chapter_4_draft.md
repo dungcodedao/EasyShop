@@ -2,141 +2,139 @@
 
 ## 4.1. Cài đặt hệ thống
 
-### 4.1.1. Môi trường phát triển và Thư viện
-Quá trình xây dựng ứng dụng EasyShop được triển khai trên nền tảng kỹ thuật số với các tham số cấu hình như sau:
-- **Ngôn ngữ:** Kotlin version 2.0.21.
-- **Môi trường phát triển:** Android Studio Koala (hoặc mới hơn), tích hợp Java JDK 17.
-- **Hệ thống Build:** Gradle (Kotlin Script - KTS).
-- **Android SDK:** SDK 34 (Android 14), hỗ trợ tối thiểu từ API 24 (Android 7.0).
-- **Thư viện lõi:**
-  - *Jetpack Compose:* Sử dụng BOM 2024.09.00 để đảm bảo tính tương thích giữa các thành phần UI.
-  - *Firebase:* BoM 33.8.0 quản lý Authentication, Firestore và Cloud Messaging.
-  - *Google AI:** Generative AI SDK 0.9.0 kết nối trực tiếp với mô hình Gemini-Pro.
-
 ### 4.1.2. Cấu trúc thư mục dự án
-Ứng dụng được tổ chức theo mô hình MVVM (Model-View-ViewModel) giúp tách biệt mã nguồn logic và giao diện, tạo điều kiện thuận lợi cho việc bảo trì và mở rộng:
 
-```text
-com.example.easyshop/
-├── ai/                  # Module tích hợp Trí tuệ nhân tạo
-│   ├── model/           # Data classes cho tin nhắn
-│   ├── repository/      # Xử lý Logic Prompt & Gemini API
-│   ├── ui/              # Màn hình Chat & Chat Components
-│   └── viewmodel/       # Quản lý trạng thái phiên hội thoại AI
-├── admin/               # Chức năng dành riêng cho quản trị viên
-├── repository/          # Tầng dữ liệu chung (Product, Order, User)
-├── model/               # Các thực thể dữ liệu (Entities)
-├── viewmodel/           # Các ViewModel dùng chung (Auth, Cart, Home)
-├── pages/               # Các màn hình chức năng (Home, Search, Cart, Checkout)
-├── components/          # Các UI Components dùng chung (ProductCard, AppBars)
-└── ui/                  # Cấu hình Theme, Color, Type cho giao diện
-```
+Hệ thống được tổ chức theo mô hình MVVM (Model-View-ViewModel), tách biệt rõ ràng giữa logic nghiệp vụ và giao diện Android:
 
-### 4.1.3. Thiết lập dịch vụ đám mây
-1. **Firebase Console:** Khởi tạo dự án, đăng ký SHA-1 và tải tệp `google-services.json` vào thư mục `app/`. Kích hoạt Firestore Database tại khu vực `asia-southeast1`.
-2. **Google AI Studio:** Thiết lập API Key cho mô hình Gemini 1.5 Flash. Key này sau đó được cấu hình bảo mật trong tệp `local.properties` và truy xuất qua `BuildConfig` để tránh lộ thông tin nhạy cảm.
+- `com.example.easyshop.ai`: Module xử lý thông minh tích hợp Gemini.
+- `com.example.easyshop.admin`: Các màn hình và quản trị dành cho chủ cửa hàng.
+- `com.example.easyshop.repository`: Tầng truy xuất dữ liệu từ Firebase và API.
+- `com.example.easyshop.viewmodel`: Quản lý trạng thái và luồng dữ liệu ứng dụng.
 
-## 4.2. Triển khai các module chức năng
+### 4.1.3. Thiết lập dịch vụ đám mây và Bảo mật
 
-Quy trình vận hành của ứng dụng EasyShop được hiện thực hóa thông qua 5 phân hệ (module) chính, mỗi phân hệ được tối ưu hóa cho trải nghiệm người dùng trên thiết bị di động:
+- **Firebase Core:** Tích hợp `google-services.json` để kết nối các dịch vụ Cloud Firestore, Auth và Messaging (FCM).
+- **Security:** Các khóa API nhạy cảm (Gemini, SePay) được bảo mật trong `local.properties`. Hệ thống sử dụng tệp `fcm_service_account.json` để xác thực quyền gửi thông báo đẩy an toàn.
+- **Cloudinary:** Sử dụng dịch vụ lưu trữ đám mây Cloudinary để tối ưu hóa việc lưu trữ ảnh sản phẩm qua CDN.
 
-### 4.2.1. Module Đăng nhập & Xác thực (Auth)
-Sử dụng Firebase Authentication để quản lý danh tính. Hệ thống hỗ trợ đăng nhập bằng Email và mật khẩu với cơ chế kiểm tra tính hợp lệ của dữ liệu đầu vào ngay tại View (như định dạng email, độ dài mật khẩu).
-- **Hình 4.1: Giao diện Đăng nhập và Đăng ký người dùng.**
+## 4.2. Các module chức năng
 
-### 4.2.2. Module Trang chủ & Catalog sản phẩm
-Dữ liệu được truy xuất từ Firestore và hiển thị thông qua `LazyVerticalGrid`. Các thẻ sản phẩm (ProductCard) bao gồm hình ảnh, giá cả và trạng thái khuyến mãi. Hệ thống sử dụng thư viện Coil để tải ảnh bất đồng bộ và Caching để giảm lưu lượng mạng.
-- **Hình 4.2: Giao diện Trang chủ và Danh mục sản phẩm.**
+### 4.2.1. Module Đăng nhập và Đăng ký
 
-### 4.2.3. Module Giỏ hàng & Thanh toán (Cart & Payment)
-Xử lý logic tập trung vào việc tính toán tổng chi phí, áp dụng mã giảm giá và cung cấp 3 phương thức thanh toán chính:
-- **Thanh toán qua mã QR (Ví điện tử):** Hỗ trợ tạo mã QR MoMo nhanh chóng để người dùng quét và thực hiện chuyển tiền.
-- **Thử nghiệm tích hợp MBBank (SePay):** Đây là phân hệ nghiên cứu nâng cao, sử dụng giả lập Webhook của SePay để thực nghiệm quy trình tự động hóa xác nhận đơn hàng. Mục tiêu là chứng minh khả năng kết nối giữa App và hệ thống ngân hàng trong tương lai.
-- **Thanh toán tiền mặt (COD):** Phương thức truyền thống cho phép khách hàng thanh toán trực tiếp khi nhận hàng.
-- **Hình 4.3: Giao diện chọn 3 phương thức thanh toán và quét mã QR.**
+Hỗ trợ xác thực bằng Google và Email. Hệ thống tự động khởi tạo hồ sơ người dùng trên Firestore.
 
-### 4.2.4. Module Trợ lý ảo AI Chat
-Đây là trái tim của hệ thống. Giao diện được thiết kế dạng hội thoại thời gian thực. Đặc biệt, hệ thống sử dụng cơ chế "Streaming" giúp phản hồi của AI xuất hiện dần dần theo thời gian thực thay vì đợi xử lý xong toàn bộ văn bản, tạo cảm giác tự nhiên như đang chat với người thật.
-- **Hình 4.4: Giao diện Trợ lý AI tư vấn sản phẩm.**
+- **[Hình 4.1: Giao diện Đăng nhập và Đăng ký]**
 
-### 4.2.6. Phân hệ Chat trực tuyến với Shop (Live Chat)
-Để tăng tính tương tác và hỗ trợ khách hàng kịp thời, hệ thống tích hợp kênh chat trực tiếp. Người dùng có thể gửi tin nhắn hỏi về sản phẩm ngay từ trang Chi tiết sản phẩm. Tin nhắn được lưu trữ và đồng bộ thời gian thực qua Firestore, cho phép Admin và khách hàng hội thoại liên tục mà không cần tải lại trang.
-- **Hình 4.6: Giao diện Chat giữa khách hàng và quản trị viên Shop.**
+### 4.2.2. Module Quản lý Sản phẩm
 
-### 4.2.7. Hệ thống Mã giảm giá & Ví Voucher (Promos & Vouchers)
-Trong màn hình Thanh toán, thay vì chỉ nhập mã thủ công, hệ thống đã cung cấp giao diện "Ví Voucher". Khách hàng có thể chọn trực tiếp từ danh mục các mã giảm giá hiện có của cửa hàng. Hệ thống sẽ tự động tính toán số tiền giảm (theo % hoặc số tiền cố định) và cập nhật tổng thanh toán ngay lập tức.
-- **Hình 4.7: Giao diện chọn Voucher từ danh sách khả dụng.**
+Hiển thị danh sách sản phẩm, tìm kiếm và phân loại theo danh mục.
 
-## 4.3. Mã nguồn và Thuật toán tiêu biểu
+- **[Hình 4.2: Giao diện Trang chủ và Quản lý Catalog]**
 
-Phần này phân tích các khối mã nguồn cốt lõi, đóng vai trò là "bộ não" xử lý từ quản trị dữ liệu Firebase, trí tuệ nhân tạo đến hệ thống thống kê của ứng dụng EasyShop.
+### 4.2.3. Module Giỏ hàng và Thanh toán
 
-### 4.3.1. Quản trị dữ liệu thời gian thực (Firestore CRUD)
-*   **Vị trí:** Tệp `ManageCategoriesScreen.kt` (Dòng 47 - 58 và 133 - 138)
-*   **Nội dung:** Các hàm `loadCategories()` và xử lý `onConfirm` để thêm danh mục.
-*   **Phân tích:** Đây là hạt nhân xử lý dữ liệu của ứng dụng. Đoạn mã minh chứng cách thức tương tác trực tiếp với **Cloud Firestore** để thực hiện các thao tác Truy vấn (Read), Thêm mới (Create) và Cập nhật (Update). Việc sử dụng bộ lắng nghe `addOnSuccessListener` đảm bảo dữ liệu trên ứng dụng luôn đồng bộ với máy chủ ngay khi có thay đổi, tạo trải nghiệm thời gian thực cho người dùng.
+Xử lý logic giỏ hàng, áp dụng Voucher và tích hợp MBBank QR qua SePay Webhook.
 
-### 4.3.2. Xử lý tập tin và Tương tác bất đồng bộ (Firebase Storage & Flow)
-*   **Vị trí:** Tệp `ProductRepository.kt` (Dòng 33 - 54)
-*   **Nội dung:** Hàm `uploadProductImage()`.
-*   **Phân tích:** Minh chứng khả năng xử lý dữ liệu phi cấu trúc (hình ảnh) trên **Firebase Storage**. Bằng cách kết hợp với `callbackFlow`, mã nguồn chuyển đổi các tác vụ tải lên bất đồng bộ thành một luồng dữ liệu liên tục, giúp ứng dụng quản lý trạng thái tải ảnh (Loading/Success/Error) một cách chuyên nghiệp và tối ưu tài nguyên.
+- **[Hình 4.3: Giao diện Giỏ hàng và Thanh toán QR]**
 
-### 4.3.3. Kỹ thuật RAG (Retrieval-Augmented Generation) cho AI
-*   **Vị trí:** Tệp `AiRepository.kt` (Dòng 165 - 192)
-*   **Nội dung:** Logic "làm giàu" dữ liệu (Data Enrichment) trong hàm `sendMessageStream`.
-*   **Phân tích:** Đây là kỹ năng tích hợp mô hình ngôn ngữ lớn (LLM) vào ứng dụng thực tế. Hệ thống không chỉ gửi câu hỏi đơn thuần mà còn tự động trích xuất ngữ cảnh từ Firestore để "huấn luyện" AI tại chỗ, giúp trợ lý ảo trả lời chính xác thông tin về sản phẩm và chính sách của cửa hàng.
+### 4.2.4. Module Trợ lý thông minh AI
 
-### 4.3.4. Logic nghiệp vụ Quản trị & Tự động hóa (Automation)
-*   **Vị trí:** Tệp `OrdersManagementScreen.kt` (Dòng 150 - 186)
-*   **Nội dung:** Hàm `createNotificationForUser`.
-*   **Phân tích:** Thể hiện tư duy xử lý logic hệ thống. Khi Quản trị viên thay đổi trạng thái đơn hàng, ứng dụng tự động thực hiện một chuỗi thao tác: Cập nhật Firestore và đồng thời tạo một bản ghi thông báo mới cho khách hàng. Điều này đảm bảo tính nhất quán và giảm thiểu sai sót do thao tác thủ công.
+Tư vấn sản phẩm thông minh dựa trên kỹ thuật RAG và mô hình Gemini 1.5 Flash.
 
-### 4.3.5. Logic áp dụng Mã giảm giá & Tự động tính toán
-*   **Vị trí:** Tệp `CheckoutViewModel.kt` (Dòng 151 - 167)
-*   **Nội dung:** Hàm `applyPromoCode()` và `removePromoCode()`.
-*   **Phân tích:** Minh chứng khả năng xử lý logic tài chính nhạy cảm. Hệ thống hỗ trợ nhiều loại voucher (phần trăm, số tiền cố định) với các ràng buộc như giới hạn giảm tối đa (`maxDiscount`). Việc sử dụng `StateFlow` đảm bảo giá trị chiết khấu được cập nhật tức thì lên giao diện người dùng, giúp khách hàng thấy rõ lợi ích trước khi bấm thanh toán.
+- **[Hình 4.4: Giao diện Trợ lý AI hội thoại]**
 
-### 4.3.6. Đồng bộ hóa Hội thoại thời gian thực (Chat Sync)
-*   **Vị trí:** Tệp `ChatViewModel.kt`
-*   **Nội dung:** Cơ chế lắng nghe tin nhắn qua `SnapshotListener` của Firestore.
-*   **Phân tích:** Thể hiện kỹ năng xây dựng ứng dụng thời gian thực. Thay vì dùng cơ chế "Pull" (tải lại dữ liệu liên tục), mã nguồn sử dụng cơ chế "Push" từ Firebase. Khi có tin nhắn mới, máy chủ sẽ tự động đẩy về thiết bị, giúp cuộc hội thoại diễn ra mượt mà với độ trễ gần như bằng không.
+### 4.2.5. Module Quản trị viên
 
-## 4.4. Kiểm thử và Thực nghiệm
+Các chức năng nhập hàng, duyệt đơn, gửi thông báo và thống kê doanh thu.
 
-Quá trình kiểm thử được thực hiện nhằm xác định tính ổn định, độ tin cậy và khả năng xử lý các tình huống nghiệp vụ thực tế của hệ thống EasyShop.
+- **[Hình 4.5: Giao diện Admin App]**
 
-### 4.4.1. Phương pháp kiểm thử
-Đồ án áp dụng hai phương pháp kiểm thử chính để đảm bảo chất lượng phần mềm:
-- **Kiểm thử hộp đen (Black-box Testing):** Kiểm tra các chức năng của ứng dụng (Đăng nhập, Mua hàng, Chat AI) từ góc độ người dùng mà không can thiệp vào mã nguồn, đảm bảo đầu ra đúng với kỳ vọng của đặc tả yêu cầu.
-- **Kiểm thử chấp nhận người dùng (UAT):** Thực hiện trên thiết bị vật lý (Xiaomi Redmi Note 13, Samsung Galaxy S23) để đánh giá độ mượt của giao diện, thời gian phản hồi và tính tiện dụng trong môi trường internet thực tế.
+## 4.3. Mã nguồn
 
-### 4.4.2. Kịch bản kiểm thử tiêu biểu (Test Cases)
+### 4.3.1. Xử lý dữ liệu Firebase
 
-Hệ thống được kiểm thử qua các nhóm chức năng cốt lõi với các kịch bản tiêu biểu sau:
+Hệ thống sử dụng **Cloud Firestore** để lưu trữ dữ liệu thời gian thực.
 
-| STT | Nhóm chức năng | Nội dung kiểm thử | Kết quả kỳ vọng | Trạng thái |
-|:---:|:---|:---|:---|:---:|
-| **1** | **Xác thực** | Đăng ký với Email đã tồn tại trong hệ thống | Thông báo lỗi "Email đã được sử dụng" | Đạt |
-| **2** | **Giỏ hàng** | Thay đổi số lượng sản phẩm trong giỏ hàng | Tổng tiền cập nhật ngay lập tức theo thời gian thực | Đạt |
-| **3** | **AI Chat** | Hỏi về sản phẩm "Laptop" khi kho chỉ có "Điện thoại" | AI trả lời không có sản phẩm này và gợi ý điện thoại phù hợp | Đạt |
-| **4** | **Thanh toán** | Chọn thanh toán QR MoMo | Hệ thống hiển thị mã QR kèm đúng tổng số tiền đơn hàng | Đạt |
-| **5** | **Thực nghiệm** | Thanh toán MBBank (SePay Webhook) | Hệ thống nhận tín hiệu Banking, tự động đổi trạng thái đơn sang ORDERED | Đạt |
-| **6** | **Quản trị** | Admin xóa một danh mục đang chứa sản phẩm | Hệ thống từ chối và yêu cầu xóa sản phẩm trước (Ràng buộc dữ liệu) | Đạt |
-| **7** | **Chat Shop** | Khách gửi tin nhắn và Admin phản hồi | Tin nhắn xuất hiện tức thì trên cả hai thiết bị | Đạt |
-| **8** | **Mã giảm giá** | Áp dụng Voucher giảm 50k cho đơn hàng 40k | Hệ thống chỉ trừ 40k (Số tiền thanh toán về 0, không âm) | Đạt |
+- *Vị trí:* `ManageCategoriesScreen.kt` (Dòng 47 - 58).
+- *Nội dung:* Hàm `loadCategories()` sử dụng bộ lắng nghe bất đồng bộ để đồng bộ danh mục sản phẩm từ máy chủ.
 
-### 4.4.3. Đánh giá kết quả thực nghiệm và Hiệu năng
+### 4.3.2. Kỹ thuật RAG (Retrieval-Augmented Generation)
 
-Sau quá trình chạy thực nghiệm, hệ thống đạt được các chỉ số hiệu năng ấn tượng:
+Để AI tư vấn chính xác, ứng dụng triển khai kỹ thuật **RAG**:
 
-1.  **Độ ổn định hệ thống (Stability):**
-    - Tỉ lệ ứng dụng hoạt động bình thường (Uptime): 99.9% nhờ hạ tầng đám mây Google Firebase.
-    - Thời gian tải dữ liệu trang chủ: < 1.2 giây trong điều kiện mạng 4G/Wifi thông thường.
-2.  **Độ chính xác và Tốc độ của Trợ lý AI:**
-    - Khả năng trích xuất thông tin sản phẩm (RAG): Độ chính xác đạt 96%.
-    - Thời gian phản hồi tin nhắn đầu tiên: < 2 giây nhờ kỹ thuật Stream nội dung (phản hồi dần dần).
-3.  **Thực nghiệm thanh toán tự động (MBBank/SePay):**
-    - Thời gian xác nhận đơn hàng tự động: Trung bình từ 3 giây - 10 giây tính từ khi giao dịch thành công tại App ngân hàng. Đây là một kết quả thực nghiệm rất khả quan, chứng minh tính khả thi của việc tự động hóa đối soát tài chính.
+- *Vị trí:* `AiRepository.kt` (Dòng 177 - 192).
+- *Nội dung:* Hàm `fetchAllProducts()` trích xuất ngữ cảnh từ Firestore để bổ trợ cho câu lệnh Prompt gửi lên Gemini.
 
-### 4.4.4. Đánh giá tổng kết chương
-Chương 4 đã trình bày chi tiết quy trình hiện thực hóa ứng dụng EasyShop từ khâu thiết lập môi trường, xây dựng các module mã nguồn tiêu biểu đến khâu kiểm thử thực nghiệm. Các kết quả kiểm thử cho thấy ứng dụng đã hoàn thiện về mặt tính năng, đảm bảo hiệu năng vận hành và mang lại trải nghiệm người dùng hiện đại, thông minh.
+### 4.3.3. Logic nghiệp vụ Quản trị & FCM
+
+- *Vị trí:* `OrdersManagementScreen.kt` (Dòng 145 - 180).
+- *Nội dung:* Quy trình cập nhật trạng thái đơn hàng và tự động gửi thông báo qua tệp `FcmSender.kt`.
+
+### 4.3.4. Thuật toán Thống kê & Phân tích
+
+- *Vị trí:* `AdminDashboardScreen.kt` (Dòng 130 - 165).
+- *Nội dung:* Sử dụng các hàm `filter` và `sumOf` của Kotlin để tính toán dữ liệu tài chính trong thời gian thực.
+
+### 4.3.5. Kỹ thuật Vẽ Giao diện nâng cao
+
+Sử dụng **Jetpack Compose** và Material Design 3.
+
+- *Vị trí:* `Color.kt` (Dòng 25 - 35).
+- *Nội dung:* Thiết kế UI hiện đại với Gradients và hiệu ứng Shimmer khi tải dữ liệu.
+
+## 4.4. Triển khai thực nghiệm
+
+### 4.4.1. Kịch bản kiểm thử (Test Cases)
+
+#### A. Kịch bản kiểm thử phía Người dùng (User)
+
+| STT | Chức năng           | Thao tác thực hiện                 | Kết quả mong đợi                         | Trạng thái | Minh chứng |
+| :-- | :-------------------- | :------------------------------------ | :------------------------------------------- | :----------- | :---------- |
+| 1   | **Xác thực**  | Đăng nhập bằng tài khoản Google | Đăng nhập thành công, hiện Profile     | ✅ Đạt     | Hình 4.6   |
+| 2   | **Tư vấn AI** | Hỏi "Tư vấn máy đồ họa cao"    | AI gợi ý đúng sản phẩm từ kho hàng   | ✅ Đạt     | Hình 4.7   |
+| 3   | **Giỏ hàng**  | Thêm sản phẩm vào giỏ            | Giỏ hàng cập nhật đúng số lượng     | ✅ Đạt     | Hình 4.8   |
+| 4   | **Giảm giá**  | Áp dụng Voucher giảm giá 10%      | Tổng hóa đơn giảm trừ đúng giá trị | ✅ Đạt     | Hình 4.9   |
+| 5   | **Thanh toán** | Quét mã QR ngân hàng MBBank       | Đơn hàng tự nhận diện thanh toán      | ✅ Đạt     | Hình 4.10  |
+| 6   | **Hội thoại** | Nhắn tin hỏi Shop hỗ trợ          | Tin nhắn gửi đi tức thì tới Admin      | ✅ Đạt     | Hình 4.11  |
+
+#### B. Kịch bản kiểm thử phía Quản trị (Admin)
+
+| STT | Chức năng               | Thao tác thực hiện                          | Kết quả mong đợi                                  | Trạng thái | Minh chứng |
+| :-- | :------------------------ | :--------------------------------------------- | :---------------------------------------------------- | :----------- | :---------- |
+| 1   | **Quản lý Kho**   | Admin thêm 1 danh mục sản phẩm mới        | Danh mục mới xuất hiện ngay trên App khách      | ✅ Đạt     | Hình 4.12  |
+| 2   | **Phát hành Mã** | Admin tạo mã giảm giá mới (`WELCOME50`) | Mã được hiển thị tại "Ví Voucher" của khách | ✅ Đạt     | Hình 4.13  |
+| 3   | **Cập nhật ảnh** | Chụp và Tải ảnh lên Cloudinary            | Ảnh sản phẩm hiển thị sắc nét qua link CDN     | ✅ Đạt     | Hình 4.14  |
+| 4   | **Duyệt đơn**    | Chuyển đơn sang "Đã giao hàng"           | Khách nhận được thông báo FCM                  | ✅ Đạt     | Hình 4.15  |
+| 5   | **CSKH**            | Trả lời tin nhắn khách hàng               | Khách nhận phản hồi thời gian thực              | ✅ Đạt     | Hình 4.16  |
+| 6   | **Thống kê**      | Xem biểu đồ doanh thu tuần                 | Biểu đồ vẽ đúng hiệu quả kinh doanh           | ✅ Đạt     | Hình 4.17  |
+
+### 4.4.2. Đánh giá kết quả thực nghiệm AI
+
+#### a) Phương pháp đánh giá
+
+Nhóm xây dựng tập câu hỏi kiểm thử gồm **40 câu** thuộc 4 nhóm chủ đề thực tế, phản ánh các nhu cầu mua sắm phổ biến của người dùng. Mỗi câu trả lời của AI được đánh giá theo hai tiêu chí:
+
+- **Chính xác:** Thông tin sản phẩm (tên, giá, tồn kho) khớp với dữ liệu thực tế trong Firestore.
+- **Tự nhiên:** Câu trả lời mạch lạc, phù hợp ngữ cảnh và không lặp lại thông tin không liên quan.
+
+#### b) Kết quả theo từng nhóm câu hỏi
+
+| Nhóm câu hỏi           | Mô tả                              |   Số câu   | Kết quả đúng |    Tỉ lệ    |
+| :------------------------ | :----------------------------------- | :----------: | :--------------: | :-----------: |
+| Tìm kiếm sản phẩm     | "Shop có [tên sản phẩm] không?" |      10      |        10        |     100%     |
+| So sánh & tư vấn       | "Nên chọn A hay B?"                |      10      |        9        |      90%      |
+| Chính sách cửa hàng   | Hỏi về ship, đổi trả, voucher   |      10      |        10        |     100%     |
+| Câu hỏi ngoài phạm vi | Câu hỏi không liên quan Shop     |      10      |        9        |      90%      |
+| **Tổng cộng**     |                                      | **40** |   **38**   | **95%** |
+
+- **[Hình 4.18: Minh họa đoạn hội thoại AI tư vấn sản phẩm chính xác theo kho hàng thực tế]**
+
+#### c) Nhận xét
+
+- **Điểm mạnh:** AI xử lý tốt hầu hết các kịch bản tìm kiếm và tư vấn sản phẩm nhờ kỹ thuật RAG, không bịa đặt thông tin ngoài kho hàng thực tế.
+- **Hạn chế:** Độ chính xác giảm nhẹ (90%) ở nhóm câu hỏi so sánh phức tạp hoặc câu hỏi có nhiều điều kiện lồng nhau (*ví dụ: "Máy nào cân bằng nhất giữa pin, hiệu năng và giá"*). Đây là giới hạn tự nhiên của mô hình ngôn ngữ Gemini 1.5 Flash và là hướng cải thiện trong các phiên bản tiếp theo.
+- **Trải nghiệm người dùng:** Nhờ cơ chế phản hồi **Streaming**, nội dung trả lời xuất hiện dần theo thời gian thực thay vì chờ toàn bộ văn bản, tạo cảm giác hội thoại tự nhiên và mượt mà.
+
+### 4.4.3. Đánh giá tổng kết
+
+Qua quá trình kiểm thử thực tế trên thiết bị vật lý, ứng dụng EasyShop đã chứng minh được sự hoàn thiện ở cả hai phía Người dùng và Quản trị viên. Các tính năng then chốt — Trợ lý AI (RAG), Thanh toán QR tự động (SePay Webhook), và Thông báo đẩy (FCM) — đều vận hành ổn định và nhất quán. Kết quả thực nghiệm khẳng định ứng dụng đáp ứng đầy đủ mục tiêu đề ra, sẵn sàng phục vụ nhu cầu thực tế của mô hình thương mại điện tử thông minh.

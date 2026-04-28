@@ -647,4 +647,30 @@ object AppUtil {
             showError("Lỗi xuất file", e.message)
         }
     }
+
+    fun restoreStock(items: Map<String, Long>) {
+        if (items.isEmpty()) return
+        val db = Firebase.firestore
+        val batch = db.batch()
+        
+        items.forEach { (productId, quantity) ->
+            val productRef = db.collection("data").document("stock")
+                .collection("products").document(productId)
+            
+            // Tăng stockCount và đảm bảo inStock là true
+            batch.update(productRef, "stockCount", FieldValue.increment(quantity))
+            batch.update(productRef, "inStock", true)
+        }
+        
+        batch.commit()
+            .addOnSuccessListener {
+                android.util.Log.d("EasyShop_Stock", "--- Hoàn kho thành công cho ${items.size} mặt hàng ---")
+                items.forEach { (pid, q) -> 
+                    android.util.Log.d("EasyShop_Stock", "ID SP: $pid | Đã cộng lại: $q")
+                }
+            }
+            .addOnFailureListener { e ->
+                android.util.Log.e("EasyShop_Stock", "Lỗi hoàn kho: ${e.message}")
+            }
+    }
 }

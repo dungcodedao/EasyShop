@@ -9,6 +9,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class AdminChatViewModel : ViewModel() {
 
@@ -27,21 +28,53 @@ class AdminChatViewModel : ViewModel() {
     private val _selectedUserId = MutableStateFlow<String?>(null)
     val selectedUserId: StateFlow<String?> = _selectedUserId.asStateFlow()
 
+    private val userCache = mutableMapOf<String, com.example.easyshop.model.UserModel>()
+
     init {
         // Lấy danh sách chat sessions thời gian thực
-        viewModelScope.launch {
-            repository.getAllChatSessions().collect {
-                _chatSessions.value = it
+        viewModelScope.launch   {
+            repository.getAllChatSessions().collect { sessions ->
+                val updatedSessions = sessions.map { session ->
+                    var userModel = userCache[session.userId]
+                    if (userModel == null) {
+                        try {
+                            val userDoc = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                .collection("users")
+                                .document(session.userId)
+                                .get()
+                                .await()
+                            userModel = userDoc.toObject(com.example.easyshop.model.UserModel::class.java)
+                            if (userModel != null) {
+                                userCache[session.userId] = userModel
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                    
+                    if (userModel != null) {
+                        session.copy(
+                            userName = userModel.name.takeIf { it.isNotBlank() } ?: session.userName,
+                            userProfileImage = userModel.profileImg.takeIf { it.isNotBlank() } ?: session.userProfileImage
+                        )
+                    } else session
+                }
+                _chatSessions.value = updatedSessions
             }
         }
     }
+
+    private var messageJob: kotlinx.coroutines.Job? = null
 
     /**
      * Chọn một user để chat
      */
     fun selectUser(userId: String) {
         _selectedUserId.value = userId
-        viewModelScope.launch {
+        // Hủy lắng nghe cũ nếu có để tránh memory leak và tốn băng thông
+        messageJob?.cancel()
+        
+        messageJob = viewModelScope.launch {
             repository.getMessages(userId).collect {
                 _messages.value = it
                 repository.markAsRead(userId, isAdmin = true)
