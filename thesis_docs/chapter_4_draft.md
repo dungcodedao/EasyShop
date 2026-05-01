@@ -39,7 +39,7 @@ Xử lý logic giỏ hàng, áp dụng Voucher và tích hợp MBBank QR qua SeP
 
 ### 4.2.4. Module Trợ lý thông minh AI
 
-Tư vấn sản phẩm thông minh dựa trên kỹ thuật RAG và mô hình Gemini 1.5 Flash.
+Tư vấn sản phẩm thông minh dựa trên kỹ thuật RAG và mô hình Gemini 2.5 Flash.
 
 - **[Hình 4.4: Giao diện Trợ lý AI hội thoại]**
 
@@ -132,7 +132,7 @@ Nhóm xây dựng tập câu hỏi kiểm thử gồm **40 câu** thuộc 4 nhó
 #### c) Nhận xét
 
 - **Điểm mạnh:** AI xử lý tốt hầu hết các kịch bản tìm kiếm và tư vấn sản phẩm nhờ kỹ thuật RAG, không bịa đặt thông tin ngoài kho hàng thực tế.
-- **Hạn chế:** Độ chính xác giảm nhẹ (90%) ở nhóm câu hỏi so sánh phức tạp hoặc câu hỏi có nhiều điều kiện lồng nhau (*ví dụ: "Máy nào cân bằng nhất giữa pin, hiệu năng và giá"*). Đây là giới hạn tự nhiên của mô hình ngôn ngữ Gemini 1.5 Flash và là hướng cải thiện trong các phiên bản tiếp theo.
+- **Hạn chế:** Độ chính xác giảm nhẹ (90%) ở nhóm câu hỏi so sánh phức tạp hoặc câu hỏi có nhiều điều kiện lồng nhau (*ví dụ: "Máy nào cân bằng nhất giữa pin, hiệu năng và giá"*). Đây là giới hạn tự nhiên của mô hình ngôn ngữ Gemini 2.5 Flash và là hướng cải thiện trong các phiên bản tiếp theo.
 - **Trải nghiệm người dùng:** Nhờ cơ chế phản hồi **Streaming**, nội dung trả lời xuất hiện dần theo thời gian thực thay vì chờ toàn bộ văn bản, tạo cảm giác hội thoại tự nhiên và mượt mà.
 
 ### 4.4.3. Đánh giá tổng kết

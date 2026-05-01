@@ -6,7 +6,7 @@ sequenceDiagram
     participant User as Người dùng
     participant UI as AIChatScreen
     participant VM as AIChatViewModel
-    participant Gemini as Gemini Pro API
+    participant Gemini as Gemini 2.5 Flash API
     participant DB as Firestore
 
     User->>UI: Nhập câu hỏi

@@ -1,5 +1,6 @@
 package com.example.easyshop.screen
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -68,6 +69,7 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.launch
 
+@Suppress("ComposeComposableModifier")
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,

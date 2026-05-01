@@ -65,7 +65,7 @@ class AiRepository {
     private val promoCacheTtlMs = 120_000L // 2 phút
 
     private fun getMessagesCollection() = auth.currentUser?.uid?.let { uid ->
-        db.collection("chats").document(uid).collection("messages")
+        db.collection("ai_chats").document(uid).collection("messages")
     }
 
     /**
@@ -103,7 +103,7 @@ class AiRepository {
             val welcomeText = "Chào bạn! Mình là Trợ lý AI của EasyShop. Bạn cần mình gợi ý sản phẩm hay hỗ trợ đơn hàng không ạ?"
             val msg = ChatMessage(content = welcomeText, isUser = false, timestamp = Timestamp.now())
             collection.add(msg).await()
-            db.collection("chats").document(auth.currentUser!!.uid).set(mapOf("lastActivity" to FieldValue.serverTimestamp()), SetOptions.merge())
+            db.collection("ai_chats").document(auth.currentUser!!.uid).set(mapOf("lastActivity" to FieldValue.serverTimestamp()), SetOptions.merge())
         }
     }
 
@@ -178,7 +178,7 @@ class AiRepository {
         // 4. Lưu phản hồi AI
         if (aiResponse.isNotBlank()) {
             collection.add(ChatMessage(content = aiResponse, isUser = false, timestamp = Timestamp.now())).await()
-            db.collection("chats").document(uid).update("lastActivity", FieldValue.serverTimestamp())
+            db.collection("ai_chats").document(uid).update("lastActivity", FieldValue.serverTimestamp())
             emit(aiResponse)
         }
     }
@@ -472,7 +472,7 @@ class AiRepository {
         // 4. Lưu phản hồi AI
         if (aiResponse.isNotBlank()) {
             collection.add(ChatMessage(content = aiResponse, isUser = false, timestamp = Timestamp.now())).await()
-            db.collection("chats").document(uid).update("lastActivity", FieldValue.serverTimestamp())
+            db.collection("ai_chats").document(uid).update("lastActivity", FieldValue.serverTimestamp())
             emit(aiResponse)
         }
     }
