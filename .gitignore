@@ -38,6 +38,12 @@ app/build/outputs/mapping/
 planProject/
 .kotlin/
 
+# Thesis Documentation
+thesis_docs/
+*.docx
+*.pdf
+datn_extracted.txt
+
 # Gradle User Home (Trash)
 .gradle-user-home/
 .gradle-user-home-checkout-fix/
