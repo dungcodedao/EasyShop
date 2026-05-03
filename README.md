@@ -1,5 +1,5 @@
 # 🌟 EasyShop - Android E-Commerce Real-time Application
-> **Đồ án tốt nghiệp: Xây dựng hệ thống thương mại điện tử đa nền tảng với Jetpack Compose & Firebase**
+> **Đồ án tốt nghiệp: Hệ thống thương mại điện tử tích hợp AI & Hỗ trợ trực tuyến**
 
 ---
 
@@ -10,8 +10,8 @@
 ### 🎯 Mục tiêu dự án
 - Xây dựng hệ thống bán hàng đa vai trò (User & Admin).
 - Tối ưu hóa trải nghiệm người dùng với hệ thống thông báo đẩy (Push Notifications).
-- Tích hợp trí tuệ nhân tạo (AI Assistant) hỗ trợ tư vấn 24/7.
-- Đảm bảo tính toàn vẹn dữ liệu trong môi trường NoSQL thông qua Snapshot Pattern.
+- Tích hợp **AI Chatbot** (Gemini) và **Hỗ trợ trực tuyến** (Shop Chat) để phục vụ khách hàng.
+- Quản lý tài nguyên hình ảnh tối ưu thông qua **Cloudinary**.
 
 ---
 
@@ -19,116 +19,56 @@
 
 | Tầng (Layer) | Công nghệ / Thư viện | Vai trò |
 | :--- | :--- | :--- |
-| **Giao diện (UI)** | Jetpack Compose, Material Design 3 | Thiết kế UI khai báo, linh hoạt và hiện đại. |
-| **Kiến trúc** | MVVM (Model-View-ViewModel) | Đảm bảo logic nghiệp vụ tách biệt với giao diện. |
+| **Giao diện (UI)** | Jetpack Compose, MD3 | Thiết kế UI khai báo, linh hoạt và hiện đại. |
+| **Kiến trúc** | MVVM | Đảm bảo logic nghiệp vụ tách biệt với giao diện. |
 | **Ngôn ngữ** | Kotlin (Coroutines & Flow) | Xử lý bất đồng bộ và luồng dữ liệu thời gian thực. |
-| **Backend** | Firebase Authentication | Quản lý đăng nhập Email & Google. |
-| **Database** | Cloud Firestore (NoSQL) | Lưu trữ và đồng bộ hóa dữ liệu thời gian thực. |
+| **Backend** | Firebase Auth, Firestore | Quản lý định danh và cơ sở dữ liệu Real-time. |
+| **Hình ảnh** | Cloudinary & OkHttp | Tải và lưu trữ hình ảnh (Sản phẩm & Chat). |
 | **AI** | Generative AI SDK | Tích hợp Trợ lý ảo tư vấn khách hàng. |
 
 ---
 
-## 🗺️ Đặc tả Use Case (Use Case Specification)
+## 🏗️ Kiến Trúc & Tài Liệu (Architecture & Docs)
 
-```mermaid
-graph LR
-    subgraph Users ["Khách Hàng"]
-        UC1(Xem & Tìm SP)
-        UC2(Quản lý Giỏ hàng)
-        UC3(Thanh toán & Đặt hàng)
-        UC4(Theo dõi Đơn hàng)
-        UC5(Chat với AI)
-    end
-    
-    subgraph Admins ["Quản Trị Viên"]
-        UC6(Quản lý Sản phẩm)
-        UC7(Duyệt Đơn hàng)
-        UC8(Quản lý Promo)
-        UC9(Gửi Thông báo)
-    end
-    
-    User((User)) --> Users
-    Admin((Admin)) --> Admins
-```
+Để hiểu sâu hơn về kiến trúc hệ thống, sơ đồ luồng dữ liệu và cấu trúc Firestore, vui lòng xem tại:
+👉 **[PROJECT_ANALYSIS.md](docs/PROJECT_ANALYSIS.md)**
 
----
-
-## 🏗️ Kiến Trúc Hệ Thống (Architecture)
-
-### 1. Kiến trúc Database NoSQL (Firestore)
-- **Embedded Pattern:** Nhúng mảng địa chỉ (`addressList`) vào tài liệu `User`.
-- **Reference Pattern:** Giỏ hàng (`cartItems`) lưu dưới dạng `Map<ProductId, Quantity>`.
-- **Snapshot Pattern:** Chụp ảnh thông tin sản phẩm và giá tại thời điểm chốt đơn hàng (`Order`) để đảm bảo tính lịch sử.
-
-### 2. Sơ đồ Thực thể (ERD Mermaid)
-
-```mermaid
-erDiagram
-    USERS ||--o{ ORDERS : "đặt hàng"
-    USERS {
-        string uid
-        string name
-        map cartItems
-        array addressList
-    }
-    PRODUCTS ||--o{ ORDERS : "thuộc về"
-    PRODUCTS {
-        string id
-        string title
-        double price
-    }
-    ORDERS ||--o{ NOTIFICATIONS : "kích hoạt"
-    ORDERS {
-        string id
-        double total
-        string status
-    }
-```
-
-### 3. Sơ đồ Lớp (Class Diagram)
-
-```mermaid
-classDiagram
-    class UserModel {
-        +String uid
-        +String name
-        +Map cartItems
-        +List addressList
-    }
-    class AddressModel {
-        +String id
-        +String label
-        +Boolean isDefault
-    }
-    class ProductModel {
-        +String id
-        +String title
-        +Double price
-    }
-    class OrderModel {
-        +String id
-        +String status
-        +Double total
-    }
-    UserModel *-- AddressModel
-    OrderModel o-- ProductModel
-```
+### Tóm lược kiến trúc Database
+- **Snapshot Pattern:** Chụp ảnh thông tin sản phẩm tại thời điểm đặt hàng.
+- **Embedded Pattern:** Nhúng mảng địa chỉ trực tiếp vào tài liệu User.
+- **Real-time Sync:** Đồng bộ hóa tin nhắn và trạng thái đơn hàng ngay lập tức.
 
 ---
 
 ## 💎 Tính Năng Nổi Bật (Key Features)
 
-### 1. Hệ thống Thông báo Real-time (Dual-Layer Notification)
-- **In-app Banner:** Sử dụng `NotifBannerOverlay` trượt từ trên xuống với hiệu ứng bounce, tích hợp `SharedFlow` để lắng nghe thay đổi trạng thái đơn hàng ngay khi người dùng đang mở app.
-- **System Push:** Kết hợp Firebase Messaging để bắn thông báo ngay cả khi app đang chạy ngầm hoặc đã đóng.
+### 1. Hệ thống Chat Kép (Dual-Chat System)
+- **AI Assistant:** Tư vấn sản phẩm, giải đáp thắc mắc tự động dựa trên Gemini AI.
+- **Shop Support:** Chat trực tiếp với Admin, hỗ trợ gửi hình ảnh (qua Cloudinary) với giao diện Indigo/White hiện đại.
 
-### 2. Trợ Lý Ảo AI (AI Copilot)
-- Tích hợp **Generative AI** tư vấn sản phẩm dựa trên nhu cầu (ngân sách, mục đích sử dụng).
-- Hỗ trợ xem nhanh sản phẩm (Quick View Assist Chips) trực tiếp từ khung chat.
+### 2. Thông báo Thông minh (Smart Notifications)
+- **In-app Banner:** Trượt từ trên xuống với hiệu ứng mượt mà khi có thay đổi đơn hàng.
+- **Push Notification:** Firebase Cloud Messaging giúp nhận tin nhắn ngay cả khi tắt app.
 
-### 3. Quy trình Thanh toán & Promo
-- Áp dụng mã giảm giá (`PromoCodeModel`) linh hoạt theo phần trăm hoặc số tiền cố định.
-- Quản lý địa chỉ giao hàng và phương thức thanh toán đa dạng.
+### 3. Quản trị Toàn diện (Admin Dashboard)
+- Quản lý sản phẩm, danh mục, mã giảm giá (Promo Code).
+- Theo dõi doanh thu và duyệt đơn hàng tập trung.
+
+---
+
+## 🚀 Hướng Dẫn Cài Đặt (Installation)
+
+1. **Clone project:**
+   ```bash
+   git clone https://github.com/your-username/EasyShop.git
+   ```
+2. **Cấu hình Firebase:**
+   - Tạo project trên [Firebase Console](https://console.firebase.google.com/).
+   - Thêm file `google-services.json` vào thư mục `app/`.
+   - Bật Authentication (Email & Google) và Firestore.
+3. **Cấu hình Cloudinary:**
+   - Cập nhật API Key trong `CloudinaryUploader.kt` hoặc file config tương ứng.
+4. **Build & Run:** Mở dự án bằng Android Studio và chạy trên Emulator hoặc thiết bị thật.
 
 ---
 
@@ -138,9 +78,9 @@ classDiagram
 | :---: | :---: | :---: |
 | ![Home](screenshots/home.png) | ![Details](screenshots/details.png) | ![AI](screenshots/ai.png) |
 
-| Giỏ Hàng | Thông Báo | Quản Trị (Admin) |
+| Chat với Shop | Thông Báo | Quản Trị (Admin) |
 | :---: | :---: | :---: |
-| ![Cart](screenshots/cart.png) | ![Notif](screenshots/notif.png) | ![Admin](screenshots/admin.png) |
+| ![Chat](screenshots/chat.png) | ![Notif](screenshots/notif.png) | ![Admin](screenshots/admin.png) |
 
 ---
 
@@ -150,4 +90,5 @@ classDiagram
 - **Trường:** [Tên trường của bạn]
 
 ---
-*© 2024 EasyShop Project - Graduation Thesis.*
+*© 2026 EasyShop Project - Graduation Thesis.*
+
