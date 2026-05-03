@@ -294,7 +294,8 @@ fun AnalyticsScreen(
                 title = {
                     Text(
                         stringResource(id = R.string.business_analytics_title),
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium
                     )
                 },
                 navigationIcon = {
@@ -567,7 +568,13 @@ fun PreviewReportDialog(
             Scaffold(
                 topBar = {
                     TopAppBar(
-                        title = { Text("Xem trước dữ liệu xuất", fontWeight = FontWeight.Bold) },
+                        title = {
+                            Text(
+                                "Xem trước dữ liệu xuất",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        },
                         navigationIcon = {
                             IconButton(onClick = onDismiss) {
                                 Icon(Icons.Default.Close, contentDescription = "Đóng")

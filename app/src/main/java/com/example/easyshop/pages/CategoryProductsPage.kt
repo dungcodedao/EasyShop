@@ -91,7 +91,8 @@ fun CategoryProductsPage(
                 title = {
                     Text(
                         stringResource(id = R.string.products_count, filteredProducts.size),
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium
                     )
                 },
                 navigationIcon = {
@@ -107,7 +108,8 @@ fun CategoryProductsPage(
                         Icon(Icons.Default.FilterList, "Filter")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+                windowInsets = WindowInsets(0.dp)
             )
         }
     ) { padding ->

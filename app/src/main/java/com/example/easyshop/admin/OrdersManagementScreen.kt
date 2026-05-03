@@ -161,7 +161,13 @@ fun OrdersManagementScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(id = R.string.orders_management_title), fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        stringResource(id = R.string.orders_management_title),
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
                 navigationIcon = { IconButton(onClick = { navController.navigateUp() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
                 actions = { IconButton(onClick = { loadOrders() }) { Icon(Icons.Default.Refresh, "Refresh") } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)

@@ -92,7 +92,6 @@ sealed class ProductMediaItem {
         is RemoteUrl -> url
     }
 }
-
 @Composable
 fun AddProductPage(
     modifier: Modifier = Modifier,
@@ -249,13 +248,13 @@ fun AddProductPage(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
                     onClick = { navController.navigateUp() },
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
@@ -269,7 +268,7 @@ fun AddProductPage(
                     style = MaterialTheme.typography.titleMedium
                 )
 
-                Spacer(modifier = Modifier.size(40.dp))
+                Spacer(modifier = Modifier.size(36.dp))
             }
         }
         Column(
@@ -794,3 +793,4 @@ fun MediaItemCard(
         }
     }
 }
+

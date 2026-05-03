@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -202,234 +203,251 @@ fun ProfilePage(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = stringResource(id = R.string.profile),
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
 
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 14.dp)
         ) {
-            Spacer(Modifier.height(16.dp))
+            val compactHeight = maxHeight < 620.dp
+            val avatarOuterSize = if (compactHeight) 88.dp else 110.dp
+            val avatarInnerSize = if (compactHeight) 82.dp else 104.dp
+            val topSpacing = if (compactHeight) 8.dp else 16.dp
+            val sectionSpacing = if (compactHeight) 10.dp else 16.dp
+            val bottomSpacing = if (compactHeight) 8.dp else 18.dp
 
-            // Avatar 
-            Box(
-                modifier = Modifier
-                    .size(110.dp)
-                    .clip(CircleShape)
-                    .border(3.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                    .clickable { showAvatarDialog = true },
-                contentAlignment = Alignment.Center
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                if (userModel.value.profileImg.isNotEmpty()) {
-                    val imageRequest = coil.request.ImageRequest.Builder(LocalContext.current)
-                        .data(userModel.value.profileImg)
-                        .crossfade(true)
-                        .memoryCacheKey(userModel.value.profileImg)
-                        .diskCacheKey(userModel.value.profileImg)
-                        .size(300)
-                        .build()
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Spacer(Modifier.height(topSpacing))
 
-                    AsyncImage(
-                        model = imageRequest,
-                        contentDescription = "Avatar",
-                        modifier = Modifier.size(104.dp).clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    // Placeholder nếu chưa có ảnh
                     Box(
-                        modifier = Modifier.size(104.dp).background(MaterialTheme.colorScheme.surfaceVariant),
+                        modifier = Modifier
+                            .size(avatarOuterSize)
+                            .clip(CircleShape)
+                            .border(3.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                            .clickable { showAvatarDialog = true },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Person, null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.primary)
-                    }
-                }
-            }
+                        if (userModel.value.profileImg.isNotEmpty()) {
+                            val imageRequest = coil.request.ImageRequest.Builder(LocalContext.current)
+                                .data(userModel.value.profileImg)
+                                .crossfade(true)
+                                .memoryCacheKey(userModel.value.profileImg)
+                                .diskCacheKey(userModel.value.profileImg)
+                                .size(300)
+                                .build()
 
-            Spacer(Modifier.height(16.dp))
-
-            // Name + Edit
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = userModel.value.name,
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                IconButton(onClick = { showEditNameDialog = true }, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Default.Edit, "Edit name", Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-                }
-            }
-
-            Text(
-                text = userModel.value.email,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            if (userModel.value.role != "admin") {
-                // --- Primary Address Summary (TikTok Style) ---
-                val defaultAddr = userModel.value.addressList.find { it.isDefault } ?: userModel.value.addressList.firstOrNull()
-                
-                Surface(
-                    modifier = Modifier.fillMaxWidth().clickable { showAddressListSheet = true },
-                    color = Color.Transparent
-                ) {
-                    Row(modifier = Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.Top) {
-                        Icon(
-                            Icons.Default.LocationOn,
-                            null,
-                            modifier = Modifier.size(20.dp).padding(top = 2.dp),
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                        )
-                        Spacer(Modifier.width(10.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = if (defaultAddr != null) "${defaultAddr.fullName} (+84)${defaultAddr.phone.removePrefix("0")}" else "Chưa có địa chỉ",
-                                    fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.bodyLarge
+                            AsyncImage(
+                                model = imageRequest,
+                                contentDescription = "Avatar",
+                                modifier = Modifier.size(avatarInnerSize).clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(avatarInnerSize)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.Person,
+                                    null,
+                                    modifier = Modifier.size(40.dp),
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
-                                Spacer(Modifier.weight(1f))
-                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
                             }
-                            if (defaultAddr != null) {
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    text = defaultAddr.detailedAddress.trim(),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                                    lineHeight = 20.sp,
-                                    maxLines = 2,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        }
+                    }
+
+                    Spacer(Modifier.height(if (compactHeight) 8.dp else 16.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = userModel.value.name,
+                            style = if (compactHeight) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        IconButton(onClick = { showEditNameDialog = true }, modifier = Modifier.size(36.dp)) {
+                            Icon(Icons.Default.Edit, "Edit name", Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+
+                    Text(
+                        text = userModel.value.email,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (userModel.value.role != "admin") {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        val defaultAddr = userModel.value.addressList.find { it.isDefault } ?: userModel.value.addressList.firstOrNull()
+
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showAddressListSheet = true },
+                            color = Color.Transparent
+                        ) {
+                            Row(modifier = Modifier.padding(vertical = sectionSpacing), verticalAlignment = Alignment.Top) {
+                                Icon(
+                                    Icons.Default.LocationOn,
+                                    null,
+                                    modifier = Modifier.size(20.dp).padding(top = 2.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                                 )
-                            } else {
-                                Text("Chạm để thêm địa chỉ giao hàng", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                Spacer(Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = if (defaultAddr != null) "${defaultAddr.fullName} (+84)${defaultAddr.phone.removePrefix("0")}" else "Chưa có địa chỉ",
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.bodyLarge
+                                        )
+                                        Spacer(Modifier.weight(1f))
+                                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                                    }
+                                    if (defaultAddr != null) {
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            text = defaultAddr.detailedAddress.trim(),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                                            lineHeight = 20.sp,
+                                            maxLines = if (compactHeight) 1 else 2,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                        )
+                                    } else {
+                                        Text("Chạm để thêm địa chỉ giao hàng", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                    }
+                                }
+                            }
+                        }
+
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(20.dp),
+                            elevation = CardDefaults.cardElevation(2.dp)
+                        ) {
+                            Column {
+                                ListItem(
+                                    headlineContent = { Text(stringResource(R.string.cart_items), fontWeight = FontWeight.Medium) },
+                                    supportingContent = { Text("${userModel.value.cartItems.values.sum()} items") },
+                                    leadingContent = {
+                                        Box(
+                                            Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
+                                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                                            contentAlignment = Alignment.Center
+                                        ) { Icon(Icons.Default.ShoppingCart, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp)) }
+                                    },
+                                    trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                                    modifier = Modifier.clickable { GlobalNavigation.navController.navigate("cart") }
+                                )
+
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
+
+                                ListItem(
+                                    headlineContent = { Text(stringResource(R.string.my_orders), fontWeight = FontWeight.Medium) },
+                                    leadingContent = {
+                                        Box(
+                                            Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
+                                                .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)),
+                                            contentAlignment = Alignment.Center
+                                        ) { Icon(Icons.AutoMirrored.Filled.List, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(22.dp)) }
+                                    },
+                                    trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                                    modifier = Modifier.clickable { GlobalNavigation.navController.navigate("orders") }
+                                )
+
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
+
+                                ListItem(
+                                    headlineContent = { Text("Nhắn tin với Shop", fontWeight = FontWeight.Medium) },
+                                    supportingContent = { Text("Hỗ trợ, tư vấn đơn hàng") },
+                                    leadingContent = {
+                                        Box(
+                                            Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
+                                                .background(Color(0xFFFF9800).copy(alpha = 0.1f)),
+                                            contentAlignment = Alignment.Center
+                                        ) { Icon(Icons.AutoMirrored.Filled.Message, null, tint = Color(0xFFFF9800), modifier = Modifier.size(22.dp)) }
+                                    },
+                                    trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                                    modifier = Modifier.clickable { GlobalNavigation.navController.navigate("chat-with-shop") }
+                                )
                             }
                         }
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
-
-                // Quick links
-                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), elevation = CardDefaults.cardElevation(2.dp)) {
-                    Column {
-                        // Cart
-                        ListItem(
-                            headlineContent = { Text(stringResource(R.string.cart_items), fontWeight = FontWeight.Medium) },
-                            supportingContent = { Text("${userModel.value.cartItems.values.sum()} items") },
-                            leadingContent = {
-                                Box(
-                                    Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                                    contentAlignment = Alignment.Center
-                                ) { Icon(Icons.Default.ShoppingCart, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp)) }
-                            },
-                            trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
-                            modifier = Modifier.clickable { GlobalNavigation.navController.navigate("cart") }
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
-
-                        // Orders
-                        ListItem(
-                            headlineContent = { Text(stringResource(R.string.my_orders), fontWeight = FontWeight.Medium) },
-                            leadingContent = {
-                                Box(
-                                    Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
-                                        .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)),
-                                    contentAlignment = Alignment.Center
-                                ) { Icon(Icons.AutoMirrored.Filled.List, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(22.dp)) }
-                            },
-                            trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
-                            modifier = Modifier.clickable { GlobalNavigation.navController.navigate("orders") }
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
-
-                        // Message with Shop
-                        ListItem(
-                            headlineContent = { Text("Nhắn tin với Shop", fontWeight = FontWeight.Medium) },
-                            supportingContent = { Text("Hỗ trợ, tư vấn đơn hàng") },
-                            leadingContent = {
-                                Box(
-                                    Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
-                                        .background(Color(0xFFFF9800).copy(alpha = 0.1f)),
-                                    contentAlignment = Alignment.Center
-                                ) { Icon(Icons.AutoMirrored.Filled.Message, null, tint = Color(0xFFFF9800), modifier = Modifier.size(22.dp)) }
-                            },
-                            trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
-                            modifier = Modifier.clickable { GlobalNavigation.navController.navigate("chat-with-shop") }
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-            }
-        }
-
-        // --- Bottom Buttons Section (Minimalist Style) ---
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 35.dp, bottom = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            OutlinedButton(
-                onClick = {
-                    FirebaseAuth.getInstance().signOut()
-                    GlobalNavigation.navController.navigate("auth") {
-                        popUpTo(0) { inclusive = true }
-                    }
-                },
-                modifier = Modifier
-                    .width(440.dp)
-                    .height(44.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.6f)),
-                shape = RoundedCornerShape(22.dp)
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ExitToApp, 
-                    null, 
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.error
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    stringResource(R.string.sign_out),
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.error,
-                    fontSize = 14.sp
-                )
-            }
-
-            if (userModel.value.role != "admin") {
-                TextButton(
-                    onClick = { showDeleteAccountDialog = true },
-                    modifier = Modifier.padding(top = 4.dp),
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
-                    )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = bottomSpacing),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        stringResource(R.string.delete_account),
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 12.sp
-                    )
+                    OutlinedButton(
+                        onClick = {
+                            FirebaseAuth.getInstance().signOut()
+                            GlobalNavigation.navController.navigate("auth") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.6f)),
+                        shape = RoundedCornerShape(22.dp)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ExitToApp,
+                            null,
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            stringResource(R.string.sign_out),
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 14.sp
+                        )
+                    }
+
+                    if (userModel.value.role != "admin") {
+                        TextButton(
+                            onClick = { showDeleteAccountDialog = true },
+                            modifier = Modifier.padding(top = 4.dp),
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
+                            )
+                        ) {
+                            Text(
+                                stringResource(R.string.delete_account),
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
                 }
             }
         }

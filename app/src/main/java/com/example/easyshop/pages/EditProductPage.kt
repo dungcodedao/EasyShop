@@ -160,13 +160,13 @@ fun EditProductPage(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
                     onClick = { navController.navigateUp() },
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
@@ -180,8 +180,8 @@ fun EditProductPage(
                     style = MaterialTheme.typography.titleMedium
                 )
 
-                Modifier.size(40.dp) // Placeholder for alignment
-                Spacer(modifier = Modifier.size(40.dp))
+                Modifier.size(36.dp) // Placeholder for alignment
+                Spacer(modifier = Modifier.size(36.dp))
             }
         }
         if (isLoadingData) {

@@ -55,7 +55,6 @@ private fun formatRelativeTime(timestamp: Timestamp): String {
         else         -> SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(timestamp.toDate())
     }
 }
-
 // ─── Kiểu thông báo → màu + icon ────────────────────────────────────────────
 private data class NotifStyle(val color: Color, val icon: ImageVector, val bgColor: Color)
 
@@ -175,7 +174,7 @@ fun NotificationsPage(navController: NavController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { navController.popBackStack() }) {
@@ -183,7 +182,7 @@ fun NotificationsPage(navController: NavController) {
                     }
                     Text(
                         text = "Thông báo",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f).padding(start = 4.dp)
                     )
@@ -472,3 +471,4 @@ private fun EmptyNotificationState(modifier: Modifier = Modifier) {
         )
     }
 }
+
