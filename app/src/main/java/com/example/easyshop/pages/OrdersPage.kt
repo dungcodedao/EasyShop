@@ -83,13 +83,20 @@ fun OrdersPage(modifier: Modifier = Modifier) {
         topBar = {
             Column {  // ✅ THAY ĐỔI: Bọc TopAppBar + TabRow trong Column
                 TopAppBar(
-                    title = { Text(stringResource(id = R.string.your_orders), fontWeight = FontWeight.Bold) },
+                    title = {
+                        Text(
+                            stringResource(id = R.string.your_orders),
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+                    windowInsets = androidx.compose.foundation.layout.WindowInsets(0.dp)
                 )
 
                 // ✅ THÊM: TabRow vào đây

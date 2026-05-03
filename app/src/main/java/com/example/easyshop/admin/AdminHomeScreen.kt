@@ -165,7 +165,13 @@ fun AdminHomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(id = R.string.manage_products_title), fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        stringResource(id = R.string.manage_products_title),
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(id = R.string.back_to_home))

@@ -79,7 +79,7 @@ fun AdminProfileScreen(navController: NavController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { navController.popBackStack() }) {
@@ -87,7 +87,7 @@ fun AdminProfileScreen(navController: NavController) {
                     }
                     Text(
                         text = "Hồ sơ Admin",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f)
                     )
@@ -201,7 +201,6 @@ fun AdminProfileScreen(navController: NavController) {
         }
     }
 }
-
 @Composable
 private fun InfoRow(label: String, value: String) {
     Row(
@@ -215,3 +214,4 @@ private fun InfoRow(label: String, value: String) {
     }
     Divider(color = Color(0xFFF3F4F6))
 }
+

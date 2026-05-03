@@ -72,13 +72,20 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId: String) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.product_details)) },
+                title = {
+                    Text(
+                        stringResource(R.string.product_details),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+                windowInsets = androidx.compose.foundation.layout.WindowInsets(0.dp)
             )
         }
     ) { padding ->

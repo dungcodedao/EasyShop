@@ -176,13 +176,13 @@ fun AdminDashboardScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = stringResource(id = R.string.admin_dashboard_title),
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -361,7 +361,6 @@ fun AdminDashboardScreen(
         }
     }
 }
-
 @Composable
 private fun StatCard(
     modifier: Modifier = Modifier,
@@ -477,3 +476,4 @@ fun AdminMenuCard(
         }
     }
 }
+

@@ -122,7 +122,7 @@ fun CartPage(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (navController != null && navController.previousBackStackEntry != null) {
@@ -144,7 +144,7 @@ fun CartPage(
                 
                 Text(
                     text = stringResource(id = R.string.your_cart),
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
