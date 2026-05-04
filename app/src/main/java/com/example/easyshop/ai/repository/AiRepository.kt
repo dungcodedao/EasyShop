@@ -168,7 +168,7 @@ class AiRepository {
                     aiResponse = requestBeeknoeeReply(systemInstruction, history, userMessage)
                 } catch (be: Exception) {
                     Log.e("AI_CHAT", "Beeknoee also failed: ${be.message}")
-                    throw Exception("Shop đang bận, bạn vui lòng thử lại sau vài giây nhé! 🙏")
+                    throw Exception("Cửa hàng đang bận, bạn vui lòng thử lại sau vài giây nhé!")
                 }
             } else {
                 throw geminiQuotaError ?: Exception("Không thể kết nối AI lúc này.")
@@ -319,7 +319,7 @@ class AiRepository {
     }
 
     private fun formatPromosForAI(promos: List<PromoCodeModel>): String {
-        if (promos.isEmpty()) return "Hiện tại shop chưa phát hành mã giảm giá nào."
+        if (promos.isEmpty()) return "Hiện tại cửa hàng chưa phát hành mã giảm giá nào."
         return promos.joinToString("\n") { promo ->
             val discountText = if (promo.type == "percentage") {
                 "Giảm ${promo.value.toInt()}%" + if (promo.maxDiscount > 0) " (tối đa ${formatVND(promo.maxDiscount)})" else ""
@@ -351,7 +351,7 @@ class AiRepository {
             4. MÃ GIẢM GIÁ / VOUCHER: 
                - Khi khách hỏi về mã giảm giá, voucher, khuyến mãi, ưu đãi → PHẢI trả lời dựa trên danh sách "MÃ GIẢM GIÁ HIỆN ĐANG CÓ" phía trên.
                - Liệt kê RÕ RÀNG mã code, mức giảm, điều kiện áp dụng.
-               - Nếu không có mã nào → thông báo "Shop hiện chưa có mã giảm giá nào" và gợi ý khách theo dõi thông báo.
+               - Nếu không có mã nào → thông báo "Cửa hàng hiện chưa có mã giảm giá nào" và gợi ý khách theo dõi thông báo.
                - Hướng dẫn khách nhập mã ở trang Thanh toán (Checkout).
                - KHÔNG bịa ra mã giảm giá không có trong danh sách.
             5. THANH TOÁN:
@@ -365,7 +365,7 @@ class AiRepository {
                - Nếu khách hỏi về Voucher -> Chỉ tập trung vào Voucher.
                - Nếu khách hỏi về Thanh toán -> Chỉ tập trung về Thanh toán.
                - KHÔNG tự ý gợi ý sản phẩm thay thế hoặc quảng cáo lan man trừ khi khách hỏi "có món nào hay không" hoặc đang trong bối cảnh tư vấn mua sắm chung (advice).
-            7. PHONG CÁCH: Thân thiện, ngắn gọn, chuyên nghiệp (Xưng hô: Shop - Bạn).
+            7. PHONG CÁCH: Thân thiện, ngắn gọn, chuyên nghiệp (Xưng hô: Cửa hàng - Bạn).
             8. NGÔN NGỮ: Tiếng Việt.
         """.trimIndent()
     }
@@ -398,7 +398,7 @@ class AiRepository {
 
         // Tất cả model đều bị quota → hiện thông báo thân thiện thay vì JSON thô
         if (allQuotaExhausted) {
-            throw Exception("Shop đang bận, bạn vui lòng thử lại sau vài giây nhé! 🙏")
+            throw Exception("Cửa hàng đang bận, bạn vui lòng thử lại sau vài giây nhé!")
         }
         throw lastErr ?: Exception("Không thể kết nối AI lúc này.")
     }
@@ -502,7 +502,7 @@ class AiRepository {
         }
 
         if (allQuotaExhausted) {
-            throw Exception("Shop đang bận, bạn vui lòng thử lại sau vài giây nhé! 🙏")
+            throw Exception("Cửa hàng đang bận, bạn vui lòng thử lại sau vài giây nhé!")
         }
         throw lastErr ?: Exception("Không thể kết nối AI lúc này.")
     }

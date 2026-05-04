@@ -318,13 +318,13 @@
     <string name="order_update_failed">Cập nhật trạng thái thất bại</string>
     
     <!-- New Order Note & Messaging -->
-    <string name="order_note_label">Ghi chú cho Shop</string>
+    <string name="order_note_label">Ghi chú cho cửa hàng</string>
     <string name="order_note_hint">Nhập yêu cầu đặc biệt (ví dụ: giao giờ hành chính...)</string>
     <string name="message_customer">Nhắn tin cho khách</string>
     <string name="customer_note_title">Ghi chú của khách hàng</string>
 
     <!-- Chat -->
-    <string name="chat_with_shop">Nhắn tin với Shop</string>
+    <string name="chat_with_shop">Nhắn tin với cửa hàng</string>
     <string name="admin_chat_title">Tin nhắn khách</string>
     <string name="delete_chat_confirm_title">Xoá cuộc trò chuyện</string>
     <string name="delete_chat_confirm_msg">Bạn có chắc chắn muốn xóa dữ liệu cuộc trò chuyện này không?</string>

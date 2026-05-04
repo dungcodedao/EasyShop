@@ -413,7 +413,7 @@ private fun WelcomeHintCard() {
         Column(modifier = Modifier.padding(14.dp)) {
             Text("Tư vấn nhanh theo nhu cầu", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(6.dp))
-            Text("Hãy gửi tin nhắn, giọng nói hoặc hình ảnh sản phẩm để Shop tư vấn nhanh nhất cho bạn nhé!",
+            Text("Hãy gửi tin nhắn, giọng nói hoặc hình ảnh sản phẩm để cửa hàng tư vấn nhanh nhất cho bạn nhé!",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

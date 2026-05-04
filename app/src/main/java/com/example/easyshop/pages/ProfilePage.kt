@@ -352,7 +352,7 @@ fun ProfilePage(
                             Column {
                                 ListItem(
                                     headlineContent = { Text(stringResource(R.string.cart_items), fontWeight = FontWeight.Medium) },
-                                    supportingContent = { Text("${userModel.value.cartItems.values.sum()} items") },
+                                    supportingContent = { Text("${userModel.value.cartItems.values.sum()} sản phẩm") },
                                     leadingContent = {
                                         Box(
                                             Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
@@ -382,7 +382,7 @@ fun ProfilePage(
                                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
 
                                 ListItem(
-                                    headlineContent = { Text("Nhắn tin với Shop", fontWeight = FontWeight.Medium) },
+                                    headlineContent = { Text("Nhắn tin với cửa hàng", fontWeight = FontWeight.Medium) },
                                     supportingContent = { Text("Hỗ trợ, tư vấn đơn hàng") },
                                     leadingContent = {
                                         Box(

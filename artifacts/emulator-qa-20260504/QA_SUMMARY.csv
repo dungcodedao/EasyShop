@@ -1,0 +1,10 @@
+﻿artifact,muc_dich,ket_qua_chinh,issue_ghi_chu
+screen-initial.png,Anh trang thai ban dau,"Capture thanh cong (1076996 bytes)","Mo bang Image Preview, khong mo text"
+screen-after-coldstart.png,Anh sau cold start,"Capture thanh cong (688784 bytes)","File hop le, truoc do chi mo sai mode"
+ui-state-initial.xml,UI dump ban dau qua exec-out,"That bai, chi 120 bytes","ERROR: null root node returned by UiTestAutomationBridge"
+ui-state.xml,UI state fallback qua /sdcard,"Thanh cong (19443 bytes)","Dung file nay de phan tich UI"
+logcat-coldstart.txt,Log runtime cold start,"Co SecurityException lien quan com.google.android.gms","Chua thay FATAL EXCEPTION cua app"
+logcat-crash.txt,Buffer crash,"Rong (0 bytes)","Khong ghi nhan crash trong phien nay"
+gfxinfo.txt,Snapshot frame/jank,"146 frames; 86 janky (58.90%); p50=18ms; p99=250ms","Co dau hieu jank tren emulator"
+gfxinfo-framestats.txt,Framestats chi tiet,"Capture thanh cong (58834 bytes)","Dung khi can phan tich sau"
+meminfo.txt,Snapshot bo nho,"TOTAL PSS=181816 KB; Java Heap=15568 KB; Native Heap=12760 KB","Anh chup 1 thoi diem, chua du ket luan leak"

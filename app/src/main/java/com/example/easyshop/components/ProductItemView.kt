@@ -123,7 +123,7 @@ fun ProductItemView(modifier: Modifier = Modifier, product: ProductModel) {
                     modifier = Modifier.size(36.dp),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Icon(Icons.Default.ShoppingCart, "Add to cart", Modifier.size(18.dp))
+                    Icon(Icons.Default.ShoppingCart, "Thêm vào giỏ", Modifier.size(18.dp))
                 }
             }
         }

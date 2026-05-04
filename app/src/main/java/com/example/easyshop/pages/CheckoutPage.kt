@@ -243,7 +243,7 @@ fun CheckoutPage(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .navigationBarsPadding()
-                    .padding(bottom = 12.dp),
+                    .padding(bottom = 2.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {

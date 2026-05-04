@@ -238,7 +238,7 @@ class AIChatViewModel : ViewModel() {
             // Quota / rate limit — đã được xử lý thành câu tiếng Việt trong Repository
             msg.contains("bận") || msg.contains("thử lại") -> msg
             msg.contains("429") || msg.contains("quota") || msg.contains("RESOURCE_EXHAUSTED") ->
-                "Shop đang bận, bạn vui lòng thử lại sau vài giây nhé! 🙏"
+                "Cửa hàng đang bận, bạn vui lòng thử lại sau vài giây nhé!"
             msg.contains("401") || msg.contains("403") || msg.contains("API key") ->
                 "Lỗi xác thực API, vui lòng liên hệ shop để được hỗ trợ."
             msg.contains("timeout") || msg.contains("SocketTimeout") || msg.contains("connect") ->

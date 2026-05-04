@@ -222,7 +222,7 @@ fun ChatWithShopScreen(
                                 Text("Chào bạn!", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    "Bạn cần hỗ trợ về đơn hàng, thanh toán hay khiếu nại? Hãy nhắn tin cho Shop để được giải quyết ngay nhé.",
+                                    "Bạn cần hỗ trợ về đơn hàng, thanh toán hay khiếu nại? Hãy nhắn tin cho cửa hàng để được giải quyết ngay nhé.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     lineHeight = 18.sp

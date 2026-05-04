@@ -286,10 +286,12 @@ private fun CartContent(
 
         Column(
             modifier = Modifier
-                .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 4.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
                 .navigationBarsPadding()
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(bottom = 0.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -320,22 +322,20 @@ private fun CartContent(
             Button(
                 onClick = onCheckoutClick,
                 modifier = Modifier
-                    .width(440.dp)
-                    .height(40.dp)
-                    .align(Alignment.CenterHorizontally),
+                    .width(220.dp)
+                    .height(48.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF4F46E5)
                 ),
-                shape = RoundedCornerShape(24.dp)
+                shape = RoundedCornerShape(24.dp),
+                elevation = ButtonDefaults.buttonElevation(4.dp)
             ) {
                 Text(
                     text = stringResource(id = R.string.checkout),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
             }
-
-            Spacer(modifier = Modifier.height(2.dp))
         }
     }
 }
