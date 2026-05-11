@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -24,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.easyshop.R
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.easyshop.AppUtil
 import com.example.easyshop.util.GlobalNavigation
 import com.example.easyshop.model.ProductModel
@@ -31,6 +33,15 @@ import com.example.easyshop.model.ProductModel
 @Composable
 fun ProductItemView(modifier: Modifier = Modifier, product: ProductModel) {
     val context = LocalContext.current
+    val outOfStockMsg = stringResource(R.string.product_out_of_stock_msg)
+
+    val imageRequest = remember(product.id) {
+        ImageRequest.Builder(context)
+            .data(product.images.firstOrNull())
+            .crossfade(true)
+            .size(400)
+            .build()
+    }
 
     Card(
         modifier = modifier
@@ -52,7 +63,7 @@ fun ProductItemView(modifier: Modifier = Modifier, product: ProductModel) {
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             ) {
                 AsyncImage(
-                    model = product.images.firstOrNull(),
+                    model = imageRequest,
                     contentDescription = product.title,
                     modifier = Modifier
                         .fillMaxSize()
@@ -117,7 +128,7 @@ fun ProductItemView(modifier: Modifier = Modifier, product: ProductModel) {
                 FilledTonalIconButton(
                     onClick = {
                         if (product.inStock) AppUtil.addItemToCart(context, product.id)
-                        else AppUtil.showToast(context, context.getString(R.string.product_out_of_stock_msg))
+                        else AppUtil.showToast(context, outOfStockMsg)
                     },
                     enabled = product.inStock,
                     modifier = Modifier.size(36.dp),

@@ -1,8 +1,9 @@
 package com.example.easyshop.pages
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -201,21 +202,18 @@ private fun ProductListContent(
                         }
                     }
                 } else {
-                    LazyColumn(
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(
-                            items = products.chunked(2),
-                            key = { row -> row.joinToString("-") { it.id } }
-                        ) { rowItems ->
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                rowItems.forEach { product ->
-                                    ProductItemView(product = product, modifier = Modifier.weight(1f))
-                                }
-                                if (rowItems.size == 1) Spacer(Modifier.weight(1f))
-                            }
+                            items = products,
+                            key = { it.id }
+                        ) { product ->
+                            ProductItemView(product = product)
                         }
                     }
                 }

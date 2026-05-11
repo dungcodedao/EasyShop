@@ -12,16 +12,20 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.easyshop.R
 
 @Composable
 fun ErrorStateView(
     modifier: Modifier = Modifier,
-    title: String = "Đã có lỗi xảy ra",
-    message: String = "Không thể tải dữ liệu. Vui lòng thử lại sau.",
-    buttonText: String = "Thử lại",
+    title: String? = null,
+    message: String? = null,
+    buttonText: String? = null,
     icon: ImageVector = Icons.Default.ErrorOutline,
     onRetry: () -> Unit
 ) {
+    val resolvedTitle   = title      ?: androidx.compose.ui.res.stringResource(R.string.error_title)
+    val resolvedMessage = message    ?: androidx.compose.ui.res.stringResource(R.string.error_message)
+    val resolvedButton  = buttonText ?: androidx.compose.ui.res.stringResource(R.string.error_retry)
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -39,7 +43,7 @@ fun ErrorStateView(
         Spacer(Modifier.height(24.dp))
         
         Text(
-            text = title,
+            text = resolvedTitle,
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
@@ -49,7 +53,7 @@ fun ErrorStateView(
         Spacer(Modifier.height(8.dp))
         
         Text(
-            text = message,
+            text = resolvedMessage,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -64,7 +68,7 @@ fun ErrorStateView(
         ) {
             Icon(Icons.Default.Refresh, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text(text = buttonText, fontWeight = FontWeight.Bold)
+            Text(text = resolvedButton, fontWeight = FontWeight.Bold)
         }
     }
 }

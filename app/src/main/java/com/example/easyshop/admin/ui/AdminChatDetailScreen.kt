@@ -55,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -68,7 +69,6 @@ import com.example.easyshop.admin.viewmodel.AdminChatViewModel
 import com.example.easyshop.model.ShopChatMessage
 import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,6 +87,24 @@ fun AdminChatDetailScreen(
     val auth = FirebaseAuth.getInstance()
     val currentAdminId = remember { auth.currentUser?.uid }
 
+    // Localized strings
+    val defaultCustomer = stringResource(R.string.admin_chat_default_customer)
+    val loadingText = stringResource(R.string.admin_chat_loading)
+    val activeText = stringResource(R.string.admin_chat_active)
+    val activeMinutesAgoFmt = stringResource(R.string.admin_chat_active_minutes_ago)
+    val activeHoursAgoFmt = stringResource(R.string.admin_chat_active_hours_ago)
+    val activeDaysAgoFmt = stringResource(R.string.admin_chat_active_days_ago)
+    val cdUserAvatar = stringResource(R.string.cd_user_avatar)
+    val cdBack = stringResource(R.string.cd_back)
+    val cdDeleteChat = stringResource(R.string.cd_delete_chat)
+    val cdSendImage = stringResource(R.string.admin_chat_send_image)
+    val replyPlaceholder = stringResource(R.string.admin_chat_reply_placeholder)
+    val cdSend = stringResource(R.string.cd_send)
+    val deleteChatTitle = stringResource(R.string.delete_chat_confirm_title)
+    val deleteChatMsg = stringResource(R.string.delete_chat_confirm_msg)
+    val deleteChatConfirm = stringResource(R.string.admin_chat_delete_confirm)
+    val cancelText = stringResource(R.string.admin_chat_cancel)
+
     // Image picker launcher
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
@@ -95,7 +113,6 @@ fun AdminChatDetailScreen(
         }
     )
 
-    // Load messages for selected user
     LaunchedEffect(userId) {
         viewModel.selectUser(userId)
     }
@@ -110,23 +127,30 @@ fun AdminChatDetailScreen(
     val chatSession = chatSessions.find { it.userId == userId }
     val lastTimestamp = chatSession?.lastTimestamp
 
-    val displayUserName = chatSession?.userName?.takeIf { it.isNotBlank() } ?: userName ?: "Khách hàng"
+    val displayUserName = chatSession?.userName?.takeIf { it.isNotBlank() }
+        ?: userName
+        ?: defaultCustomer
     val displayUserAvatar = chatSession?.userProfileImage?.takeIf { it.isNotBlank() } ?: userAvatar
 
-    var statusText by remember { mutableStateOf("Đang tải...") }
+    // isActive flag để kiểm tra màu sắc mà không phụ thuộc so sánh chuỗi
+    var isActive by remember { mutableStateOf(false) }
+    var statusText by remember { mutableStateOf(loadingText) }
+
     LaunchedEffect(lastTimestamp) {
         while (true) {
             if (lastTimestamp != null) {
                 val now = System.currentTimeMillis() / 1000
                 val diff = now - lastTimestamp.seconds
+                isActive = diff < 60
                 statusText = when {
-                    diff < 60 -> "Đang hoạt động"
-                    diff < 3600 -> "Hoạt động ${diff / 60} phút trước"
-                    diff < 86400 -> "Hoạt động ${diff / 3600} giờ trước"
-                    else -> "Hoạt động ${diff / 86400} ngày trước"
+                    diff < 60 -> activeText
+                    diff < 3600 -> String.format(activeMinutesAgoFmt, diff / 60)
+                    diff < 86400 -> String.format(activeHoursAgoFmt, diff / 3600)
+                    else -> String.format(activeDaysAgoFmt, diff / 86400)
                 }
             } else {
-                statusText = "Đang tải thông tin..."
+                isActive = false
+                statusText = loadingText
             }
             kotlinx.coroutines.delay(60000) // update every minute
         }
@@ -140,7 +164,7 @@ fun AdminChatDetailScreen(
                         if (!displayUserAvatar.isNullOrEmpty()) {
                             AsyncImage(
                                 model = displayUserAvatar,
-                                contentDescription = "User Avatar",
+                                contentDescription = cdUserAvatar,
                                 modifier = Modifier
                                     .size(36.dp)
                                     .clip(CircleShape)
@@ -157,7 +181,8 @@ fun AdminChatDetailScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = displayUserName.takeIf { it.isNotBlank() }?.take(1)?.uppercase() ?: "K",
+                                    text = displayUserName.takeIf { it.isNotBlank() }
+                                        ?.take(1)?.uppercase() ?: "?",
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -172,26 +197,30 @@ fun AdminChatDetailScreen(
                             Text(
                                 text = statusText,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = if (statusText == "Đang hoạt động") Color(0xFF4CAF50) else Color.Gray
+                                color = if (isActive) Color(0xFF4CAF50) else Color.Gray
                             )
                         }
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, cdBack)
                     }
                 },
                 actions = {
                     var showDeleteDialog by remember { mutableStateOf(false) }
                     IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(Icons.Default.Delete, "Delete Chat", tint = MaterialTheme.colorScheme.error)
+                        Icon(
+                            Icons.Default.Delete,
+                            cdDeleteChat,
+                            tint = MaterialTheme.colorScheme.error
+                        )
                     }
                     if (showDeleteDialog) {
                         AlertDialog(
                             onDismissRequest = { showDeleteDialog = false },
-                            title = { Text(stringResource(R.string.delete_chat_confirm_title)) },
-                            text = { Text(stringResource(R.string.delete_chat_confirm_msg)) },
+                            title = { Text(deleteChatTitle) },
+                            text = { Text(deleteChatMsg) },
                             confirmButton = {
                                 TextButton(onClick = {
                                     showDeleteDialog = false
@@ -199,12 +228,12 @@ fun AdminChatDetailScreen(
                                         navController.popBackStack()
                                     }
                                 }) {
-                                    Text("Xóa", color = MaterialTheme.colorScheme.error)
+                                    Text(deleteChatConfirm, color = MaterialTheme.colorScheme.error)
                                 }
                             },
                             dismissButton = {
                                 TextButton(onClick = { showDeleteDialog = false }) {
-                                    Text("Hủy")
+                                    Text(cancelText)
                                 }
                             }
                         )
@@ -214,7 +243,7 @@ fun AdminChatDetailScreen(
         },
         bottomBar = {
             Surface(
-                tonalElevation = 2.dp, 
+                tonalElevation = 2.dp,
                 color = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.navigationBarsPadding().imePadding()
             ) {
@@ -240,7 +269,7 @@ fun AdminChatDetailScreen(
                         } else {
                             Icon(
                                 Icons.Default.Image,
-                                contentDescription = "Gửi ảnh",
+                                contentDescription = cdSendImage,
                                 tint = Color(0xFF4F46E5)
                             )
                         }
@@ -250,7 +279,7 @@ fun AdminChatDetailScreen(
                         value = inputText,
                         onValueChange = { inputText = it },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Nhập phản hồi...") },
+                        placeholder = { Text(replyPlaceholder) },
                         shape = RoundedCornerShape(24.dp),
                         maxLines = 4,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
@@ -271,7 +300,11 @@ fun AdminChatDetailScreen(
                         },
                         enabled = inputText.isNotBlank()
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.Send, "Send", tint = if (inputText.isNotBlank()) Color(0xFF4F46E5) else Color.Gray)
+                        Icon(
+                            Icons.AutoMirrored.Filled.Send,
+                            cdSend,
+                            tint = if (inputText.isNotBlank()) Color(0xFF4F46E5) else Color.Gray
+                        )
                     }
                 }
             }
@@ -291,7 +324,7 @@ fun AdminChatDetailScreen(
             ) {
                 items(messages) { message ->
                     val isMe = message.senderId == currentAdminId
-                    AdminSimpleChatBubble(message, isMe) 
+                    AdminSimpleChatBubble(message, isMe)
                 }
             }
         }
@@ -308,7 +341,7 @@ fun AdminSimpleChatBubble(message: ShopChatMessage, isMe: Boolean) {
     val adminAccent = Color(0xFF4F46E5)
     val textColor = if (isMe) adminAccent else Color.Black
     val borderColor = if (isMe) adminAccent.copy(alpha = 0.5f) else Color(0xFFE0E0E0)
-    
+
     val shape = RoundedCornerShape(
         topStart = 16.dp, topEnd = 16.dp,
         bottomStart = if (isMe) 16.dp else 4.dp,
@@ -338,18 +371,23 @@ fun AdminSimpleChatBubble(message: ShopChatMessage, isMe: Boolean) {
                     )
                     if (message.text.isNotBlank()) Spacer(modifier = Modifier.height(8.dp))
                 }
-                
+
                 if (message.text.isNotBlank()) {
                     Text(
                         text = message.text,
                         color = textColor,
                         style = MaterialTheme.typography.bodyMedium,
-                        modifier = if (!message.imageUrl.isNullOrEmpty()) Modifier.padding(horizontal = 8.dp, vertical = 4.dp) else Modifier
+                        modifier = if (!message.imageUrl.isNullOrEmpty())
+                            Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        else Modifier
                     )
                 }
             }
         }
-        val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(message.timestamp.toDate())
+        val locale = LocalConfiguration.current.locales[0]
+        val time = remember(locale) {
+            SimpleDateFormat("HH:mm", locale).format(message.timestamp.toDate())
+        }
         Text(
             text = time,
             style = MaterialTheme.typography.labelSmall,

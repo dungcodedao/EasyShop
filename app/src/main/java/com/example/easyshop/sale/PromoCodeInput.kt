@@ -19,6 +19,8 @@ import com.example.easyshop.components.VoucherSelectionSheet
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import androidx.compose.material.icons.filled.ConfirmationNumber
+import androidx.compose.ui.res.stringResource
+import com.example.easyshop.R
 
 @Composable
 fun PromoCodeInput(
@@ -67,15 +69,15 @@ fun PromoCodeInput(
                 promoCode = it.uppercase()
                 isPromoError = false
             },
-            label = { Text("Mã giảm giá") },
-            placeholder = { Text("Nhập mã tại đây") },
+            label = { Text(stringResource(R.string.promo_code_label)) },
+            placeholder = { Text(stringResource(R.string.promo_code_hint_input)) },
             modifier = Modifier.fillMaxWidth(),
             isError = isPromoError,
             leadingIcon = {
                 IconButton(onClick = { showVoucherSheet = true }) {
                     Icon(
                         Icons.Default.ConfirmationNumber,
-                        contentDescription = "Ví Voucher",
+                        contentDescription = stringResource(R.string.voucher_wallet_cd),
                         tint = if (savedVouchers.isNotEmpty()) Color(0xFF4F46E5) else Color.Gray
                     )
                 }
@@ -88,13 +90,13 @@ fun PromoCodeInput(
                             if (trimmedCode.isBlank()) {
                                 com.example.easyshop.AppUtil.showToast(
                                     context,
-                                    "Vui lòng nhập mã giảm giá"
+                                    context.getString(R.string.promo_empty_error)
                                 )
                                 return@TextButton
                             }
 
                             isLoading = true
-                            validatePromoCode(trimmedCode, subtotal) { result ->
+                            validatePromoCode(context, trimmedCode, subtotal) { result ->
                                 isLoading = false
                                 when (result) {
                                     is PromoResult.Success -> {
@@ -103,7 +105,7 @@ fun PromoCodeInput(
                                         errorText = ""
                                         com.example.easyshop.AppUtil.showToast(
                                             context,
-                                            "Áp dụng mã thành công!"
+                                            context.getString(R.string.promo_apply_success)
                                         )
                                     }
                                     is PromoResult.Error -> {
@@ -125,7 +127,7 @@ fun PromoCodeInput(
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text("Áp dụng")
+                            Text(stringResource(R.string.apply_btn))
                         }
                     }
                 } else {
@@ -138,7 +140,7 @@ fun PromoCodeInput(
                     ) {
                         Icon(
                             Icons.Default.Close,
-                            contentDescription = "Xóa mã",
+                            contentDescription = stringResource(R.string.clear_code_cd),
                             tint = Color.Red
                         )
                     }
@@ -227,6 +229,7 @@ sealed class PromoResult {
 
 // Validate Promo Code from Firebase
 fun validatePromoCode(
+    context: android.content.Context,
     code: String,
     subtotal: Float,
     callback: (PromoResult) -> Unit
@@ -237,13 +240,13 @@ fun validatePromoCode(
         .get()
         .addOnSuccessListener { doc ->
             if (!doc.exists()) {
-                callback(PromoResult.Error("Mã giảm giá không tồn tại"))
+                callback(PromoResult.Error(context.getString(R.string.promo_not_found_error)))
                 return@addOnSuccessListener
             }
 
             val promo = doc.toObject(PromoCodeModel::class.java)
             if (promo == null) {
-                callback(PromoResult.Error("Lỗi dữ liệu mã giảm giá"))
+                callback(PromoResult.Error(context.getString(R.string.promo_data_error)))
                 return@addOnSuccessListener
             }
 
@@ -251,14 +254,14 @@ fun validatePromoCode(
             val now = System.currentTimeMillis()
 
             when {
-                !promo.active -> callback(PromoResult.Error("Mã giảm giá hiện không khả dụng"))
-                promo.expiryDate > 0 && now > promo.expiryDate -> callback(PromoResult.Error("Mã giảm giá đã hết hạn"))
-                subtotal < promo.minOrder -> callback(PromoResult.Error("Đơn hàng phải tối thiểu đ${promo.minOrder.toLong()} để dùng mã này"))
-                promo.usageLimit > 0 && promo.usedCount >= promo.usageLimit -> callback(PromoResult.Error("Mã giảm giá đã hết lượt sử dụng"))
+                !promo.active -> callback(PromoResult.Error(context.getString(R.string.promo_unavailable_error)))
+                promo.expiryDate > 0 && now > promo.expiryDate -> callback(PromoResult.Error(context.getString(R.string.promo_expired_error)))
+                subtotal < promo.minOrder -> callback(PromoResult.Error(context.getString(R.string.promo_min_order_error, promo.minOrder.toLong().toString())))
+                promo.usageLimit > 0 && promo.usedCount >= promo.usageLimit -> callback(PromoResult.Error(context.getString(R.string.promo_limit_reached_error)))
                 else -> callback(PromoResult.Success(promo))
             }
         }
         .addOnFailureListener {
-            callback(PromoResult.Error("Lỗi kết nối máy chủ"))
+            callback(PromoResult.Error(context.getString(R.string.server_error)))
         }
 }

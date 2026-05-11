@@ -68,7 +68,7 @@ fun MBBankQRSection(
                     }
                     Spacer(Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Ngân hàng MBBank", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.mbbank_label), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
                         Text(accountNo, style = MaterialTheme.typography.bodySmall, color = Color.DarkGray)
                         Text(accountName, style = MaterialTheme.typography.bodySmall, color = Color.DarkGray)
                     }
@@ -84,7 +84,7 @@ fun MBBankQRSection(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Nội dung chuyển khoản:", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    Text(stringResource(R.string.transfer_note_label), style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                     Text(
                         displayRef,
                         style = MaterialTheme.typography.bodyMedium,
@@ -125,12 +125,12 @@ fun MBBankQRSection(
             OutlinedButton(
                 onClick = {
                     scope.launch {
-                        AppUtil.showToast(context, "Đang tải mã QR...")
+                        AppUtil.showToast(context, context.getString(R.string.loading_qr_msg))
                         val success = ImageSaver.saveQrToGallery(context, qrUrl)
                         if (success) {
                             AppUtil.showToast(context, saveQrMsg)
                         } else {
-                            AppUtil.showToast(context, "Lỗi khi lưu ảnh, vui lòng thử lại")
+                            AppUtil.showToast(context, context.getString(R.string.save_qr_error))
                         }
                     }
                 },
@@ -140,19 +140,18 @@ fun MBBankQRSection(
             ) {
                 Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color(0xFF0038A8))
                 Spacer(Modifier.width(8.dp))
-                Text("Lưu mã", color = Color(0xFF0038A8))
+                Text(stringResource(R.string.save_qr_btn), color = Color(0xFF0038A8))
             }
 
             Button(
                 onClick = {
-                    AppUtil.showToast(context, "Mở ứng dụng MB Bank...")
-                    // MBBank app scheme (nếu có)
+                    AppUtil.showToast(context, context.getString(R.string.open_app_msg_format, "MB Bank"))
                 },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0038A8))
             ) {
-                Text("Mở app MBBank", color = Color.White)
+                Text(stringResource(R.string.open_mbbank_btn), color = Color.White)
             }
         }
 
@@ -167,10 +166,10 @@ fun MBBankQRSection(
                 modifier = Modifier.padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text("🏦 Hướng dẫn chuyển khoản", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF0038A8))
-                Text("Bước 1: Quét mã QR hoặc chuyển khoản theo số tài khoản trên.", fontSize = 12.sp, color = Color.DarkGray)
-                Text("Bước 2: Đảm bảo nội dung chuyển khoản khớp với mã màu hồng ở trên.", fontSize = 12.sp, color = Color.DarkGray)
-                Text("Bước 3: Chờ 1-2 phút hệ thống SePay sẽ tự động xác nhận.", fontSize = 12.sp, color = Color.DarkGray)
+                Text(stringResource(R.string.payment_instruction_title), fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF0038A8))
+                Text(stringResource(R.string.mb_step_1), fontSize = 12.sp, color = Color.DarkGray)
+                Text(stringResource(R.string.mb_step_2), fontSize = 12.sp, color = Color.DarkGray)
+                Text(stringResource(R.string.mb_step_3), fontSize = 12.sp, color = Color.DarkGray)
             }
         }
     }

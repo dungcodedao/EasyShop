@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -61,7 +62,7 @@ fun AuthScreen(
 
         // Main Heading
         Text(
-            text = "Bắt đầu hành trình mua sắm ngay",
+            text = stringResource(R.string.auth_heading),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.ExtraBold,
             textAlign = TextAlign.Center,
@@ -73,7 +74,7 @@ fun AuthScreen(
 
         // Subheading
         Text(
-            text = "Nền tảng mua sắm tốt nhất với giá tốt nhất",
+            text = stringResource(R.string.auth_subheading),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             textAlign = TextAlign.Center
@@ -91,7 +92,7 @@ fun AuthScreen(
             colors = ButtonDefaults.buttonColors(containerColor = primaryIndigo)
         ) {
             Text(
-                text = "Đăng nhập",
+                text = stringResource(R.string.auth_login),
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
@@ -110,7 +111,7 @@ fun AuthScreen(
             border = BorderStroke(1.5.dp, primaryIndigo.copy(alpha = 0.6f))
         ) {
             Text(
-                text = "Đăng ký",
+                text = stringResource(R.string.auth_register),
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = primaryIndigo
@@ -121,7 +122,7 @@ fun AuthScreen(
 
         // Guest Mode Link
         Text(
-            text = "Tiếp tục với tư cách khách",
+            text = stringResource(R.string.auth_guest),
             modifier = Modifier.clickableOnce { navController.navigate("home") },
             color = primaryIndigo.copy(alpha = 0.8f),
             style = MaterialTheme.typography.labelLarge,

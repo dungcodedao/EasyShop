@@ -6,10 +6,18 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import com.example.easyshop.ui.theme.EasyShopTheme
+import com.example.easyshop.util.LanguageManager
 
 class MainActivity : ComponentActivity() {
 
+    /** Bọc context với locale đã lưu TRƯỚC KHI Activity khởi tạo. */
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(LanguageManager.wrapContext(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Tắt animation ngay lập tức khi vào onCreate
+        overridePendingTransition(0, 0)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {

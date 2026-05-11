@@ -85,7 +85,7 @@ fun HeaderView(
                     .data(avatarUrl)
                     .crossfade(true)
                     .build(),
-                contentDescription = "Ảnh đại diện",
+                contentDescription = stringResource(R.string.cd_avatar),
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
@@ -136,7 +136,7 @@ fun HeaderView(
         ) {
             Icon(
                 Icons.Default.Search,
-                contentDescription = "Search",
+                contentDescription = stringResource(R.string.cd_search),
                 modifier = Modifier.size(22.dp)
             )
         }
@@ -152,7 +152,7 @@ fun HeaderView(
             ) {
                 Icon(
                     Icons.Default.Notifications,
-                    contentDescription = "Notifications",
+                    contentDescription = stringResource(R.string.cd_notifications),
                     modifier = Modifier.size(22.dp)
                 )
             }

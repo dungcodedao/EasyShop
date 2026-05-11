@@ -2,6 +2,7 @@ package com.example.easyshop.ai.repository
 
 import android.util.Log
 import com.example.easyshop.BuildConfig
+import com.example.easyshop.R
 import com.example.easyshop.ai.model.ChatMessage
 import com.example.easyshop.model.OrderModel
 import com.example.easyshop.model.ProductModel
@@ -30,15 +31,16 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.text.Normalizer
 import java.util.concurrent.TimeUnit
 
-class AiRepository {
-
-    private val db = FirebaseFirestore.getInstance()
-    private val auth = FirebaseAuth.getInstance()
-    private val gson = Gson()
-    private val httpClient = OkHttpClient.Builder()
+class AiRepository(
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val httpClient: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(90, TimeUnit.SECONDS)
         .build()
+) {
+
+    private val gson = Gson()
 
     // Config Gemini
     private val geminiApiKey = BuildConfig.GEMINI_API_KEY
@@ -96,11 +98,12 @@ class AiRepository {
     /**
      * Kiểm tra lời chào
      */
-    suspend fun checkAndShowWelcomeMessage() {
+    suspend fun checkAndShowWelcomeMessage(context: android.content.Context? = null) {
         val collection = getMessagesCollection() ?: return
         val snapshot = collection.limit(1).get().await()
         if (snapshot.isEmpty) {
-            val welcomeText = "Chào bạn! Mình là Trợ lý AI của EasyShop. Bạn cần mình gợi ý sản phẩm hay hỗ trợ đơn hàng không ạ?"
+            val welcomeText = context?.getString(R.string.ai_welcome_msg)
+                ?: "Chào bạn! Mình là Trợ lý AI của EasyShop. Bạn cần mình gợi ý sản phẩm hay hỗ trợ đơn hàng không ạ?"
             val msg = ChatMessage(content = welcomeText, isUser = false, timestamp = Timestamp.now())
             collection.add(msg).await()
             db.collection("ai_chats").document(auth.currentUser!!.uid).set(mapOf("lastActivity" to FieldValue.serverTimestamp()), SetOptions.merge())
@@ -126,8 +129,8 @@ class AiRepository {
     /**
      * Gửi tin nhắn và xử lý tư vấn thông minh
      */
-    fun sendMessageStream(userMessage: String, history: List<ChatMessage>): Flow<String> = flow {
-        val uid = auth.currentUser?.uid ?: throw Exception("Vui lòng đăng nhập")
+    fun sendMessageStream(userMessage: String, history: List<ChatMessage>, context: android.content.Context?): Flow<String> = flow {
+        val uid = auth.currentUser?.uid ?: throw Exception(context?.getString(R.string.login_required_msg) ?: "Vui lòng đăng nhập")
         val collection = getMessagesCollection()!!
 
         // 1. Lưu tin nhắn User
@@ -143,16 +146,16 @@ class AiRepository {
             selectRelevantProducts(userMessage, history, allProducts).take(12)
         } else emptyList()
 
-        val userContext = fetchUserContext(uid, allProducts.associateBy { it.id })
+        val userContext = fetchUserContext(uid, allProducts.associateBy { it.id }, context)
         val activePromos = fetchActivePromoCodes()
 
-        val systemInstruction = buildComplexInstruction(intent, userContext, relevantProducts, activePromos)
+        val systemInstruction = buildComplexInstruction(intent, userContext, relevantProducts, activePromos, context)
 
         // 3. Gọi AI — Gemini trước (miễn phí), Beeknoee là fallback (tiết kiệm credit)
         // Nếu Gemini hết quota/503 → tự động chuyển sang Beeknoee
         var aiResponse = ""
         val geminiQuotaError = runCatching {
-            aiResponse = requestGeminiWithFallback(systemInstruction, history, userMessage)
+            aiResponse = requestGeminiWithFallback(systemInstruction, history, userMessage, context)
         }.exceptionOrNull()
 
         if (aiResponse.isBlank()) {
@@ -168,10 +171,10 @@ class AiRepository {
                     aiResponse = requestBeeknoeeReply(systemInstruction, history, userMessage)
                 } catch (be: Exception) {
                     Log.e("AI_CHAT", "Beeknoee also failed: ${be.message}")
-                    throw Exception("Cửa hàng đang bận, bạn vui lòng thử lại sau vài giây nhé!")
+                    throw Exception(context?.getString(R.string.ai_busy_msg) ?: "Cửa hàng đang bận, bạn vui lòng thử lại sau vài giây nhé!")
                 }
             } else {
-                throw geminiQuotaError ?: Exception("Không thể kết nối AI lúc này.")
+                throw geminiQuotaError ?: Exception(context?.getString(R.string.ai_not_connected) ?: "Không thể kết nối AI lúc này.")
             }
         }
 
@@ -256,10 +259,11 @@ class AiRepository {
             .map { it.first }
     }
 
-    private suspend fun fetchUserContext(uid: String, productsById: Map<String, ProductModel>): String {
+    private suspend fun fetchUserContext(uid: String, productsById: Map<String, ProductModel>, context: android.content.Context?): String {
         return try {
             val userDoc = db.collection("users").document(uid).get().await()
-            val name = userDoc.getString("name") ?: "Khách hàng"
+            val name = userDoc.getString("name") ?: (context?.getString(R.string.ai_unknown_customer) ?: "Khách hàng")
+            @Suppress("UNCHECKED_CAST")
             val cartItems = userDoc.get("cartItems") as? Map<String, Long> ?: emptyMap()
             val cartStr = cartItems.entries.joinToString(", ") { "${productsById[it.key]?.title ?: it.key} x${it.value}" }
 
@@ -267,71 +271,76 @@ class AiRepository {
                 .documents.mapNotNull { doc -> doc.toObject(OrderModel::class.java) }
             val orderSummary = orders.joinToString("; ") { "${it.id.take(5)}:${it.status}:${it.total}" }
 
-            "Tên: $name\nGiỏ hàng: $cartStr\nĐơn hàng gần đây: $orderSummary"
-        } catch (e: Exception) { "Khách hàng mới" }
+            context?.getString(R.string.ai_user_context_format, name, cartStr, orderSummary)
+                ?: "Tên: $name\nGiỏ hàng: $cartStr\nĐơn hàng gần đây: $orderSummary"
+        } catch (e: Exception) { context?.getString(R.string.ai_new_customer) ?: "Khách hàng mới" }
     }
 
-    private fun buildComplexInstruction(intent: String, userContext: String, products: List<ProductModel>, promoCodes: List<PromoCodeModel> = emptyList()): String {
-        val productListInfo = formatProductsForAI(products)
-        val promoListInfo = formatPromosForAI(promoCodes)
+    private fun buildComplexInstruction(intent: String, userContext: String, products: List<ProductModel>, promoCodes: List<PromoCodeModel> = emptyList(), context: android.content.Context?): String {
+        val productListInfo = formatProductsForAI(products, context)
+        val promoListInfo = formatPromosForAI(promoCodes, context)
 
         val focusInstruction = when(intent) {
-            "promo" -> "TRỌNG TÂM: Khách đang hỏi về khuyến mãi. Hãy liệt kê mã giảm giá rõ ràng, KHÔNG tư vấn sản phẩm trừ khi khách hỏi kèm."
-            "payment" -> "TRỌNG TÂM: Khách đang hỏi về thanh toán. Giải đáp các phương thức thanh toán, KHÔNG lan man sang khuyến mãi hay sản phẩm."
-            "comparison" -> "TRỌNG TÂM: So sánh sản phẩm. Phân tích ưu nhược điểm các sản phẩm khách quan tâm."
-            "budget" -> "TRỌNG TÂM: Tư vấn giá. Tìm sản phẩm phù hợp ngân sách của khách."
-            else -> "TRỌNG TÂM: Tư vấn mua hàng/hỗ trợ chung."
+            "promo" -> context?.getString(R.string.ai_prompt_focus_promo) ?: "TRỌNG TÂM: Khách đang hỏi về khuyến mãi. Hãy liệt kê mã giảm giá rõ ràng, KHÔNG tư vấn sản phẩm trừ khi khách hỏi kèm."
+            "payment" -> context?.getString(R.string.ai_prompt_focus_payment) ?: "TRỌNG TÂM: Khách đang hỏi về thanh toán. Giải đáp các phương thức thanh toán, KHÔNG lan man sang khuyến mãi hay sản phẩm."
+            "comparison" -> context?.getString(R.string.ai_prompt_focus_comparison) ?: "TRỌNG TÂM: So sánh sản phẩm. Phân tích ưu nhược điểm các sản phẩm khách quan tâm."
+            "budget" -> context?.getString(R.string.ai_prompt_focus_budget) ?: "TRỌNG TÂM: Tư vấn giá. Tìm sản phẩm phù hợp ngân sách của khách."
+            else -> context?.getString(R.string.ai_prompt_focus_general) ?: "TRỌNG TÂM: Tư vấn mua hàng/hỗ trợ chung."
         }
 
         return """
-            BẠN LÀ CHUYÊN VIÊN TƯ VẤN CỦA EASYSHOP.
+            ${context?.getString(R.string.ai_prompt_system_role) ?: "BẠN LÀ CHUYÊN VIÊN TƯ VẤN CỦA EASYSHOP."}
             $focusInstruction
             
-            NGỮ CẢNH KHÁCH HÀNG:
+            ${context?.getString(R.string.ai_prompt_user_context) ?: "NGỮ CẢNH KHÁCH HÀNG:"}
             $userContext
             
-            DANH SÁCH SẢN PHẨM KHẢ DỤNG:
+            ${context?.getString(R.string.ai_prompt_available_products) ?: "DANH SÁCH SẢN PHẨM KHẢ DỤNG:"}
             $productListInfo
             
-            MÃ GIẢM GIÁ / VOUCHER HIỆN ĐANG CÓ:
+            ${context?.getString(R.string.ai_prompt_available_promos) ?: "MÃ GIẢM GIÁ / VOUCHER HIỆN ĐANG CÓ:"}
             $promoListInfo
             
-            PHƯƠNG THỨC THANH TOÁN SHOP HỖ TRỢ:
-            1. Chuyển khoản ngân hàng MB (MBBank) — Quét mã QR, hệ thống tự động xác nhận thanh toán qua SePay.
-            2. Ví điện tử MoMo — Quét mã QR MoMo để thanh toán.
-            3. Thẻ quốc tế (Visa / Mastercard) — Nhập số thẻ, tên, ngày hết hạn và CVV.
-            4. Thanh toán khi nhận hàng (COD) — Trả tiền mặt khi nhận được hàng.
+            ${context?.getString(R.string.ai_prompt_payment_methods) ?: "PHƯƠNG THỨC THANH TOÁN SHOP HỖ TRỢ..."}
             
-            QUY TRÌNH ĐẶT HÀNG:
-            Thêm vào giỏ → Vào Giỏ hàng → Nhấn "Thanh toán" → Nhập/chọn địa chỉ giao hàng → Nhập mã giảm giá (nếu có) → Chọn phương thức thanh toán → Xác nhận đơn hàng.
+            ${context?.getString(R.string.ai_prompt_order_process) ?: "QUY TRÌNH ĐẶT HÀNG..."}
             
-            Ý ĐỊNH NGƯỜI DÙNG: $intent
+            ${context?.getString(R.string.ai_prompt_intent_prefix, intent) ?: "Ý ĐỊNH NGƯỜI DÙNG: $intent"}
             
-            ${getCommonRules()}
+            ${getCommonRules(context)}
         """.trimIndent()
     }
 
-    private fun formatProductsForAI(products: List<ProductModel>): String {
-        if (products.isEmpty()) return "Hiện chưa tìm thấy sản phẩm chính xác trong kho."
+    private fun formatProductsForAI(products: List<ProductModel>, context: android.content.Context?): String {
+        if (products.isEmpty()) return context?.getString(R.string.ai_no_products_found) ?: "Hiện chưa tìm thấy sản phẩm chính xác trong kho."
         return products.joinToString("\n") { product ->
-            "- ${product.title} [${product.id}] | Giá: ${product.price} | Tình trạng: ${if(product.inStock) "Còn hàng" else "Hết hàng"}"
+            val status = if(product.inStock) (context?.getString(R.string.ai_in_stock) ?: "Còn hàng") else (context?.getString(R.string.ai_out_of_stock) ?: "Hết hàng")
+            context?.getString(R.string.ai_product_item_format, product.title, product.id, product.price.toString(), status)
+                ?: "- ${product.title} [${product.id}] | Giá: ${product.price} | Tình trạng: $status"
         }
     }
 
-    private fun formatPromosForAI(promos: List<PromoCodeModel>): String {
-        if (promos.isEmpty()) return "Hiện tại cửa hàng chưa phát hành mã giảm giá nào."
+    private fun formatPromosForAI(promos: List<PromoCodeModel>, context: android.content.Context?): String {
+        if (promos.isEmpty()) return context?.getString(R.string.ai_no_promos_found) ?: "Hiện tại cửa hàng chưa phát hành mã giảm giá nào."
         return promos.joinToString("\n") { promo ->
             val discountText = if (promo.type == "percentage") {
-                "Giảm ${promo.value.toInt()}%" + if (promo.maxDiscount > 0) " (tối đa ${formatVND(promo.maxDiscount)})" else ""
+                context?.getString(R.string.ai_discount_percent_format, promo.value.toInt(), if (promo.maxDiscount > 0) formatVND(promo.maxDiscount) else "0")
+                    ?: ("Giảm ${promo.value.toInt()}%" + if (promo.maxDiscount > 0) " (tối đa ${formatVND(promo.maxDiscount)})" else "")
             } else {
-                "Giảm ${formatVND(promo.value)}"
+                context?.getString(R.string.ai_discount_fixed_format, formatVND(promo.value))
+                    ?: "Giảm ${formatVND(promo.value)}"
             }
-            val minOrderText = if (promo.minOrder > 0) "đơn tối thiểu ${formatVND(promo.minOrder)}" else "không yêu cầu đơn tối thiểu"
+            val minOrderText = if (promo.minOrder > 0) {
+                context?.getString(R.string.ai_min_order_format, formatVND(promo.minOrder)) ?: "đơn tối thiểu ${formatVND(promo.minOrder)}"
+            } else context?.getString(R.string.ai_no_min_order) ?: "không yêu cầu đơn tối thiểu"
+            
             val expiryText = if (promo.expiryDate > 0) {
                 val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
-                "HSD: ${sdf.format(java.util.Date(promo.expiryDate))}"
-            } else "Không giới hạn thời gian"
-            "- Mã: ${promo.code} | $discountText | $minOrderText | $expiryText"
+                context?.getString(R.string.ai_expiry_date_format, sdf.format(java.util.Date(promo.expiryDate))) ?: "HSD: ${sdf.format(java.util.Date(promo.expiryDate))}"
+            } else context?.getString(R.string.ai_no_limit_time) ?: "Không giới hạn thời gian"
+            
+            context?.getString(R.string.ai_promo_item_format, promo.code, discountText, minOrderText, expiryText)
+                ?: "- Mã: ${promo.code} | $discountText | $minOrderText | $expiryText"
         }
     }
 
@@ -340,37 +349,14 @@ class AiRepository {
         return "${formatter.format(amount.toLong())}₫"
     }
 
-    private fun getCommonRules(): String {
-        return """
+    private fun getCommonRules(context: android.content.Context?): String {
+        return context?.getString(R.string.ai_prompt_common_rules) ?: """
             QUY TẮC PHẢN HỒI BẮT BUỘC:
-            1. KHÔNG HIỂN THỊ MÃ ID: Tuyệt đối không viết các mã lộn xộn (như 3qifh...) ra nội dung chat.
-            2. GẮN THẺ SẢN PHẨM: Khi nhắc đến sản phẩm, phải gắn thẻ [PID_id] ngay sau tên hoặc cuối câu. 
-               Thẻ này dùng để hiển thị nút bấm ngầm, người dùng sẽ không thấy thẻ này.
-               Ví dụ: "Bạn có thể tham khảo mẫu Laptop Gaming [PID_abc123] này ạ!"
-            3. TRƯỜNG HỢP HẾT HÀNG: Nếu sản phẩm khách hỏi đã hết hàng, hãy thông báo lịch sự và chủ động gợi ý sản phẩm thay thế có gắn [PID_...].
-            4. MÃ GIẢM GIÁ / VOUCHER: 
-               - Khi khách hỏi về mã giảm giá, voucher, khuyến mãi, ưu đãi → PHẢI trả lời dựa trên danh sách "MÃ GIẢM GIÁ HIỆN ĐANG CÓ" phía trên.
-               - Liệt kê RÕ RÀNG mã code, mức giảm, điều kiện áp dụng.
-               - Nếu không có mã nào → thông báo "Cửa hàng hiện chưa có mã giảm giá nào" và gợi ý khách theo dõi thông báo.
-               - Hướng dẫn khách nhập mã ở trang Thanh toán (Checkout).
-               - KHÔNG bịa ra mã giảm giá không có trong danh sách.
-            5. THANH TOÁN:
-               - Khi khách hỏi về cách thanh toán, phương thức thanh toán, chuyển khoản, COD → PHẢI trả lời dựa trên danh sách "PHƯƠNG THỨC THANH TOÁN" phía trên.
-               - Giải thích ngắn gọn ưu điểm từng phương thức nếu khách phân vân.
-               - MBBank QR: Nhanh nhất, tự động xác nhận, không cần chờ duyệt.
-               - MoMo: Tiện lợi, quen thuộc với nhiều người dùng.
-               - Thẻ quốc tế: Phù hợp khách có thẻ Visa/Mastercard.
-               - COD: An tâm, xem hàng rồi mới trả tiền.
-            6. TRẢ LỜI ĐÚNG TRỌNG TÂM: Đây là quy tắc cực kỳ quan trọng. 
-               - Nếu khách hỏi về Voucher -> Chỉ tập trung vào Voucher.
-               - Nếu khách hỏi về Thanh toán -> Chỉ tập trung về Thanh toán.
-               - KHÔNG tự ý gợi ý sản phẩm thay thế hoặc quảng cáo lan man trừ khi khách hỏi "có món nào hay không" hoặc đang trong bối cảnh tư vấn mua sắm chung (advice).
-            7. PHONG CÁCH: Thân thiện, ngắn gọn, chuyên nghiệp (Xưng hô: Cửa hàng - Bạn).
-            8. NGÔN NGỮ: Tiếng Việt.
+            ...
         """.trimIndent()
     }
 
-    private suspend fun requestGeminiWithFallback(sys: String, history: List<ChatMessage>, user: String): String {
+    private suspend fun requestGeminiWithFallback(sys: String, history: List<ChatMessage>, user: String, context: android.content.Context?): String {
         // gemini-2.0-flash-lite và gemini-1.5-flash đều không có free tier quota → loại khỏi danh sách
         // Chỉ giữ các model có free tier hợp lệ
         val models = listOf(geminiModel, "gemini-2.5-flash", "gemini-2.0-flash").distinct()
@@ -398,16 +384,16 @@ class AiRepository {
 
         // Tất cả model đều bị quota → hiện thông báo thân thiện thay vì JSON thô
         if (allQuotaExhausted) {
-            throw Exception("Cửa hàng đang bận, bạn vui lòng thử lại sau vài giây nhé!")
+            throw Exception(context?.getString(R.string.ai_busy_msg) ?: "Cửa hàng đang bận, bạn vui lòng thử lại sau vài giây nhé!")
         }
-        throw lastErr ?: Exception("Không thể kết nối AI lúc này.")
+        throw lastErr ?: Exception(context?.getString(R.string.ai_not_connected) ?: "Không thể kết nối AI lúc này.")
     }
 
     /**
      * Gửi tin nhắn kèm hình ảnh (Vision)
      */
-    fun sendMessageWithImageStream(userMessage: String, base64Image: String, history: List<ChatMessage>): Flow<String> = flow {
-        val uid = auth.currentUser?.uid ?: throw Exception("Vui lòng đăng nhập")
+    fun sendMessageWithImageStream(userMessage: String, base64Image: String, history: List<ChatMessage>, context: android.content.Context?): Flow<String> = flow {
+        val uid = auth.currentUser?.uid ?: throw Exception(context?.getString(R.string.login_required_msg) ?: "Vui lòng đăng nhập")
         val collection = getMessagesCollection()!!
 
         // 1. Tải ảnh lên Cloudinary trước để có URL
@@ -423,30 +409,25 @@ class AiRepository {
 
         // 3. Thu thập dữ liệu ngữ cảnh
         val allProducts = fetchAllProducts()
-        val userContext = fetchUserContext(uid, allProducts.associateBy { it.id })
+        val userContext = fetchUserContext(uid, allProducts.associateBy { it.id }, context)
 
         // Hướng dẫn đặc biệt cho Vision
         val visionSystemInstruction = """
-            BẠN LÀ CHUYÊN VIÊN TƯ VẤN THỊ GIÁC CỦA EASYSHOP.
-            NGỮ CẢNH: $userContext
+            ${context?.getString(R.string.ai_vision_prompt_role) ?: "BẠN LÀ CHUYÊN VIÊN TƯ VẤN THỊ GIÁC CỦA EASYSHOP."}
+            ${context?.getString(R.string.ai_prompt_user_context) ?: "NGỮ CẢNH:"} $userContext
             
-            KHO HÀNG SHOP ĐANG CÓ:
-            ${formatProductsForAI(allProducts)}
+            ${context?.getString(R.string.ai_prompt_available_products) ?: "KHO HÀNG SHOP ĐANG CÓ:"}
+            ${formatProductsForAI(allProducts, context)}
             
-            NHIỆM VỤ CỦA BẠN:
-            1. PHÂN TÍCH ẢNH: Xác định sản phẩm trong ảnh là gì.
-            2. TRA CỨU KHO: So khớp với DANH SÁCH SẢN PHẨM KHẢ DỤNG bên trên.
-            3. TƯ VẤN: 
-               - NẾU KHỚP: Tư vấn giá và cấu hình, bắt buộc kèm [PID_id] ngầm.
-               - NẾU KHÔNG KHỚP: Thông báo chưa có mẫu này, gợi ý sản phẩm TƯƠNG TỰ nhất kèm [PID_id] ngầm.
+            ${context?.getString(R.string.ai_vision_prompt_task) ?: "NHIỆM VỤ CỦA BẠN..."}
             
-            ${getCommonRules()}
+            ${getCommonRules(context)}
         """.trimIndent()
 
         // 4. Gọi AI Vision — Gemini trước (miễn phí), Beeknoee fallback khi Gemini hết quota
         var aiResponse = ""
         val geminiVisionError = runCatching {
-            aiResponse = requestGeminiVisionWithFallback(visionSystemInstruction, history, userMessage, base64Image)
+            aiResponse = requestGeminiVisionWithFallback(visionSystemInstruction, history, userMessage, base64Image, context)
         }.exceptionOrNull()
 
         if (aiResponse.isBlank()) {
@@ -462,10 +443,10 @@ class AiRepository {
                     aiResponse = requestBeeknoeeReply(visionSystemInstruction, history, userMessage, base64Image)
                 } catch (be: Exception) {
                     Log.e("AI_CHAT", "All AI providers failed: ${be.message}")
-                    aiResponse = "Xin lỗi, mình gặp trục trặc khi kết nối với máy chủ AI. Bạn vui lòng thử lại sau nhé!"
+                    aiResponse = context?.getString(R.string.ai_generic_error) ?: "Xin lỗi, mình gặp trục trặc khi kết nối với máy chủ AI. Bạn vui lòng thử lại sau nhé!"
                 }
             } else {
-                aiResponse = "Xin lỗi, mình gặp trục trặc khi kết nối với máy chủ AI. Bạn vui lòng thử lại sau nhé!"
+                aiResponse = context?.getString(R.string.ai_generic_error) ?: "Xin lỗi, mình gặp trục trặc khi kết nối với máy chủ AI. Bạn vui lòng thử lại sau nhé!"
             }
         }
 
@@ -477,7 +458,7 @@ class AiRepository {
         }
     }
 
-    private suspend fun requestGeminiVisionWithFallback(sys: String, history: List<ChatMessage>, user: String, base64Image: String): String {
+    private suspend fun requestGeminiVisionWithFallback(sys: String, history: List<ChatMessage>, user: String, base64Image: String, context: android.content.Context?): String {
         val models = listOf(geminiModel, "gemini-2.5-flash", "gemini-2.0-flash").distinct()
         var lastErr: Exception? = null
         var allQuotaExhausted = true
@@ -502,9 +483,9 @@ class AiRepository {
         }
 
         if (allQuotaExhausted) {
-            throw Exception("Cửa hàng đang bận, bạn vui lòng thử lại sau vài giây nhé!")
+            throw Exception(context?.getString(R.string.ai_busy_msg) ?: "Cửa hàng đang bận, bạn vui lòng thử lại sau vài giây nhé!")
         }
-        throw lastErr ?: Exception("Không thể kết nối AI lúc này.")
+        throw lastErr ?: Exception(context?.getString(R.string.ai_not_connected) ?: "Không thể kết nối AI lúc này.")
     }
 
     private suspend fun callGeminiApi(
@@ -697,7 +678,9 @@ class AiRepository {
         }
     }
 
-    private fun foldText(text: String): String = Normalizer.normalize(text.lowercase(), Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "")
+    private fun foldText(text: String): String = Normalizer.normalize(text.lowercase(), Normalizer.Form.NFD)
+        .replace(Regex("\\p{M}+"), "")
+        .replace("đ", "d")
 
     private fun getSearchTokens(text: String): List<String> {
         return text.split(Regex("\\s+"))

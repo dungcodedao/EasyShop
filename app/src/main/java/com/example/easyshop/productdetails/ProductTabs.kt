@@ -14,7 +14,7 @@ fun ProductTabs(selectedTab: Int, onTabSelected: (Int) -> Unit) {
     val titles = listOf(
         stringResource(id = R.string.product_description),
         stringResource(id = R.string.specifications),
-        "Đánh giá"
+        stringResource(id = R.string.tab_reviews)
     )
     TabRow(
         selectedTabIndex = selectedTab,

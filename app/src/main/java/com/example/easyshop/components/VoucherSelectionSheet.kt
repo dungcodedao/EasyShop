@@ -16,11 +16,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.easyshop.AppUtil
+import com.example.easyshop.R
 import com.example.easyshop.model.PromoCodeModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,7 +46,7 @@ fun VoucherSelectionSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text(
-                text = "Chọn Mã Giảm Giá",
+                text = stringResource(R.string.select_voucher_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -58,7 +60,7 @@ fun VoucherSelectionSheet(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.ConfirmationNumber, null, modifier = Modifier.size(48.dp), tint = Color.LightGray)
                         Spacer(Modifier.height(8.dp))
-                        Text("Ví voucher trống", color = Color.Gray)
+                        Text(stringResource(R.string.empty_voucher_msg), color = Color.Gray)
                     }
                 }
             } else {
@@ -73,7 +75,7 @@ fun VoucherSelectionSheet(
                     if (validVouchers.isNotEmpty()) {
                         item {
                             Text(
-                                "Mã có thể áp dụng",
+                                stringResource(R.string.applicable_vouchers),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = Color.Gray
                             )
@@ -91,7 +93,7 @@ fun VoucherSelectionSheet(
                     if (invalidVouchers.isNotEmpty()) {
                         item {
                             Text(
-                                "Chưa đủ điều kiện",
+                                stringResource(R.string.ineligible_vouchers),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = Color.Gray,
                                 modifier = Modifier.padding(top = 16.dp)
@@ -159,14 +161,15 @@ fun VoucherItem(
         // Middle: Content
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = if (voucher.type == "percentage") "Giảm ${voucher.value.toInt()}%" else "Giảm ${AppUtil.formatPrice(voucher.value.toFloat())}",
+                text = if (voucher.type == "percentage") stringResource(R.string.discount_amount_prefix, "${voucher.value.toInt()}%") 
+                       else stringResource(R.string.discount_amount_prefix, AppUtil.formatPrice(voucher.value.toFloat())),
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (isEnabled) Color.Black else Color.Gray
             )
             
             Text(
-                text = "Đơn tối thiểu: ${AppUtil.formatPrice(voucher.minOrder.toFloat())}",
+                text = stringResource(R.string.min_order_required_prefix, AppUtil.formatPrice(voucher.minOrder.toFloat())),
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.Gray
             )
@@ -176,7 +179,7 @@ fun VoucherItem(
                     Icon(Icons.Default.Info, null, modifier = Modifier.size(12.dp), tint = Color.Red)
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = "Còn thiếu ${AppUtil.formatPrice((voucher.minOrder - subtotal).toFloat())}",
+                        text = stringResource(R.string.amount_missing_prefix, AppUtil.formatPrice((voucher.minOrder - subtotal).toFloat())),
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.Red,
                         fontWeight = FontWeight.Medium
@@ -185,7 +188,8 @@ fun VoucherItem(
             } else if (voucher.expiryDate > 0) {
                 val daysLeft = ((voucher.expiryDate - System.currentTimeMillis()) / (24 * 60 * 60 * 1000)).toInt()
                 Text(
-                    text = if (daysLeft <= 3) "Sắp hết hạn: $daysLeft ngày" else "HSD: ${AppUtil.formatDate(voucher.expiryDate)}",
+                    text = if (daysLeft <= 3) stringResource(R.string.expiring_soon_days, daysLeft) 
+                           else stringResource(R.string.expiry_date_prefix, AppUtil.formatDate(voucher.expiryDate)),
                     style = MaterialTheme.typography.labelSmall,
                     color = if (daysLeft <= 3) Color.Red else Color.Gray,
                     fontWeight = if (daysLeft <= 3) FontWeight.Bold else FontWeight.Normal

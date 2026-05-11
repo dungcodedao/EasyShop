@@ -9,7 +9,9 @@ import com.example.easyshop.model.PromoCodeModel
 import com.example.easyshop.model.UserModel
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import com.example.easyshop.BuildConfig
+import com.example.easyshop.R
 import com.example.easyshop.network.RetrofitClient
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -29,9 +32,10 @@ sealed class CheckoutResult {
     data class Error(val message: String) : CheckoutResult()
 }
 
-class CheckoutViewModel : ViewModel() {
-    private val db = Firebase.firestore
-    private val auth = Firebase.auth
+class CheckoutViewModel(
+    private val db: FirebaseFirestore = Firebase.firestore,
+    private val auth: FirebaseAuth = Firebase.auth
+) : ViewModel() {
 
     private val _userModel = MutableStateFlow<UserModel?>(null)
     val userModel: StateFlow<UserModel?> = _userModel.asStateFlow()
@@ -125,7 +129,7 @@ class CheckoutViewModel : ViewModel() {
                     _paymentReference.value = "ES" + System.currentTimeMillis().toString().takeLast(6)
                 }
             } catch (e: Exception) {
-                _checkoutResult.value = CheckoutResult.Error("Lỗi khi tải dữ liệu: ${e.message}")
+                _checkoutResult.value = CheckoutResult.Error(com.example.easyshop.AppUtil.getString(R.string.checkout_error_loading, e.message ?: ""))
             }
         }
     }
@@ -182,7 +186,7 @@ class CheckoutViewModel : ViewModel() {
         val user = _userModel.value ?: return
         val address = _selectedAddress.value
         if (address == null) {
-            _checkoutResult.value = CheckoutResult.Error("Vui lòng chọn hoặc thêm địa chỉ nhận hàng")
+            _checkoutResult.value = CheckoutResult.Error(com.example.easyshop.AppUtil.getString(R.string.checkout_error_no_address))
             return
         }
         val uid = auth.currentUser?.uid ?: return
@@ -244,7 +248,7 @@ class CheckoutViewModel : ViewModel() {
                         android.util.Log.d("EasyShop_Checkout", "Kiểm tra SP: ${snapshot.getString("title")} | Cần: $qty | Kho: $stock")
                         
                         if (stock < qty) {
-                            throw Exception("Sản phẩm ${snapshot.getString("title")} đã hết hàng hoặc không đủ số lượng")
+                            throw Exception(com.example.easyshop.AppUtil.getString(R.string.checkout_error_out_of_stock, snapshot.getString("title") ?: ""))
                         }
                         
                         // Update Stock
@@ -257,12 +261,12 @@ class CheckoutViewModel : ViewModel() {
                     promoSnap?.let { (promoRef, snapshot) ->
                         android.util.Log.d("EasyShop_Checkout", "Đang áp dụng mã giảm giá: $promoCodeToUse")
                         if (!snapshot.exists() || snapshot.getBoolean("active") == false) {
-                            throw Exception("Mã giảm giá không còn khả dụng")
+                            throw Exception(com.example.easyshop.AppUtil.getString(R.string.checkout_error_promo_inactive))
                         }
                         val usageLimit = snapshot.getLong("usageLimit") ?: 0L
                         val usedCount = snapshot.getLong("usedCount") ?: 0L
                         if (usageLimit > 0 && usedCount >= usageLimit) {
-                            throw Exception("Mã giảm giá đã hết lượt sử dụng")
+                            throw Exception(com.example.easyshop.AppUtil.getString(R.string.checkout_error_promo_limit))
                         }
                         transaction.update(promoRef, "usedCount", usedCount + 1)
                     }
@@ -278,8 +282,13 @@ class CheckoutViewModel : ViewModel() {
 
                 // --- TẠO THÔNG BÁO CHO ADMIN ---
                 val adminNotif = hashMapOf(
-                    "title" to "Có đơn hàng mới!",
-                    "body" to "Khách hàng ${user.name} vừa đặt đơn #${orderId.take(8).uppercase()} trị giá ${com.example.easyshop.AppUtil.formatPrice(total)}",
+                    "title" to com.example.easyshop.AppUtil.getString(R.string.checkout_notif_admin_title),
+                    "body" to com.example.easyshop.AppUtil.getString(
+                        R.string.checkout_notif_admin_body,
+                        user.name,
+                        orderId.take(8).uppercase(),
+                        com.example.easyshop.AppUtil.formatPrice(total)
+                    ),
                     "type" to "NEW_ORDER",
                     "orderId" to orderId,
                     "isRead" to false,
@@ -290,12 +299,17 @@ class CheckoutViewModel : ViewModel() {
 
                 // Gửi push notification cho các admin (hoạt động kể cả khi app admin đang tắt)
                 com.example.easyshop.services.FcmSender.sendToAdmins(
-                    title = "Đơn hàng mới!",
-                    body = "Khách hàng ${user.name} vừa đặt đơn #${orderId.take(8).uppercase()}",
+                    title = com.example.easyshop.AppUtil.getString(R.string.checkout_notif_admin_title),
+                    body = com.example.easyshop.AppUtil.getString(
+                        R.string.checkout_notif_admin_body,
+                        user.name,
+                        orderId.take(8).uppercase(),
+                        com.example.easyshop.AppUtil.formatPrice(total)
+                    ),
                     type = "NEW_ORDER"
                 )
             } catch (e: Exception) {
-                _checkoutResult.value = CheckoutResult.Error(e.message ?: "Có lỗi xảy ra khi đặt hàng")
+                _checkoutResult.value = CheckoutResult.Error(e.message ?: com.example.easyshop.AppUtil.getString(R.string.checkout_error_generic))
             }
         }
     }
@@ -331,13 +345,13 @@ class CheckoutViewModel : ViewModel() {
                         placeOrder("MB")
                     } else {
                         // Chưa tìm thấy giao dịch
-                        _checkoutResult.value = CheckoutResult.Error("Chưa tìm thấy giao dịch chuyển khoản cho mã ${_paymentReference.value}. Vui lòng thử lại sau 1-2 phút hoặc liên hệ hỗ trợ.")
+                        _checkoutResult.value = CheckoutResult.Error(com.example.easyshop.AppUtil.getString(R.string.checkout_sepay_not_found, _paymentReference.value))
                     }
                 } else {
-                    _checkoutResult.value = CheckoutResult.Error("Lỗi từ hệ thống SePay: ${response.messages}")
+                    _checkoutResult.value = CheckoutResult.Error(com.example.easyshop.AppUtil.getString(R.string.checkout_sepay_error, response.messages ?: ""))
                 }
             } catch (e: Exception) {
-                _checkoutResult.value = CheckoutResult.Error("Lỗi kết nối khi kiểm tra thanh toán: ${e.message}")
+                _checkoutResult.value = CheckoutResult.Error(com.example.easyshop.AppUtil.getString(R.string.checkout_sepay_connect_error, e.message ?: ""))
             } finally {
                 _isPaymentChecking.value = false
             }

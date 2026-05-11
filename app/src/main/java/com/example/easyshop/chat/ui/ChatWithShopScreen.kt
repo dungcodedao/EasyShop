@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -294,7 +295,8 @@ fun SimpleChatBubble(message: ShopChatMessage, isUser: Boolean) {
                 }
             }
         }
-        val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(message.timestamp.toDate())
+        val locale = LocalConfiguration.current.locales[0]
+        val time = remember(locale) { SimpleDateFormat("HH:mm", locale).format(message.timestamp.toDate()) }
         Text(
             text = time,
             style = MaterialTheme.typography.labelSmall,

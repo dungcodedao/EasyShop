@@ -26,11 +26,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.easyshop.AppUtil
+import com.example.easyshop.R
 import com.example.easyshop.model.PromoCodeModel
 
 @Composable
@@ -45,7 +47,7 @@ fun PromoSection(
                 .padding(vertical = 16.dp)
         ) {
             Text(
-                text = "🎁 Ưu Đãi Dành Cho Bạn",
+                text = stringResource(R.string.promo_section_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.onBackground,
@@ -103,7 +105,7 @@ fun PromoCard(promo: PromoCodeModel, onCollect: () -> Unit) {
                         fontSize = 22.sp
                     )
                     Text(
-                        text = "GIẢM GIÁ",
+                        text = stringResource(R.string.discount_label_caps),
                         color = Color.White.copy(alpha = 0.9f),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
@@ -145,7 +147,7 @@ fun PromoCard(promo: PromoCodeModel, onCollect: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Đơn từ ${AppUtil.formatPrice(promo.minOrder.toFloat())}",
+                        text = stringResource(R.string.min_order_prefix, AppUtil.formatPrice(promo.minOrder.toFloat())),
                         fontSize = 10.sp,
                         color = Color.Gray,
                         fontWeight = FontWeight.Medium
@@ -159,7 +161,7 @@ fun PromoCard(promo: PromoCodeModel, onCollect: () -> Unit) {
                         colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                     ) {
                         Text(
-                            text = "Lưu",
+                            text = stringResource(R.string.collect_label),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White

@@ -1,0 +1,908 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">EasyShop</string>
+    
+    <!-- General -->
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="read_more">Read more</string>
+    <string name="read_less">Show less</string>
+    <string name="close">Close</string>
+    <string name="apply">Apply</string>
+    <string name="reset">Reset</string>
+    <string name="success">Success</string>
+    <string name="loading_label">Loading...</string>
+    <string name="edit_action">Edit</string>
+    <string name="delete_action">Delete</string>
+    <string name="add">Add</string>
+    <string name="stt_label">STT</string>
+    <string name="view_action">View</string>
+    <string name="currency_suffix_dong">VND</string>
+    <string name="currency_symbol">VND</string>
+
+    <!-- Profile Page -->
+    <string name="profile">Profile</string>
+    <string name="address">Address</string>
+    <string name="back_nav">Back</string>
+    <string name="email">Email</string>
+    <string name="cart_items">Cart</string>
+    <string name="your_cart">Your Cart</string>
+    <string name="your_products">Your Products</string>
+    <string name="empty_cart_msg">Your cart is empty</string>
+    <string name="total_items">Total Items</string>
+    <string name="checkout">Checkout</string>
+    <string name="my_orders">Orders</string>
+    <string name="your_orders">Your Orders</string>
+    <string name="processing">Processing</string>
+    <string name="history">History</string>
+    <string name="no_active_orders">No active orders</string>
+    <string name="no_order_history">No order history yet</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="edit_name">Edit Name</string>
+    <string name="full_name">Full Name</string>
+    <string name="language">Language</string>
+    <string name="vietnamese">Vietnamese</string>
+    <string name="support_center">Support Center</string>
+    <string name="version_format">Version: %s</string>
+    <string name="feature_under_development">Feature under development</string>
+    <string name="support_contact">Contact: %s</string>
+    <string name="set_default">Set Default</string>
+    <string name="address_deleted">Address deleted</string>
+    <string name="update_avatar">Update Profile Photo</string>
+    <string name="choose_from_gallery">Choose from Gallery</string>
+    <string name="take_new_photo">Take New Photo</string>
+    <string name="remove_current_photo">Remove Current Photo</string>
+    <string name="change_name">Change Name</string>
+    <string name="enter_new_name">Enter new name</string>
+    <string name="change_phone">Change Phone Number</string>
+    <string name="enter_new_phone">Enter new phone number</string>
+    <string name="order_support_desc">Order support &amp; consultation</string>
+    <string name="default_label">Default</string>
+    <string name="address_list">Address List</string>
+    <string name="add_new_address">Add New Address</string>
+    <string name="edit_address">Edit Address</string>
+    <string name="receiver_name">Receiver Name</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="detail_address_hint">Detailed address (House no., street...)</string>
+    <string name="delete_address">Delete Address</string>
+    <string name="add_address_hint">Tap to add a delivery address</string>
+    <string name="update_avatar_success">Profile photo updated</string>
+    <string name="home_label">Home</string>
+    <string name="office_label">Office</string>
+    <string name="set_default_hint">Set as default address</string>
+    <string name="your_addresses">Your Addresses</string>
+    <string name="add_address">Add Address</string>
+    <string name="address_update_notice">Area list updated. Edit your address to ensure accurate delivery.</string>
+    <string name="profile_load_error">Error loading profile info</string>
+
+    <!-- Home Page -->
+    <string name="categories">Categories</string>
+    <string name="welcome_back">Welcome back</string>
+    <string name="search_hint">Search products...</string>
+    <string name="no_products_found">No products found</string>
+    <string name="in_stock">In Stock</string>
+    <string name="out_of_stock">Out of Stock</string>
+    <string name="product_out_of_stock_msg">This product is out of stock</string>
+    
+    <!-- Auth -->
+    <string name="sign_in_subtitle">Sign in to your account</string>
+    <string name="email_address">Email Address</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="hide_password">Hide password</string>
+    <string name="show_password">Show password</string>
+    <string name="login_btn">Sign In</string>
+    <string name="no_account">Don\'t have an account?</string>
+    <string name="signup_link">Sign Up</string>
+    <string name="login_failed">Login failed</string>
+    <string name="welcome_admin_msg">Welcome Admin, redirecting to Dashboard...</string>
+    <string name="signup_success_msg">Registration successful!</string>
+    <string name="login_success_msg">Login successful!</string>
+    <string name="hello_there">Hello!</string>
+    <string name="create_account_subtitle">Create a new account</string>
+    <string name="email_invalid_error">Please enter a valid email address</string>
+    <string name="name_empty_error">Name cannot be empty</string>
+    <string name="password_format_error">Use 6+ characters including letters and numbers</string>
+    <string name="password_mismatch_error">Passwords do not match</string>
+    <string name="create_account_btn">Create Account</string>
+    <string name="already_have_account">Already have an account?</string>
+    <string name="something_went_wrong">Something went wrong</string>
+    <string name="delete_account">Delete Account</string>
+    <string name="delete_account_confirm">Confirm Deletion</string>
+    <string name="delete_account_warning_msg">All your information will be permanently deleted from the system. Are you sure you want to proceed?</string>
+    <string name="delete_account_success">Account deleted successfully.</string>
+    <string name="reauth_required_msg">Your session has expired. Please sign in again to delete your account.</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="enter_email_prompt">Please enter your email</string>
+    <string name="reset_password_sent">Password reset email sent</string>
+    <string name="reset_password_failed">Failed to send email</string>
+    <string name="or_login_with"> Or sign in with </string>
+    <string name="auth_error">Authentication Error</string>
+    <string name="continue_with_google">Continue with Google</string>
+    <string name="i_am_customer">I am a Customer</string>
+    <string name="are_you_admin">Are you an Admin?</string>
+    <string name="admin_code_label">Admin Verification Code</string>
+    
+    <!-- Promo Codes Input -->
+    <string name="promo_code_label">Promo Code</string>
+    <string name="promo_code_hint_input">Enter code here</string>
+    <string name="voucher_wallet_cd">Voucher Wallet</string>
+    <string name="promo_empty_error">Please enter a promo code</string>
+    <string name="promo_apply_success">Promo code applied successfully!</string>
+    <string name="apply_btn">Apply</string>
+    <string name="clear_code_cd">Clear code</string>
+    <string name="promo_not_found_error">Promo code does not exist</string>
+    <string name="promo_data_error">Promo code data error</string>
+    <string name="promo_unavailable_error">Promo code is currently unavailable</string>
+    <string name="promo_expired_error">Promo code has expired</string>
+    <string name="promo_min_order_error">Order must be at least %s to use this code</string>
+    <string name="promo_limit_reached_error">Promo code limit reached</string>
+    <string name="server_error">Server connection error</string>
+
+    <!-- Product Details -->
+    <string name="product_details">Product Details</string>
+    <string name="add_to_cart">Add to Cart</string>
+    <string name="no_specifications">No specifications available</string>
+    <string name="write_a_review">Write a Review</string>
+    <string name="overall_rating">Overall Rating</string>
+    <string name="reviews_count_suffix">reviews</string>
+    <string name="reviews_count">(%d reviews)</string>
+    <string name="tab_reviews">Reviews</string>
+    <string name="product_highlights">Highlights</string>
+    <string name="product_detail_label">Product Details</string>
+    <string name="spec_table_label">Specifications</string>
+    <string name="spec_items_count">%d items</string>
+    <string name="write_review">Write a Review</string>
+    <string name="your_rating">Your rating:</string>
+    <string name="review_content_label">Review</string>
+    <string name="review_placeholder">Share your experience with this product&#8230;</string>
+    <string name="submit_review">Submit Review</string>
+
+    <!-- Payment -->
+    <string name="payment">Payment</string>
+    <string name="payment_subtitle">Complete your secure payment</string>
+    <string name="delivery_address">Delivery Address</string>
+    <string name="order_summary">Order Summary</string>
+    <string name="subtotal">Subtotal</string>
+    <string name="discount">Discount</string>
+    <string name="tax">Tax</string>
+    <string name="total">Total</string>
+    <string name="pay_now">Pay Now</string>
+    <string name="payable_amount">Payable Amount</string>
+    <string name="total_amount">Total Amount</string>
+    <string name="pay">Pay</string>
+    <string name="pay_with_amount">Pay %s</string>
+    <string name="payment_method">Payment Method</string>
+    <string name="card_details">Card Details</string>
+    <string name="card_number">Card Number</string>
+    <string name="card_holder_name">Cardholder Name</string>
+    <string name="expiry">Expiry Date</string>
+    <string name="cvv">CVV</string>
+    <string name="secure">SECURE</string>
+    <string name="secure_notice_mock">🔒 This is a demo payment system. No real transactions are made.</string>
+    <string name="secure_notice_real">🔒 Secured payment by Razorpay</string>
+    <string name="test_card_hint">Payment declined. Use test card 4111 1111 1111 1111</string>
+    <string name="redirect_notice">You will be redirected to Razorpay\'s secure payment page to complete the transaction.</string>
+    <string name="method_mock_card">Credit Card (Demo)</string>
+    <string name="method_razorpay">Razorpay (Real)</string>
+    <string name="method_paypal">PayPal</string>
+    <string name="method_cod">Cash on Delivery</string>
+    <string name="mbbank_qr_label">SePay (MBBank QR)</string>
+    <string name="momo_qr_label">MoMo QR</string>
+    <string name="save_qr_msg">QR code saved to gallery</string>
+    <string name="open_app_msg">Opening %s...</string>
+    <string name="payment_error_title">Payment Error</string>
+    <string name="change_payment_method">Change Payment Method</string>
+    <string name="payment_mb_confirmed">Payment received - Tap to Complete</string>
+    <string name="payment_mb_checking">Checking payment</string>
+    <string name="payment_momo_confirm">Confirm transfer completed</string>
+    <string name="payment_subtitle_credit_card">International Card (Visa/Master)</string>
+    <string name="payment_subtitle_cod">Cash on Delivery</string>
+    <string name="payment_subtitle_mb">MB Bank</string>
+    <string name="payment_subtitle_momo">MoMo E-Wallet</string>
+
+    <!-- Receipt -->
+    <string name="e_receipt">E-Receipt</string>
+    <string name="transaction_summary">Transaction Summary</string>
+    <string name="payment_successful">Payment Successful</string>
+    <string name="order_id">Order ID</string>
+    <string name="date">Date</string>
+    <string name="back_to_home">Back to Home</string>
+    <string name="view_receipt_btn">View Receipt</string>
+    <string name="print_save_pdf">Print / Save PDF</string>
+    <string name="invoice_title_promax">DETAILED INVOICE</string>
+    <string name="order_not_found">Order not found</string>
+    <string name="order_status">Order Status</string>
+    <string name="order_details">Order Details</string>
+    <string name="ordered_items">Ordered Items</string>
+    <string name="summary">Summary</string>
+    <string name="shipping_address">Shipping Address</string>
+    <string name="cancel_order">Cancel Order</string>
+    <string name="cancel_order_confirm_title">Cancel Order?</string>
+    <string name="cancel_order_confirm_msg">Are you sure you want to cancel this order? This action cannot be undone.</string>
+    <string name="yes_cancel">Yes, Cancel</string>
+    <string name="no_keep_order">No, Keep Order</string>
+    <string name="quantity">Quantity</string>
+    <string name="product_info_not_available">Product information not available</string>
+    <string name="retail_invoice">RETAIL INVOICE</string>
+    <string name="order_id_label">Order ID</string>
+    <string name="date_time_label">Date &amp; Time</string>
+    <string name="customer_label">Customer</string>
+    <string name="guest_customer">Guest Customer</string>
+    <string name="payment_label">Payment</string>
+    <string name="product_column">Product</string>
+    <string name="quantity_column">Qty</string>
+    <string name="amount_column">Amount</string>
+    <string name="shipping_fee">Shipping Fee</string>
+    <string name="brand_subtitle">Premium PC Components &amp; Accessories</string>
+    <string name="free_shipping">Free</string>
+    <string name="promo_discount_label">Promo Discount</string>
+    <string name="applied_code_prefix">Applied Code: %s</string>
+    <string name="total_all_caps">TOTAL AMOUNT</string>
+    <string name="thank_you_customer">Thank you for your purchase!</string>
+    <string name="warranty_qr_note">Scan QR for e-warranty lookup</string>
+
+    <!-- Filters & Sort -->
+    <string name="filter_sort">Filter &amp; Sort</string>
+    <string name="filter_sort_products">Filter &amp; Sort Products</string>
+    <string name="brand">Brand</string>
+    <string name="sort_by_price">Sort by Price</string>
+    <string name="sort_default">Default</string>
+    <string name="sort_price_low_high">Price: Low to High</string>
+    <string name="sort_price_high_low">Price: High to Low</string>
+    <string name="all_brands">All Brands</string>
+    <string name="products_count">%d products</string>
+    <string name="reset_filters">Clear Filters</string>
+
+    <!-- Favorites -->
+    <string name="your_favorites">Favorites</string>
+    <string name="favorites">Favorites</string>
+    <string name="no_favorites_yet">No favorites yet</string>
+    <string name="no_favorites">No favorites yet</string>
+
+    <!-- Network -->
+    <string name="lost_internet">Internet Connection Lost</string>
+    <string name="no_internet">Please check your Internet connection!</string>
+    <string name="restored_internet">Connection restored</string>
+    <string name="no_internet_title">No Network Connection!</string>
+    <string name="no_internet_desc">Please connect to Wi-Fi or enable mobile data for a better experience</string>
+    <string name="connect_now">Connect Now</string>
+    <string name="cancel_dialog">Cancel</string>
+    <string name="no_internet_message">Internet connection lost. Please check your connection!</string>
+    <string name="network_lost">No Internet Connection</string>
+    <string name="network_reconnecting">Reconnecting&#8230;</string>
+
+    <!-- Admin -->
+    <string name="admin_dashboard_title">Dashboard</string>
+    <string name="logout">Logout</string>
+    <string name="quick_actions">Quick Actions</string>
+    <string name="manage_products">Manage Products</string>
+    <string name="add_product_action">Add Product</string>
+    <string name="orders">Orders</string>
+    <string name="users">Users</string>
+    <string name="promo_codes">Promo Codes</string>
+    <string name="analytics">Analytics</string>
+    <string name="add_new_product">Add New Product</string>
+    <string name="edit_product">Edit Product</string>
+    <string name="category">Category</string>
+    <string name="specifications">Specifications</string>
+    <string name="product_images">Product Images</string>
+    <string name="paste_image_urls">Paste image URLs (e.g., from Amazon, Cloudinary...)</string>
+    <string name="product_title">Product Name</string>
+    <string name="product_description">Product Description</string>
+    <string name="add_specification">Add Specification</string>
+    <string name="save_product">Save Product</string>
+    <string name="please_fill_all_fields">Please fill in all fields</string>
+    <string name="product_saved">Product saved successfully</string>
+    <string name="key">Name (e.g., RAM)</string>
+    <string name="value">Value (e.g., 16GB)</string>
+    <string name="upload_image_progress">Uploading image %1$d/%2$d...</string>
+    <string name="select_image_error">Please select an image or enter a URL</string>
+    <string name="saving_product">Saving product...</string>
+    <string name="upload_error_prefix">Upload error: %s</string>
+    <string name="add_label_short">Add</string>
+    <string name="stock_count_label">Stock Count *</string>
+    <string name="spec_key_hint">e.g. Screen Size, RAM, CPU</string>
+    <string name="spec_value_hint">e.g. 6.67 Inches, 8 GB</string>
+    <string name="add_image_title">Add Image</string>
+    <string name="gallery_label">Gallery</string>
+    <string name="gallery_desc">Select from device gallery</string>
+    <string name="url_link_label">Enter URL</string>
+    <string name="url_link_desc">Use image from internet</string>
+    <string name="enter_image_url_title">Enter Image URL</string>
+    <string name="add_more_url">Add URL</string>
+    <string name="image_url_label">Image URL</string>
+    <string name="original_price">Original Price</string>
+    <string name="sale_price">Sale Price</string>
+    <string name="items_count">%d items</string>
+    <string name="uploading">Uploading...</string>
+    <string name="product_added_msg">Product added successfully.</string>
+    <string name="specification_name">Specification Name</string>
+    <string name="loading_product">Loading product...</string>
+    <string name="failed_load_product">Failed to load product</string>
+    <string name="product_updated_msg">Product updated successfully.</string>
+    <string name="update_product">Update Product</string>
+    <string name="updating">Updating...</string>
+    
+    <!-- Orders Management -->
+    <string name="orders_management_title">Orders Management</string>
+    <string name="all_filter">ALL</string>
+    <string name="ordered_status">ORDERED</string>
+    <string name="shipping_status">SHIPPING</string>
+    <string name="delivered_status">DELIVERED</string>
+    <string name="cancelled_status">CANCELLED</string>
+    <string name="no_orders_yet">No orders yet</string>
+    <string name="no_filtered_orders">No %s orders</string>
+    <string name="order_number_prefix">Order #</string>
+    <string name="ship_btn">Ship</string>
+    <string name="deliver_btn">Delivered</string>
+    <string name="cancel_btn">Cancel</string>
+    <string name="mark_as_delivered">Mark as Delivered</string>
+    <string name="customer_info_title">Customer Info</string>
+    <string name="payment_method_label">Payment</string>
+    <string name="update_status_label">Update Status</string>
+    <string name="close_btn">Close</string>
+    <string name="unknown_product">Unknown Product</string>
+
+    <!-- Users Management -->
+    <string name="manage_users_title">Manage Users</string>
+    <string name="search_users_hint">Search by name or email</string>
+    <string name="no_users_found">No users found</string>
+    <string name="no_name">No name set</string>
+    <string name="user_id_label">User ID</string>
+    <string name="no_address_set">No address set</string>
+    <string name="total_spent_label">Total Spent</string>
+    <string name="current_role_label">Current Role</string>
+    <string name="change_role_title">Change Role</string>
+    <string name="make_user_btn">Set as User</string>
+    <string name="make_admin_btn">Set as Admin</string>
+    <string name="orders_count_label">%d orders</string>
+    <string name="promote_to_admin">Grant Admin</string>
+    <string name="demote_to_user">Revoke Admin</string>
+    <string name="role_updated_success">Role updated for %s</string>
+    <string name="role_updated_failed">Failed to update role</string>
+
+    <!-- Promo Codes Management -->
+    <string name="manage_promo_codes_title">Manage Promo Codes</string>
+    <string name="add_promo_code_action">Add Promo Code</string>
+    <string name="no_promo_codes_found">No promo codes found</string>
+    <string name="deleted_promo_msg">Deleted %s</string>
+    <string name="added_promo_msg">Added %s</string>
+    <string name="error_adding_promo">Error adding promo code</string>
+    <string name="exp_label">Exp: %s</string>
+    <string name="no_expiry">No expiry</string>
+    <string name="new_promo_code_title">New Promo Code</string>
+    <string name="code_hint">Code (e.g., SUMMER50)</string>
+    <string name="discount_type_label">Discount Type</string>
+    <string name="percentage_type">Percentage</string>
+    <string name="fixed_amount_type">Fixed Amount</string>
+    <string name="value_percentage_label">Value (%)</string>
+    <string name="value_fixed_label">Value (₫)</string>
+    <string name="min_order_label">Min. Order</string>
+    <string name="max_discount_label">Max Discount</string>
+    <string name="usage_limit_label">Usage Limit</string>
+    <string name="expires_in_days_label">Expires in (days)</string>
+    <string name="create_btn">Create</string>
+    <string name="edit_promo_code_title">Edit Promo Code</string>
+    <string name="extend_days_label">Extend by (days)</string>
+    <string name="current_expiry_label">Current Expiry: %s</string>
+    <string name="used_count_readonly">Used: %d times (read-only)</string>
+    <string name="save_changes_btn">Save Changes</string>
+    <string name="updated_promo_msg">Code %s updated successfully!</string>
+    <string name="error_updating_promo">Error while updating</string>
+
+    <!-- Categories Management -->
+    <string name="product_categories_title">Product Categories</string>
+    <string name="categories_overview_desc">Category overview and stock levels.</string>
+    <string name="no_categories_found">No categories found</string>
+    <string name="add_new_category_title">Add New Category</string>
+    <string name="edit_category_title">Edit Category</string>
+    <string name="category_id_label">Category ID (Slug)</string>
+    <string name="category_id_hint">e.g., computers</string>
+    <string name="display_name_label">Display Name</string>
+    <string name="display_name_hint">e.g., Computers</string>
+    <string name="category_image_url_label">Image URL (Icon)</string>
+    <string name="update_btn">Update</string>
+    <string name="products_count_label">%d products</string>
+    <string name="delete_category_title">Delete Category</string>
+    <string name="delete_category_confirm_msg">Are you sure you want to delete \'%s\'?</string>
+
+    <!-- Analytics Management -->
+    <string name="business_analytics_title">Business Analytics</string>
+    <string name="total_revenue_label">Total Revenue</string>
+    <string name="revenue_trend_title">Revenue Trend</string>
+    <string name="order_distribution_title">Order Distribution</string>
+    <string name="top_selling_products_title">Top Selling Products</string>
+    <string name="no_sales_data">No sales data available</string>
+    <string name="avg_value_label">Avg. Value</string>
+    <string name="pending_status_legend">Pending</string>
+    <string name="items_sold_label">%d items sold</string>
+    <string name="no_data_title">No Data</string>
+    <string name="no_data_message">Order list is empty</string>
+    <string name="permission_failed_title">Permission Denied</string>
+    <string name="permission_failed_message">The app needs storage permission to save reports.</string>
+    <string name="export_error_title">Export Error</string>
+    <string name="export_report_btn">Export Report</string>
+    <string name="preview_export_title">Preview Export Data</string>
+    <string name="report_name">Business Report</string>
+    <string name="report_order_count">Total: %d orders ready</string>
+    <string name="report_col_code">Code</string>
+    <string name="report_col_date">Date</string>
+    <string name="report_col_customer">Customer</string>
+    <string name="report_col_amount">Amount</string>
+    <string name="report_product_detail">Product details:</string>
+    <string name="report_promo_applied">Promo: %1$s (-%2$s)</string>
+    <string name="report_exporting">Processing data...</string>
+    <string name="report_confirm_download">Confirm &amp; Download CSV</string>
+    <string name="report_csv_notice">Note: The CSV file will include full product details for each order.</string>
+    <string name="updated_at_format">Updated at %s</string>
+    <string name="updated_at_empty">Updated at --</string>
+
+    <!-- Products Management (Admin) -->
+    <string name="manage_products_title">Manage Products</string>
+    <string name="no_products_yet">No products yet</string>
+    <string name="no_products_in_category">No products in this category</string>
+    <string name="delete_product_title">Delete Product?</string>
+    <string name="delete_product_confirm_msg">Are you sure you want to delete \"%s\"? This action cannot be undone.</string>
+    <string name="add_to_cart_btn">Add to Cart</string>
+    <string name="out_of_stock_btn">Out of Stock</string>
+    <string name="off_label">OFF</string>
+    <string name="profiles_incomplete_title">Incomplete Delivery Info</string>
+    <string name="profiles_incomplete_msg">You need to provide a delivery address and phone number to proceed with checkout.</string>
+    <string name="go_to_profile">Go to Profile</string>
+
+    <!-- Orders Management Feedback -->
+    <string name="order_updated_msg">Order #%s updated</string>
+    <string name="order_update_failed">Failed to update status</string>
+    <string name="order_note_label">Note for the shop</string>
+    <string name="order_note_hint">Enter special requests (e.g., deliver during business hours...)</string>
+    <string name="message_customer">Message Customer</string>
+    <string name="customer_note_title">Customer Note</string>
+    <string name="archive_success">Order #%s archived</string>
+    <string name="archive_failed">Archive failed</string>
+    <string name="delete_permanent_success">Order #%s permanently deleted</string>
+    <string name="delete_permanent_failed">Permanent deletion failed</string>
+    <string name="order_action_archive_label">Archive (Hide)</string>
+    <string name="order_action_delete_permanent_label">Delete Permanently</string>
+    <string name="no_email_label">No email</string>
+    <string name="unknown_label">Unknown</string>
+
+    <!-- Admin Home & Migration -->
+    <string name="admin_home_sync_start">Starting sync...</string>
+    <string name="admin_home_sync_success">Updated %1$d products successfully!</string>
+    <string name="admin_home_sync_no_change">All products already have stock quantity.</string>
+    <string name="admin_home_sync_error">Sync error: %1$s</string>
+    <string name="admin_home_init_stock_btn">Initialize default stock (5)</string>
+    <string name="admin_home_stock_label">Stock: %d</string>
+    <string name="admin_label">Admin</string>
+    <string name="pending_orders_label">Pending</string>
+    <string name="admin_profile_title">Admin Profile</string>
+    <string name="account_info_label">Account Information</string>
+    <string name="role_label">Role</string>
+    <string name="analytics_period_today">Today</string>
+    <string name="analytics_period_7days">7 days</string>
+    <string name="analytics_period_30days">30 days</string>
+    <string name="analytics_period_60days">60 days</string>
+    <string name="error_permission_denied_title">Permission Denied</string>
+    <string name="error_permission_denied_msg">The app needs storage permission to save reports.</string>
+    <string name="last_updated_at">Last updated at %s</string>
+    <string name="last_updated_none">Last updated at --</string>
+    <string name="error_no_data_title">No Data</string>
+    <string name="error_no_data_msg">Order list is empty</string>
+    <string name="error_export_failed_title">Export Failed</string>
+    <string name="processing_data">Processing data...</string>
+    <string name="confirm_download_csv">Confirm &amp; Download CSV</string>
+    <string name="business_report_label">Business Report</string>
+    <string name="orders_ready_msg">Total: %d orders ready</string>
+    <string name="id_short_label">ID</string>
+    <string name="date_short_label">Date</string>
+    <string name="customer_short_label">Customer</string>
+    <string name="amount_short_label">Amount</string>
+    <string name="product_details_label">Product Details:</string>
+    <string name="promo_applied_msg">Promo: %1$s (-%2$s)</string>
+    <string name="csv_export_note">Note: The CSV file will include full details of products in each order.</string>
+    <string name="promo_broadcast_title">New Offer from EasyShop!</string>
+    <string name="promo_broadcast_body">Code [%1$s] is ready. Get the offer now: %2$s</string>
+    <string name="promo_broadcast_success">Published and notification sent to users!</string>
+    <string name="promo_broadcast_error">Error sending notification: %s</string>
+    <string name="promo_retracted_msg">Retracted code [%s]</string>
+    <string name="confirm_publish_title">Confirm Publish</string>
+    <string name="confirm_publish_msg">Are you sure you want to publish promo code %s to all users? Once published, the code will appear in User Notifications.</string>
+    <string name="publish_now_btn">Publish Now</string>
+    <string name="order_action_clear">Clear</string>
+    <string name="order_action_more">More</string>
+    <string name="order_payment_cod">COD</string>
+    <string name="url_placeholder">https://...</string>
+    <string name="id_prefix">ID: %s</string>
+    <string name="promo_code_prefix">Code: %s</string>
+    <string name="cd_admin_avatar">Admin Avatar</string>
+    <string name="csv_header_orders">Order ID,Order Date,Customer,Product Name,Quantity,Unit Price,Item Total,Order Total,Status,Email,Phone</string>
+
+    <!-- Admin Notification -->
+    <string name="notif_screen_title">Notifications</string>
+    <string name="read_all_btn">Read All</string>
+    <string name="delete_error_prefix">Delete error: %s</string>
+    <string name="delete_all_success">All notifications deleted</string>
+    <string name="order_not_exist">Order does not exist!</string>
+    <string name="delete_notif_success">Notification deleted successfully</string>
+    <string name="update_order_status_success">Order status updated!</string>
+    <string name="update_failed_prefix">Update failed: %s</string>
+    <string name="notif_total">Total</string>
+    <string name="notif_unread">Unread</string>
+    <string name="notif_read">Read</string>
+    <string name="notif_empty_title">No notifications yet</string>
+    <string name="notif_empty_desc">New orders or status updates\nwill appear here.</string>
+    <string name="notif_empty_subtitle">When there are updates from the store or your orders,\nnotifications will appear here.</string>
+    <string name="notif_type_new_order">New Order</string>
+    <string name="notif_type_shipping">Shipping</string>
+    <string name="notif_type_delivered">Delivered</string>
+    <string name="notif_type_cancelled">Cancelled</string>
+    <string name="notif_type_order_status">Update</string>
+    <string name="notif_type_promo">Promotion</string>
+    <string name="notif_type_system">System</string>
+    <string name="notif_read_all">Read all</string>
+    <string name="notif_delete_all">Delete all</string>
+
+    <!-- Notifications Page -->
+    <string name="notification_title">Notifications</string>
+    <string name="promo_saved_success">Promo code saved to wallet!</string>
+    <string name="promo_save_error_title">Error</string>
+    <string name="promo_save_error_message">Could not save promo code</string>
+    <string name="login_required_to_save_promo">Please sign in to save promo codes</string>
+    <string name="time_minutes_ago">%d minutes ago</string>
+    <string name="time_hours_ago">%d hours ago</string>
+    <string name="time_days_ago">%d days ago</string>
+    <string name="time_just_now">just now</string>
+
+    <!-- Bottom Navigation Tabs -->
+    <string name="tab_home">Home</string>
+    <string name="tab_favorite">Favorites</string>
+    <string name="tab_cart">Cart</string>
+    <string name="tab_profile">Profile</string>
+
+    <!-- Exit Dialog -->
+    <string name="exit_dialog_title">Exit EasyShop?</string>
+    <string name="exit_dialog_message">Are you sure you want to close the app? Your cart will be saved.</string>
+    <string name="exit_confirm">Exit</string>
+
+    <!-- Stock -->
+    <string name="items_in_stock">%d left in stock</string>
+
+    <!-- Auth Extras -->
+    <string name="auth_heading">Start your shopping journey now</string>
+    <string name="auth_subheading">The best shopping platform at the best prices</string>
+    <string name="auth_login">Login</string>
+    <string name="auth_register">Sign Up</string>
+    <string name="auth_guest">Continue as Guest</string>
+    <string name="guest_user">User</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_tech_title">Tech World</string>
+    <string name="onboarding_tech_desc">Own the latest cutting-edge tech devices from top brands at exclusive discounted prices, only at EasyShop.</string>
+    <string name="onboarding_ai_title">Smart AI Assistant</string>
+    <string name="onboarding_ai_desc">A fully personalized shopping experience. Our AI understands your style and always recommends exactly what you need.</string>
+    <string name="onboarding_secure_title">Safe &amp; Lightning Fast</string>
+    <string name="onboarding_secure_desc">Absolute transaction security, dedicated 24/7 support. Receive your order at home in the blink of an eye with our express delivery service.</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_start">Get Started</string>
+
+    <!-- Error State -->
+    <string name="error_title">Something went wrong</string>
+    <string name="error_message">Unable to load data. Please try again later.</string>
+    <string name="error_retry">Try Again</string>
+    <string name="error_mediastore">Could not create file via MediaStore</string>
+    <string name="error_with_details">%1$s: %2$s</string>
+
+    <!-- Cart Extras -->
+    <string name="cart_empty_hint">Browse the store and find something you love!</string>
+    <string name="cart_stock_limit">Stock limit reached (%1$d)</string>
+
+    <!-- Checkout Extras -->
+    <string name="checkout_no_address">⚠️ No delivery address. Tap to select!</string>
+    <string name="checkout_no_phone">⚠️ Missing delivery phone number</string>
+    <string name="checkout_empty_address">⚠️ Delivery address cannot be empty</string>
+    <string name="checkout_select_address">Select Delivery Address</string>
+    <string name="checkout_no_saved_address">You have no saved addresses. Add one in Profile!</string>
+    <string name="no_address_warning">⚠️ No shipping address. Tap to select!</string>
+    <string name="missing_phone_warning">⚠️ Missing shipping phone number</string>
+    <string name="missing_detail_address_warning">⚠️ Detailed address cannot be empty</string>
+    <string name="select_shipping_address">Select Shipping Address</string>
+    <string name="no_address_msg">You don\'t have any addresses. Add one in Profile!</string>
+
+    <!-- Promo Extras -->
+    <string name="promo_section_title">🎁 Offers For You</string>
+    <string name="promo_min_order">Orders from %s</string>
+    <string name="discount_label_caps">DISCOUNT</string>
+    <string name="min_order_prefix">From %s</string>
+    <string name="collect_label">Save</string>
+    <string name="select_voucher_title">Select Discount Voucher</string>
+    <string name="empty_voucher_msg">Voucher wallet is empty</string>
+    <string name="applicable_vouchers">Applicable Vouchers</string>
+    <string name="ineligible_vouchers">Ineligible</string>
+    <string name="discount_amount_prefix">Off %s</string>
+    <string name="min_order_required_prefix">Min. Order: %s</string>
+    <string name="amount_missing_prefix">Need %s more</string>
+    <string name="expiring_soon_days">Expires in: %1$d days</string>
+    <string name="expiry_date_prefix">Exp: %s</string>
+
+    <!-- Voucher Extras -->
+    <string name="voucher_title">Select Voucher</string>
+    <string name="voucher_empty">No vouchers available</string>
+    <string name="voucher_applicable">Applicable</string>
+    <string name="voucher_not_eligible">Not eligible</string>
+    <string name="voucher_discount_percent">%d%% off</string>
+    <string name="voucher_discount_amount">%s off</string>
+    <string name="voucher_min_order">Min. order: %s</string>
+    <string name="voucher_need_more">Need %s more</string>
+    <string name="voucher_expiring_soon">Expiring: %d days</string>
+    <string name="voucher_expiry_date">Exp: %s</string>
+
+    <!-- Receipt Extras -->
+    <string name="receipt_order_id">Order ID</string>
+    <string name="receipt_date">Date &amp; Time</string>
+    <string name="receipt_customer">Customer</string>
+    <string name="receipt_payment">Payment</string>
+    <string name="receipt_products">Products</string>
+    <string name="receipt_amount">Amount</string>
+    <string name="receipt_subtotal">Subtotal</string>
+    <string name="receipt_shipping">Shipping</string>
+    <string name="receipt_free">Free</string>
+    <string name="receipt_promo_discount">Promo Discount</string>
+    <string name="receipt_promo_code_applied">Code applied: %s</string>
+    <string name="receipt_thank_you">Thank you for your purchase!</string>
+    <string name="receipt_warranty_hint">Scan QR to check your digital warranty</string>
+    <string name="receipt_wallet_store_info">Specializing in PC Components &amp; Accessories</string>
+    <string name="receipt_unknown_product">Product</string>
+    <string name="receipt_unknown_customer">Walk-in Customer</string>
+
+    <!-- QR Payment Extras -->
+    <string name="mbbank_label">MBBank</string>
+    <string name="momo_label">MoMo E-Wallet</string>
+    <string name="transfer_note_label">Transfer Note:</string>
+    <string name="loading_qr_msg">Loading QR code...</string>
+    <string name="save_qr_error">Failed to save image, please try again</string>
+    <string name="save_qr_btn">Save QR</string>
+    <string name="open_app_msg_format">Opening %s app...</string>
+    <string name="open_mbbank_btn">Open MBBank App</string>
+    <string name="open_momo_btn">Open MoMo App</string>
+    <string name="payment_instruction_title">🏦 Payment Instruction</string>
+    <string name="payment_instruction_title_momo">📲 Payment Instruction</string>
+    <string name="mb_step_1">Step 1: Scan the QR code or transfer to the account number above.</string>
+    <string name="mb_step_2">Step 2: Ensure the transfer note matches the pink code above.</string>
+    <string name="mb_step_3">Step 3: Wait 1-2 minutes for SePay to automatically confirm.</string>
+    <string name="momo_step_1">Option 1: Tap \'Open MoMo App\' for quick payment.</string>
+    <string name="momo_step_2">Option 2: Scan the QR code with your MoMo app.</string>
+    <string name="momo_not_installed">MoMo app is not installed on this device</string>
+
+    <!-- AI Chat & STT Extras -->
+    <string name="stt_not_supported">Speech recognition is not supported on this device</string>
+    <string name="stt_error_audio">Audio error</string>
+    <string name="stt_error_client">Client-side error</string>
+    <string name="stt_error_permissions">Microphone permission required</string>
+    <string name="stt_error_network">Network error during speech recognition</string>
+    <string name="stt_error_generic">Recognition error: %1$d</string>
+    <string name="stt_error_mic_init">Cannot start Microphone: %1$s</string>
+    <string name="error_generic_retry">An error occurred, please try again.</string>
+    <string name="ai_busy_msg">The store is busy, please try again in a few seconds!</string>
+    <string name="ai_auth_error">API authentication error, please contact shop for support.</string>
+    <string name="ai_network_error">Unstable connection, please check your Wi-Fi/4G and try again.</string>
+    <string name="ai_generic_error">AI assistant is having a minor issue, please try again shortly!</string>
+    <string name="ai_welcome_msg">Hello! I am EasyShop\'s AI Assistant. How can I help you today?</string>
+    <string name="login_required_msg">Please login</string>
+    <string name="ai_not_connected">Cannot connect to AI at this moment.</string>
+    <string name="ai_unknown_customer">Customer</string>
+    <string name="ai_new_customer">New Customer</string>
+    <string name="ai_out_of_stock">Out of Stock</string>
+    <string name="ai_in_stock">In Stock</string>
+    <string name="ai_no_products_found">No matching products found in stock.</string>
+    <string name="ai_no_promos_found">No discount codes available at the moment.</string>
+    <string name="ai_no_limit_time">No time limit</string>
+    <string name="ai_prompt_focus_promo">FOCUS: Customer is asking about promotions. List discount codes clearly, DO NOT suggest products unless asked.</string>
+    <string name="ai_prompt_focus_payment">FOCUS: Customer is asking about payment. Explain payment methods, DO NOT wander into promos or products.</string>
+    <string name="ai_prompt_focus_comparison">FOCUS: Product comparison. Analyze pros and cons of products the customer is interested in.</string>
+    <string name="ai_prompt_focus_budget">FOCUS: Price advice. Find products that fit the customer\'s budget.</string>
+    <string name="ai_prompt_focus_general">FOCUS: General shopping advice/support.</string>
+    <string name="ai_prompt_system_role">YOU ARE AN EASYSHOP CUSTOMER SERVICE SPECIALIST.</string>
+    <string name="ai_prompt_user_context">CUSTOMER CONTEXT:</string>
+    <string name="ai_prompt_available_products">AVAILABLE PRODUCTS LIST:</string>
+    <string name="ai_prompt_available_promos">CURRENT VOUCHERS / PROMO CODES:</string>
+    <string name="ai_prompt_payment_methods">SUPPORTED PAYMENT METHODS:\n1. MB Bank Transfer (MBBank) — Scan QR code, automatic confirmation via SePay.\n2. MoMo E-wallet — Scan MoMo QR code to pay.\n3. International Cards (Visa / Mastercard) — Enter card number, name, expiry, and CVV.\n4. Cash on Delivery (COD) — Pay cash upon receiving goods.</string>
+    <string name="ai_prompt_order_process">ORDERING PROCESS:\nAdd to cart → Go to Cart → Press \"Checkout\" → Enter/select delivery address → Enter promo code (if any) → Select payment method → Confirm order.</string>
+    <string name="ai_prompt_intent_prefix">USER INTENT: %1$s</string>
+    <string name="ai_prompt_common_rules">MANDATORY RESPONSE RULES:\n1. NO IDs: Never display internal IDs (like 3qifh...) in chat.\n2. PRODUCT TAGGING: When mentioning a product, use [PID_id] tag after the name.\n3. OUT OF STOCK: If out of stock, inform politely and suggest alternatives.\n4. PROMO CODES: Answer based on the provided list, clear codes and conditions.\n5. PAYMENT: Answer based on the supported methods list.\n6. STAY ON TOPIC: Don\'t wander into unrelated advertisements.\n7. STYLE: Friendly, concise (Address as: Store - You).\n8. LANGUAGE: English.</string>
+    <string name="ai_vision_prompt_role">YOU ARE AN EASYSHOP VISUAL CONSULTANT.</string>
+    <string name="ai_vision_prompt_task">YOUR TASK:\n1. IMAGE ANALYSIS: Identify the product in the image.\n2. STOCK LOOKUP: Match with the available product list.\n3. ADVICE: If matched, provide price; if not, suggest similar products.</string>
+    <string name="ai_user_context_format">Name: %1$s\nCart: %2$s\nRecent Orders: %3$s</string>
+    <string name="ai_product_item_format">- %1$s [%2$s] | Price: %3$s | Status: %4$s</string>
+    <string name="ai_promo_item_format">- Code: %1$s | %2$s | %3$s | %4$s</string>
+    <string name="ai_discount_percent_format">Discount %1$d%% (max %2$s)</string>
+    <string name="ai_discount_fixed_format">Discount %1$s</string>
+    <string name="ai_min_order_format">min order %1$s</string>
+    <string name="ai_no_min_order">no min order required</string>
+    <string name="ai_expiry_date_format">Expiry: %1$s</string>
+    <string name="speech_lang_code">en-US</string>
+    <string name="ai_chat_title">AI Assistant</string>
+    <string name="ai_status_online">Online</string>
+    <string name="ai_welcome_card_title">Quick consultation as needed</string>
+    <string name="ai_welcome_card_desc">Send messages, voice or product images for the fastest support!</string>
+    <string name="ai_listening">Listening…</string>
+    <string name="ai_input_placeholder">Type a message…</string>
+    <string name="ai_thinking">AI is thinking…</string>
+    <string name="ai_view_product">View Product</string>
+    <string name="ai_suggestion_1">15 million VND Laptop</string>
+    <string name="ai_suggestion_2">Gaming PC</string>
+    <string name="ai_suggestion_3">Good deals</string>
+    <string name="ai_suggest_iphone">Newest iPhones</string>
+
+    <!-- Admin Chat Extras -->
+    <string name="admin_chat_no_sessions">No conversations yet</string>
+    <string name="admin_chat_default_customer">Customer</string>
+    <string name="admin_chat_loading">Loading...</string>
+    <string name="admin_chat_active">Active</string>
+    <string name="admin_chat_active_minutes_ago">Active %1$d minutes ago</string>
+    <string name="admin_chat_active_hours_ago">Active %1$d hours ago</string>
+    <string name="admin_chat_active_days_ago">Active %1$d days ago</string>
+    <string name="admin_chat_delete_confirm">Delete</string>
+    <string name="admin_chat_cancel">Cancel</string>
+    <string name="admin_chat_send_image">Send Image</string>
+    <string name="admin_chat_reply_placeholder">Type a reply...</string>
+    <string name="admin_chat_title">Customer Support</string>
+
+    <!-- Order Management Extras -->
+    <string name="order_status_all">ALL</string>
+    <string name="order_status_ordered">ORDERED</string>
+    <string name="order_status_shipping">SHIPPING</string>
+    <string name="order_status_delivered">DELIVERED</string>
+    <string name="order_status_cancelled">CANCELLED</string>
+    <string name="order_search_placeholder">Search by code or customer name...</string>
+    <string name="order_empty_title">No orders found</string>
+    <string name="order_empty_msg">Try changing the filter or search query.</string>
+    <string name="order_item_count">%1$d items</string>
+    <string name="order_action_ship">Ship Order</string>
+    <string name="order_action_cancel">Cancel Order</string>
+    <string name="order_action_complete">Complete Order</string>
+    <string name="order_menu_archive">Archive (Hide)</string>
+    <string name="order_menu_delete">Delete Permanently</string>
+    <string name="order_archive_title">Archive Order?</string>
+    <string name="order_archive_msg">Order #%1$s will be hidden from this list but STILL counts towards sales in Statistics.</string>
+    <string name="order_archive_confirm">Archive (Keep Stats)</string>
+    <string name="order_delete_title">⚠️ Delete Permanently?</string>
+    <string name="order_delete_msg">Order #%1$s will be completely deleted. This data will NO LONGER appear in Sales Statistics.\n\nAre you sure?</string>
+    <string name="order_delete_confirm">I understand, delete it</string>
+    <string name="order_notif_shipping_title">Order is shipping 🚚</string>
+    <string name="order_notif_shipping_body">Order #%1$s is on its way to you.</string>
+    <string name="order_notif_delivered_title">Order delivered successfully ✅</string>
+    <string name="order_notif_delivered_body">Order #%1$s has been delivered.</string>
+    <string name="order_notif_cancelled_title">Order cancelled ❌</string>
+    <string name="order_notif_cancelled_body">Order #%1$s has been cancelled.</string>
+    <string name="order_notif_update_title">Order Update</string>
+    <string name="order_notif_update_body">Order #%1$s has updated status: %2$s</string>
+
+    <!-- Avatar Picker Extras -->
+    <string name="avatar_picker_title">Choose Avatar</string>
+    <string name="avatar_picker_gallery">Choose from Gallery</string>
+    <string name="avatar_picker_success">Image uploaded successfully!</string>
+    <string name="avatar_picker_error">Upload error: %1$s</string>
+    <string name="avatar_picker_cancel">Cancel</string>
+
+    <!-- Checkout & Order Extras -->
+    <string name="checkout_error_loading">Error loading data: %1$s</string>
+    <string name="checkout_error_no_address">Please select or add a shipping address</string>
+    <string name="checkout_error_out_of_stock">Product %1$s is out of stock or insufficient quantity</string>
+    <string name="checkout_error_promo_inactive">Promo code is no longer available</string>
+    <string name="checkout_error_promo_limit">Promo code has reached its usage limit</string>
+    <string name="checkout_error_generic">An error occurred while placing the order</string>
+    <string name="checkout_notif_admin_title">New Order Received!</string>
+    <string name="checkout_notif_admin_body">Customer %1$s placed order #%2$s worth %3$s</string>
+    <string name="checkout_sepay_not_found">Transfer transaction for code %1$s not found yet. Please try again in 1-2 minutes or contact support.</string>
+    <string name="checkout_sepay_error">SePay system error: %1$s</string>
+    <string name="checkout_sepay_connect_error">Connection error while checking payment: %1$s</string>
+
+    <!-- Auth Errors Extras -->
+    <string name="error_auth_invalid_credential">Incorrect email or password</string>
+    <string name="error_auth_user_not_found">This account does not exist</string>
+    <string name="error_auth_wrong_password">Incorrect password</string>
+    <string name="error_auth_email_in_use">This email is already in use</string>
+    <string name="error_auth_invalid_email">Invalid email format</string>
+    <string name="error_auth_too_many_attempts">Too many unsuccessful login attempts. Please try again later</string>
+    <string name="error_auth_user_disabled">Your account has been disabled</string>
+    <string name="error_auth_op_not_allowed">This login method is not enabled</string>
+
+    <!-- Payment Errors Extras -->
+    <string name="error_payment_unauthenticated">Session expired. Please log in again</string>
+    <string name="error_payment_config">Payment account configuration error</string>
+    <string name="error_payment_insufficient_balance">Insufficient balance for the transaction</string>
+    <string name="error_payment_invalid_amount">Invalid transaction amount</string>
+    <string name="error_payment_invalid_ref">Invalid payment reference</string>
+
+    <!-- Common Errors Extras -->
+    <string name="error_common_network">Network connection error. Please check your connection</string>
+    <string name="error_common_server">Server internal error. Please try again later</string>
+    <string name="error_common_expired">The session or code has expired</string>
+    <string name="error_common_permission">You do not have permission to perform this action</string>
+    <string name="error_common_unavailable">Service currently unavailable. Please try again later</string>
+
+    <!-- AppUtil Strings Extras -->
+    <string name="app_util_login_required_fav">Please log in to use favorites</string>
+    <string name="app_util_fav_remove_title">Remove Favorite</string>
+    <string name="app_util_fav_remove_msg">Product removed from list</string>
+    <string name="app_util_fav_add_title">Favorite</string>
+    <string name="app_util_fav_add_msg">Added to your favorite list</string>
+    <string name="app_util_sync_error_title">Sync Error</string>
+    <string name="app_util_sync_error_remove">Could not remove favorite</string>
+    <string name="app_util_sync_error_add">Could not save favorite</string>
+    <string name="app_util_login_required_cart">Please log in to use cart</string>
+    <string name="app_util_cart_add_success">Added to cart!</string>
+    <string name="app_util_cart_add_failed">Error adding to cart</string>
+    <string name="app_util_cart_update_error">Error updating cart</string>
+    <string name="app_util_cart_removed">Removed from cart</string>
+    <string name="app_util_no_network">No network connection</string>
+    <string name="app_util_order_notif_title">Order Notification</string>
+    <string name="app_util_order_notif_body">You have a new order waiting for processing.</string>
+    <string name="app_util_order_error">Order Error</string>
+    <string name="app_util_order_error_detail">Could not load order info</string>
+    <string name="app_util_history_error">Error loading history</string>
+    <string name="app_util_update_failed">Update failed</string>
+    <string name="app_util_demo_payment_title">Demo Payment</string>
+    <string name="app_util_demo_payment_msg">This is a demo environment.</string>
+    <string name="app_util_demo_payment_success">Transaction successful (Demo)</string>
+    <string name="app_util_demo_payment_failed">Transaction failed (Demo)</string>
+    <string name="app_util_demo_payment_cancel">Transaction cancelled (Demo)</string>
+    <string name="app_util_export_success_title">Report exported successfully</string>
+    <string name="app_util_export_success_msg">Report has been saved to Downloads folder.</string>
+    <string name="app_util_export_error_title">Export report error</string>
+
+    <!-- Content Descriptions -->
+    <string name="google_logo_cd">Google Logo</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_delete_chat">Delete conversation</string>
+    <string name="cd_send">Send</string>
+    <string name="cd_user_avatar">User Avatar</string>
+    <string name="cd_selected">Selected</string>
+    <string name="cd_clear_chat">Clear messages</string>
+    <string name="cd_chat_image">Chat image</string>
+    <string name="cd_search">Search</string>
+    <string name="cd_notifications">Notifications</string>
+    <string name="cd_avatar">Avatar</string>
+    <string name="cd_menu">Menu</string>
+    <string name="cd_filter">Filter</string>
+    <string name="cd_remove">Remove</string>
+    <string name="cd_clear">Clear</string>
+    <string name="cd_more">More</string>
+    <string name="cd_close">Close</string>
+    <string name="cd_chat">Chat</string>
+
+    <!-- Admin Chat Dialogs -->
+    <string name="delete_chat_confirm_title">Delete conversation?</string>
+    <string name="delete_chat_confirm_msg">All messages with this user will be permanently deleted. Are you sure?</string>
+
+    <string name="error_loading_revenue">Error loading revenue</string>
+    <string name="month_format">Month %d</string>
+    <string name="year_format">Year %d</string>
+    <string name="order_status_distribution">Order Status Distribution</string>
+    <string name="error_loading_name">Error loading name</string>
+    <string name="revenue_milestone_label">Milestone: %1$s - %2$s</string>
+    <string name="promo_issue_error">Issue error: %1$s</string>
+    <string name="chart_scale_label">Scale: %1$s - %2$s</string>
+    <string name="loading_product_name">Loading...</string>
+    <string name="unnamed_product">Unnamed product</string>
+    <string name="add_image_title">Add images</string>
+    <string name="gallery_label">Gallery</string>
+    <string name="gallery_desc">Choose from phone</string>
+    <string name="url_link_label">URL link</string>
+    <string name="url_link_desc">Paste image link from internet</string>
+    <string name="enter_image_url_title">Enter image URL</string>
+    <string name="image_url_label">Image URL</string>
+    <string name="add_label_short">Add</string>
+    <string name="add_url">Add URL</string>
+    <string name="paste_image_url_hint">Paste image URL</string>
+    <string name="image_url_with_index">Image URL %d</string>
+    <string name="image_url_placeholder">https://example.com/image.jpg</string>
+    <string name="stock_count_label">Stock count</string>
+    <string name="spec_key_hint">e.g. Screen Size, RAM, CPU</string>
+    <string name="spec_value_hint">e.g. 6.67 Inches, 8 GB</string>
+    <string name="min_one_image_error">Please add at least 1 image</string>
+    <string name="upload_image_error">Upload image error</string>
+    <string name="update_product_error">Update product error</string>
+</resources>

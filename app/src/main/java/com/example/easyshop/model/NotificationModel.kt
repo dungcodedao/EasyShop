@@ -1,6 +1,7 @@
 package com.example.easyshop.model
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.PropertyName
 
 /**
  * Mô hình thông báo cho cả admin và user.
@@ -18,7 +19,8 @@ data class NotificationModel(
     val type: String = "SYSTEM",
     // NEW_ORDER | ORDER_STATUS | CANCELLED | SHIPPING | DELIVERED | PROMO | SYSTEM
     val orderId: String? = null,
-    val isRead: Boolean = false,
+    @get:PropertyName("isRead") @set:PropertyName("isRead")
+    var isRead: Boolean = false,
     val createdAt: Timestamp = Timestamp.now(),
     val recipientRole: String = "user"  // "admin" hoặc "user"
 )

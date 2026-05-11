@@ -33,6 +33,10 @@ import com.example.easyshop.components.HeaderView
 import com.example.easyshop.components.SearchView
 import com.example.easyshop.viewmodel.HomeViewModel
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import com.example.easyshop.util.LanguageManager
+
 @Composable
 fun HomePage(
     modifier: Modifier = Modifier,
@@ -42,6 +46,11 @@ fun HomePage(
     onSearchToggle: (Boolean) -> Unit = {},
     viewModel: HomeViewModel // ViewModel injected from HomeScreen
 ) {
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        LanguageManager.applyUserLocale(context)
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()

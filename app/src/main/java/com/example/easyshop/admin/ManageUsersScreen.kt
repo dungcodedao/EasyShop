@@ -234,7 +234,7 @@ fun UserDetailContent(
     stats: UserStats,
     onToggleRole: () -> Unit
 ) {
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
+    // Removed hardcoded NumberFormat instance
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -278,8 +278,8 @@ fun UserDetailContent(
         DetailInfoRow(stringResource(id = R.string.user_id_label), user.uid)
         DetailInfoRow(stringResource(id = R.string.address), user.address.ifEmpty { stringResource(id = R.string.no_address_set) })
         DetailInfoRow(stringResource(id = R.string.total_items), stringResource(id = R.string.orders_count_label, stats.orderCount))
-        DetailInfoRow(stringResource(id = R.string.total_spent_label), currencyFormat.format(stats.totalSpent))
-        DetailInfoRow(stringResource(id = R.string.current_role_label), user.role.uppercase())
+        DetailInfoRow(stringResource(id = R.string.total_spent_label), com.example.easyshop.AppUtil.formatCurrency(stats.totalSpent))
+        DetailInfoRow(stringResource(id = R.string.current_role_label), if (user.role == "admin") stringResource(R.string.admin_label) else stringResource(R.string.customer_label))
 
         Spacer(Modifier.height(32.dp))
 
@@ -326,7 +326,7 @@ fun DetailInfoRow(label: String, value: String) {
 
 @Composable
 fun UserListItem(user: UserModel, stats: UserStats, onClick: () -> Unit) {
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
+    // Removed hardcoded NumberFormat instance
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -382,7 +382,7 @@ fun UserListItem(user: UserModel, stats: UserStats, onClick: () -> Unit) {
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = currencyFormat.format(stats.totalSpent),
+                    text = com.example.easyshop.AppUtil.formatCurrency(stats.totalSpent),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -396,7 +396,7 @@ fun UserListItem(user: UserModel, stats: UserStats, onClick: () -> Unit) {
             shape = RoundedCornerShape(10.dp)
         ) {
             Text(
-                text = user.role.uppercase(),
+                text = if (user.role == "admin") stringResource(R.string.admin_label).uppercase() else stringResource(R.string.customer_label).uppercase(),
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,

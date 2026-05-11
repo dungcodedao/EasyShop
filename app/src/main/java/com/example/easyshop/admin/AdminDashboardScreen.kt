@@ -198,7 +198,7 @@ fun AdminDashboardScreen(
                                 onClick = { navController.navigate("admin-notifications") },
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Icon(Icons.Default.Notifications, contentDescription = "Thông báo")
+                                Icon(Icons.Default.Notifications, contentDescription = stringResource(R.string.cd_notifications))
                             }
                         }
                         FilledTonalIconButton(
@@ -258,7 +258,7 @@ fun AdminDashboardScreen(
                                     )
                                     Spacer(Modifier.height(2.dp))
                                     Text(
-                                        adminName.replace("Admin", "Quản trị viên"),
+                                        if (adminName == "Admin") stringResource(R.string.admin_label) else adminName,
                                         style = MaterialTheme.typography.headlineMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = Color.White
@@ -279,7 +279,7 @@ fun AdminDashboardScreen(
                                                 .data(adminAvatar)
                                                 .crossfade(true)
                                                 .build(),
-                                            contentDescription = "Admin Avatar",
+                                            contentDescription = stringResource(R.string.cd_admin_avatar),
                                             modifier = Modifier.fillMaxSize().clip(CircleShape),
                                             contentScale = ContentScale.Crop
                                         )
@@ -312,7 +312,7 @@ fun AdminDashboardScreen(
                                     modifier = Modifier.weight(1f),
                                     icon = Icons.Default.Schedule,
                                     value = "$pendingOrders",
-                                    label = "Chờ xử lý",
+                                    label = stringResource(R.string.pending_orders_label),
                                     onClick = { navController.navigate("orders-management") }
                                 )
                                 StatCard(

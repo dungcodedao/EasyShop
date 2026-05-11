@@ -204,7 +204,7 @@ fun SignupScreen(
 
                     // Admin Code Toggle
                     Text(
-                        text = if (isAdminFieldVisible) "Tôi là khách hàng" else "Bạn là Quản trị viên?",
+                        text = if (isAdminFieldVisible) stringResource(id = R.string.i_am_customer) else stringResource(id = R.string.are_you_admin),
                         modifier = Modifier
                             .align(Alignment.End)
                             .clickableOnce { isAdminFieldVisible = !isAdminFieldVisible },
@@ -217,7 +217,7 @@ fun SignupScreen(
                         OutlinedTextField(
                             value = adminCode,
                             onValueChange = { adminCode = it },
-                            label = { Text("Mã xác thực Admin") },
+                            label = { Text(stringResource(id = R.string.admin_code_label)) },
                             leadingIcon = { Icon(Icons.Default.Shield, null, tint = primaryIndigo) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),

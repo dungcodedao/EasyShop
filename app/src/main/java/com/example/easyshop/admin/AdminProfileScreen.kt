@@ -1,6 +1,8 @@
 package com.example.easyshop.admin
 
+import android.app.Activity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,12 +22,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,11 +51,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.easyshop.AppUtil
+import com.example.easyshop.R
+import com.example.easyshop.util.LanguageManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -61,6 +73,10 @@ fun AdminProfileScreen(navController: NavController) {
     var adminName by remember { mutableStateOf("Admin") }
     var adminEmail by remember { mutableStateOf(currentUser?.email ?: "") }
     var adminAvatar by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    var showMenu by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
+    var currentAdminLang by remember { mutableStateOf(LanguageManager.getAdminLang(context)) }
 
     LaunchedEffect(Unit) {
         currentUser?.uid?.let { uid ->
@@ -72,32 +88,143 @@ fun AdminProfileScreen(navController: NavController) {
         }
     }
 
+    val primaryIndigo = Color(0xFF4F46E5)
+    val skyBlue = Color(0xFF0EA5E9)
+
     Scaffold(
         topBar = {
             Surface(tonalElevation = 2.dp) {
-                Row(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
                         .padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    contentAlignment = Alignment.Center
                 ) {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
+                    // Back button (trái)
+                    Box(modifier = Modifier.align(Alignment.CenterStart)) {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.cd_back),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
+
+                    // Title (giữa)
                     Text(
-                        text = "Hồ sơ Admin",
+                        text = stringResource(R.string.admin_profile_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
+
+                    // Menu 3 gạch (phải) — giống bên User
+                    Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = stringResource(id = R.string.cd_menu),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                            modifier = Modifier.width(240.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 4.dp
+                        ) {
+                            // Ngôn ngữ
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.language), fontWeight = FontWeight.Medium) },
+                                onClick = {
+                                    showMenu = false
+                                    showLanguageDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Language,
+                                        null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                trailingIcon = {
+                                    Text(
+                                        LanguageManager.displayName(currentAdminLang),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = primaryIndigo
+                                    )
+                                }
+                            )
+
+                            // Hỗ trợ
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.support_center), fontWeight = FontWeight.Medium) },
+                                onClick = {
+                                    showMenu = false
+                                    AppUtil.showToast(context, context.getString(R.string.support_contact, "support@easyshop.com"))
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Info,
+                                        null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            )
+
+                            // Phiên bản (disabled)
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.version_format, "1.0.0"), fontWeight = FontWeight.Medium) },
+                                onClick = { showMenu = false },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Info,
+                                        null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = Color.Gray
+                                    )
+                                },
+                                enabled = false
+                            )
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), thickness = 0.5.dp)
+
+                            // Đăng xuất
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(R.string.logout),
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    auth.signOut()
+                                    navController.navigate("auth") { popUpTo(0) { inclusive = true } }
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.ExitToApp,
+                                        null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
     ) { padding ->
-        val primaryIndigo = Color(0xFF4F46E5)
-        val skyBlue = Color(0xFF0EA5E9)
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -116,9 +243,7 @@ fun AdminProfileScreen(navController: NavController) {
                         .fillMaxWidth()
                         .height(200.dp)
                         .background(
-                            Brush.linearGradient(
-                                listOf(primaryIndigo, skyBlue)
-                            )
+                            Brush.linearGradient(listOf(primaryIndigo, skyBlue))
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -133,7 +258,7 @@ fun AdminProfileScreen(navController: NavController) {
                             if (adminAvatar.isNotEmpty()) {
                                 AsyncImage(
                                     model = adminAvatar,
-                                    contentDescription = "Avatar",
+                                    contentDescription = stringResource(R.string.cd_avatar),
                                     modifier = Modifier.fillMaxSize().clip(CircleShape),
                                     contentScale = ContentScale.Crop
                                 )
@@ -164,43 +289,82 @@ fun AdminProfileScreen(navController: NavController) {
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
-                        Text("Thông tin tài khoản", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = primaryIndigo)
+                        Text(
+                            stringResource(R.string.account_info_label),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = primaryIndigo
+                        )
                         Spacer(modifier = Modifier.height(16.dp))
-                        InfoRow(label = "Tên", value = adminName)
-                        InfoRow(label = "Email", value = adminEmail)
-                        InfoRow(label = "Vai trò", value = "Quản trị viên")
+                        InfoRow(label = stringResource(R.string.full_name), value = adminName)
+                        InfoRow(label = stringResource(R.string.email), value = adminEmail)
+                        InfoRow(label = stringResource(R.string.role_label), value = stringResource(R.string.admin_label))
                     }
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
             }
-
-            // Pinned Footer
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Button(
-                    onClick = {
-                        auth.signOut()
-                        navController.navigate("auth") { popUpTo(0) { inclusive = true } }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp),
-                    shape = RoundedCornerShape(27.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryIndigo)
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, tint = Color.White)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Đăng xuất", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
         }
     }
+
+    // --- Language Picker Dialog (Admin) ---
+    if (showLanguageDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showLanguageDialog = false },
+            title = {
+                Text(stringResource(R.string.language), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    listOf(
+                        LanguageManager.LANG_VI to "🇻🇳  Tiếng Việt",
+                        LanguageManager.LANG_EN to "🇬🇧  English"
+                    ).forEach { (tag, label) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    if (tag == currentAdminLang) return@clickable
+                                    currentAdminLang = tag
+                                    val activity = (context as? Activity)
+                                    LanguageManager.setAdminLang(context, tag)
+                                    activity?.overridePendingTransition(0, 0)
+                                    activity?.recreate()
+                                }
+                                .background(
+                                    if (currentAdminLang == tag)
+                                        primaryIndigo.copy(alpha = 0.1f)
+                                    else Color.Transparent
+                                )
+                                .padding(horizontal = 12.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(label, style = MaterialTheme.typography.bodyLarge)
+                            if (currentAdminLang == tag) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = primaryIndigo,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = { showLanguageDialog = false }
+                ) { Text(stringResource(R.string.cancel)) }
+            },
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
 }
+
 @Composable
 private fun InfoRow(label: String, value: String) {
     Row(
@@ -212,6 +376,5 @@ private fun InfoRow(label: String, value: String) {
         Text(text = label, color = Color(0xFF6B7280), fontSize = 14.sp)
         Text(text = value, fontWeight = FontWeight.Medium, fontSize = 14.sp)
     }
-    Divider(color = Color(0xFFF3F4F6))
+    HorizontalDivider(color = Color(0xFFF3F4F6))
 }
-

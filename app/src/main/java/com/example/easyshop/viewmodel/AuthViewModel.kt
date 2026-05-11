@@ -6,9 +6,10 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 
-class AuthViewModel : ViewModel() {
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+class AuthViewModel(
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+) : ViewModel() {
 
     /**
      * Signup function với auto-assign admin role
@@ -26,7 +27,7 @@ class AuthViewModel : ViewModel() {
                     val userId = auth.currentUser?.uid ?: ""
 
                     // ✅ Gán quyền Admin nếu nhập đúng mã bí mật
-                    val userRole = if (adminCode == "EASY_ADMIN_2024") {
+                    val userRole = if (adminCode == com.example.easyshop.AppConfig.ADMIN_SECRET_CODE) {
                         "admin"
                     } else {
                         "user"

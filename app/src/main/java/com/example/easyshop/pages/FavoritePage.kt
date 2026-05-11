@@ -83,7 +83,7 @@ fun FavoritePage(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(favoriteProducts) { product ->
+                        items(favoriteProducts, key = { it.id }) { product ->
                             ProductItemView(product = product)
                         }
                     }

@@ -132,7 +132,7 @@ fun CartPage(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.cd_back),
                             modifier = Modifier.size(22.dp),
                             tint = MaterialTheme.colorScheme.onSurface 
                         )
@@ -255,7 +255,7 @@ private fun EmptyCart() {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Dạo một vòng cửa hàng và tìm món đồ bạn yêu thích nhé!",
+            text = stringResource(id = R.string.cart_empty_hint),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -289,8 +289,8 @@ private fun CartContent(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
                 .navigationBarsPadding()
-                .padding(bottom = 0.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Card(
@@ -322,13 +322,13 @@ private fun CartContent(
             Button(
                 onClick = onCheckoutClick,
                 modifier = Modifier
-                    .width(220.dp)
-                    .height(48.dp),
+                    .fillMaxWidth(0.8f)
+                    .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF4F46E5)
                 ),
-                shape = RoundedCornerShape(24.dp),
-                elevation = ButtonDefaults.buttonElevation(4.dp)
+                shape = RoundedCornerShape(28.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 Text(
                     text = stringResource(id = R.string.checkout),

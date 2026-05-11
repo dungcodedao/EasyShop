@@ -122,13 +122,14 @@ fun ReceiptScreen(
                 ) {
                     OutlinedButton(
                         onClick = {
+                            /* Tạm thời khóa tính năng in do lỗi crash app
                             val currentOrder = orderData ?: return@OutlinedButton
                             val itemsHtml = currentOrder.items.map { (pid, qty) ->
                                 val p = productsData[pid]
                                 val priceValue = p?.actualPrice?.toDoubleOrNull() ?: p?.price?.toDoubleOrNull() ?: 0.0
                                 """
                                 <tr>
-                                    <td>${p?.title ?: "Sản phẩm"}</td>
+                                    <td>${p?.title ?: context.getString(R.string.product_column)}</td>
                                     <td style="text-align:center">$qty</td>
                                     <td style="text-align:right">${AppUtil.formatPrice(priceValue * qty)}</td>
                                 </tr>
@@ -144,41 +145,38 @@ fun ReceiptScreen(
                                 itemsHtml = itemsHtml
                             )
                             PrintHelper.printHtml(context, html, "EasyShop_Invoice_${currentOrder.id}")
+                            */
                         },
                         modifier = Modifier.weight(1f).height(56.dp),
+                        enabled = false, // Vô hiệu hóa nút
                         shape = RoundedCornerShape(16.dp),
-                        border = ButtonDefaults.outlinedButtonBorder(true).copy(width = 1.dp)
+                        border = ButtonDefaults.outlinedButtonBorder(false).copy(width = 1.dp)
                     ) {
-                        Icon(Icons.Default.Print, null)
+                        Icon(Icons.Default.Print, null, tint = Color.Gray)
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(id = R.string.print_save_pdf))
+                        Text(stringResource(id = R.string.print_save_pdf), color = Color.Gray)
                     }
 
                     val canGoBack = navController.previousBackStackEntry != null
                     
                     Button(
                         onClick = {
-                            // Quay lại screen gần nhất
-                            val popped = navController.popBackStack()
-                            if (!popped) {
-                                // Nếu không còn gì để quay lại (ví dụ sau khi payment), chuyển về dashboard tương ứng
-                                val destination = if (fromAdmin) "admin-dashboard" else "home"
-                                navController.navigate(destination) {
-                                    popUpTo(destination) { inclusive = true }
-                                }
+                            // Nhảy thẳng về Home/Dashboard và dọn sạch stack
+                            val destination = if (fromAdmin) "admin-dashboard" else "home"
+                            navController.navigate(destination) {
+                                popUpTo(destination) { inclusive = true }
                             }
                         },
                         modifier = Modifier.weight(1f).height(56.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {
                         Icon(
-                            imageVector = if (canGoBack) Icons.Default.ArrowBack else Icons.Default.Home, 
+                            imageVector = Icons.Default.Home, 
                             contentDescription = null
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = if (canGoBack) stringResource(id = R.string.back_nav) 
-                                   else if (fromAdmin) stringResource(id = R.string.admin_dashboard_title) 
+                            text = if (fromAdmin) stringResource(id = R.string.admin_dashboard_title) 
                                    else stringResource(id = R.string.back_to_home)
                         )
                     }
@@ -221,7 +219,7 @@ fun ReceiptScreen(
                             letterSpacing = 1.sp
                         )
                         Text(
-                            "Chuyên linh kiện & Phụ kiện PC cao cấp",
+                            stringResource(R.string.brand_subtitle),
                             style = MaterialTheme.typography.labelMedium,
                             color = Color.Gray
                         )
@@ -237,7 +235,7 @@ fun ReceiptScreen(
 
                         // Receipt Header
                         Text(
-                            "HÓA ĐƠN BÁN LẺ",
+                            stringResource(R.string.retail_invoice),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
@@ -245,10 +243,10 @@ fun ReceiptScreen(
                         Spacer(Modifier.height(16.dp))
 
                         // Metadata
-                        InvoiceMetaRow("Mã đơn hàng", "#${orderId.uppercase()}")
-                        InvoiceMetaRow("Ngày giờ", formatTimestamp(orderData?.date))
-                        InvoiceMetaRow("Khách hàng", orderData?.userName ?: "Khách hàng lẻ")
-                        InvoiceMetaRow("Thanh toán", orderData?.paymentMethod ?: "N/A")
+                        InvoiceMetaRow(stringResource(R.string.order_id_label), "#${orderId.uppercase()}")
+                        InvoiceMetaRow(stringResource(R.string.date_time_label), formatTimestamp(orderData?.date))
+                        InvoiceMetaRow(stringResource(R.string.customer_label), orderData?.userName ?: stringResource(R.string.guest_customer))
+                        InvoiceMetaRow(stringResource(R.string.payment_label), orderData?.paymentMethod ?: "N/A")
 
                         Spacer(Modifier.height(24.dp))
                         DashedDivider()
@@ -256,9 +254,9 @@ fun ReceiptScreen(
 
                         // Items Table Header
                         Row(modifier = Modifier.fillMaxWidth()) {
-                            Text("Sản phẩm", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-                            Text("SL", style = MaterialTheme.typography.labelMedium, color = Color.Gray, modifier = Modifier.width(30.dp), textAlign = TextAlign.Center)
-                            Text("Thành tiền", style = MaterialTheme.typography.labelMedium, color = Color.Gray, modifier = Modifier.width(90.dp), textAlign = TextAlign.End)
+                            Text(stringResource(R.string.product_column), modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                            Text(stringResource(R.string.quantity_column), style = MaterialTheme.typography.labelMedium, color = Color.Gray, modifier = Modifier.width(30.dp), textAlign = TextAlign.Center)
+                            Text(stringResource(R.string.amount_column), style = MaterialTheme.typography.labelMedium, color = Color.Gray, modifier = Modifier.width(90.dp), textAlign = TextAlign.End)
                         }
                         
                         Spacer(Modifier.height(12.dp))
@@ -273,7 +271,7 @@ fun ReceiptScreen(
                                 verticalAlignment = Alignment.Top
                             ) {
                                 Text(
-                                    product?.title ?: "Sản phẩm ID: $productId",
+                                    product?.title ?: (stringResource(R.string.product_column) + " ID: $productId"),
                                     modifier = Modifier.weight(1f),
                                     style = MaterialTheme.typography.bodySmall,
                                     maxLines = 2
@@ -299,13 +297,13 @@ fun ReceiptScreen(
                         Spacer(Modifier.height(20.dp))
 
                         // Summary
-                        SummaryRow("Tạm tính", AppUtil.formatPrice(orderData?.subtotal ?: amount))
-                        SummaryRow("Phí vận chuyển", "Miễn phí")
+                        SummaryRow(stringResource(R.string.subtotal), AppUtil.formatPrice(orderData?.subtotal ?: amount))
+                        SummaryRow(stringResource(R.string.shipping_fee), stringResource(R.string.free_shipping))
                         if ((orderData?.discount ?: 0.0) > 0) {
-                            SummaryRow("Giảm giá Promo", "- ${AppUtil.formatPrice(orderData?.discount ?: 0.0)}")
+                            SummaryRow(stringResource(R.string.promo_discount_label), "- ${AppUtil.formatPrice(orderData?.discount ?: 0.0)}")
                             if (orderData?.promoCode?.isNotEmpty() == true) {
                                 Text(
-                                    "Mã áp dụng: ${orderData?.promoCode}",
+                                    stringResource(R.string.applied_code_prefix, orderData?.promoCode ?: ""),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.fillMaxWidth(),
@@ -321,7 +319,7 @@ fun ReceiptScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("TỔNG CỘNG", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
+                            Text(stringResource(R.string.total_all_caps), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
                             Text(
                                 AppUtil.formatPrice(orderData?.total ?: amount),
                                 style = MaterialTheme.typography.headlineSmall,
@@ -346,13 +344,13 @@ fun ReceiptScreen(
                         
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            "Cảm ơn quý khách đã mua hàng!",
+                            stringResource(R.string.thank_you_customer),
                             style = MaterialTheme.typography.labelMedium,
                             color = Color.Gray,
                             fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                         )
                         Text(
-                            "Vui lòng quét QR để tra cứu bảo hành điện tử",
+                            stringResource(R.string.warranty_qr_note),
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.LightGray
                         )

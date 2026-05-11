@@ -55,6 +55,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -70,6 +71,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -104,6 +106,7 @@ fun AddProductPage(
     var actualPrice by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
     var inStock by remember { mutableStateOf(true) }
+    var stockCount by remember { mutableStateOf("10") } // Mặc định là 10 để tránh lỗi hết hàng
 
     // Dynamic specifications
     var specifications by remember { mutableStateOf(listOf<Pair<String, String>>()) }
@@ -120,6 +123,7 @@ fun AddProductPage(
     var uploadProgress by remember { mutableStateOf("") }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val pleaseFillAllFields = stringResource(R.string.please_fill_all_fields)
     var categoryExpanded by remember { mutableStateOf(false) }
     var categories by remember { mutableStateOf<List<CategoryModel>>(emptyList()) }
 
@@ -152,7 +156,7 @@ fun AddProductPage(
     // Save product to Firestore (with Cloudinary upload support)
     fun saveProduct() {
         if (title.isBlank() || category.isBlank() || price.isBlank()) {
-            errorMessage = context.getString(R.string.please_fill_all_fields)
+            errorMessage = pleaseFillAllFields
             return
         }
 
@@ -170,7 +174,7 @@ fun AddProductPage(
                 // 2. Upload selected images from device to Cloudinary
                 if (localUris.isNotEmpty()) {
                     localUris.forEachIndexed { index, uri ->
-                        uploadProgress = "Đang upload ảnh ${index + 1}/${localUris.size}..."
+                        uploadProgress = context.getString(R.string.upload_image_progress, index + 1, localUris.size)
                         productRepository.uploadProductImage(uri).collectLatest { result ->
                             result.fold(
                                 onSuccess = { url -> finalImageUrls.add(url) },
@@ -186,13 +190,13 @@ fun AddProductPage(
                 val distinctUrls = finalImageUrls.distinct().take(5)
 
                 if (distinctUrls.isEmpty()) {
-                    errorMessage = "Vui lòng chọn ảnh hoặc nhập URL"
+                    errorMessage = context.getString(R.string.select_image_error)
                     isLoading = false
                     uploadProgress = ""
                     return@launch
                 }
 
-                uploadProgress = "Đang lưu sản phẩm..."
+                uploadProgress = context.getString(R.string.saving_product)
 
                 val otherDetails = specifications
                     .filter { it.first.isNotBlank() && it.second.isNotBlank() }
@@ -208,6 +212,7 @@ fun AddProductPage(
                     "actualPrice" to actualPrice.ifBlank { price },
                     "category" to category,
                     "inStock" to inStock,
+                    "stockCount" to (stockCount.toIntOrNull() ?: 0).coerceAtLeast(0),
                     "images" to distinctUrls,
                     "otherDetails" to otherDetails
                 )
@@ -226,12 +231,13 @@ fun AddProductPage(
                 price = ""
                 actualPrice = ""
                 category = ""
+                stockCount = "10"
                 specifications = emptyList()
                 mediaItems = emptyList()
 
             } catch (e: Exception) {
                 Log.e("AddProductPage", "Upload error: ${e.message}", e)
-                errorMessage = "Lỗi upload: ${e.message}"
+                errorMessage = context.getString(R.string.upload_error_prefix, e.message)
             } finally {
                 isLoading = false
                 uploadProgress = ""
@@ -258,7 +264,7 @@ fun AddProductPage(
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(id = R.string.cd_back),
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -342,12 +348,12 @@ fun AddProductPage(
                                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                                 Icon(
                                                     Icons.Default.Add,
-                                                    contentDescription = "Thêm ảnh",
+                                                    contentDescription = stringResource(R.string.add_label_short),
                                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                                 Spacer(modifier = Modifier.height(4.dp))
                                                 Text(
-                                                    "Thêm",
+                                                    stringResource(R.string.add_label_short),
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
@@ -473,7 +479,7 @@ fun AddProductPage(
                                     ) {
                                         Icon(
                                             Icons.Default.Delete,
-                                            contentDescription = "Remove",
+                                            contentDescription = stringResource(id = R.string.cd_remove),
                                             tint = MaterialTheme.colorScheme.error
                                         )
                                     }
@@ -516,6 +522,24 @@ fun AddProductPage(
                     suffix = { Text("đ") }
                 )
             }
+
+            // Stock Count Field
+            OutlinedTextField(
+                value = stockCount,
+                onValueChange = { 
+                    if (it.all { char -> char.isDigit() }) {
+                        stockCount = it
+                        // Auto-toggle inStock based on count
+                        val count = it.toIntOrNull() ?: 0
+                        inStock = count > 0
+                    }
+                },
+                label = { Text("${stringResource(R.string.stock_count_label)}") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                leadingIcon = { Icon(Icons.Default.CheckCircle, null) }
+            )
 
             // In Stock Switch
             Row(
@@ -596,7 +620,7 @@ fun AddProductPage(
                         value = specKey,
                         onValueChange = { specKey = it },
                         label = { Text(stringResource(id = R.string.specification_name)) },
-                        placeholder = { Text("e.g. Screen Size, RAM, CPU") },
+                        placeholder = { Text(stringResource(R.string.spec_key_hint)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -604,7 +628,7 @@ fun AddProductPage(
                         value = specValue,
                         onValueChange = { specValue = it },
                         label = { Text(stringResource(id = R.string.value)) },
-                        placeholder = { Text("e.g. 6.67 Inches, 8 GB") },
+                        placeholder = { Text(stringResource(R.string.spec_value_hint)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -667,14 +691,14 @@ fun AddProductPage(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    "Thêm hình ảnh",
+                    stringResource(R.string.add_image_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
                 
                 ListItem(
-                    headlineContent = { Text("Thư viện ảnh") },
-                    supportingContent = { Text("Chọn ảnh có sẵn trong máy") },
+                    headlineContent = { Text(stringResource(R.string.gallery_label)) },
+                    supportingContent = { Text(stringResource(R.string.gallery_desc)) },
                     leadingContent = { 
                         Icon(
                             Icons.Default.PhotoLibrary, 
@@ -689,8 +713,8 @@ fun AddProductPage(
                 )
                 
                 ListItem(
-                    headlineContent = { Text("Nhập link URL") },
-                    supportingContent = { Text("Sử dụng ảnh từ internet") },
+                    headlineContent = { Text(stringResource(R.string.url_link_label)) },
+                    supportingContent = { Text(stringResource(R.string.url_link_desc)) },
                     leadingContent = { 
                         Icon(
                             Icons.Default.Link, 
@@ -713,12 +737,12 @@ fun AddProductPage(
     if (showUrlDialog) {
         AlertDialog(
             onDismissRequest = { showUrlDialog = false },
-            title = { Text("Nhập Link Ảnh") },
+            title = { Text(stringResource(R.string.enter_image_url_title)) },
             text = {
                 OutlinedTextField(
                     value = urlInput,
                     onValueChange = { urlInput = it },
-                    label = { Text("URL (https://...)") },
+                    label = { Text(stringResource(R.string.image_url_label)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             },
@@ -731,10 +755,10 @@ fun AddProductPage(
                             showUrlDialog = false
                         }
                     }
-                ) { Text("Thêm") }
+                ) { Text(stringResource(R.string.add_label_short)) }
             },
             dismissButton = {
-                TextButton(onClick = { showUrlDialog = false }) { Text("Hủy") }
+                TextButton(onClick = { showUrlDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -786,7 +810,7 @@ fun MediaItemCard(
         ) {
             Icon(
                 Icons.Default.Close,
-                contentDescription = "Xóa",
+                contentDescription = stringResource(id = R.string.cd_close),
                 tint = Color.White,
                 modifier = Modifier.size(14.dp)
             )

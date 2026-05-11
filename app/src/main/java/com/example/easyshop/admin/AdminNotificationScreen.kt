@@ -1,6 +1,8 @@
 package com.example.easyshop.admin
 
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.res.stringResource
+import com.example.easyshop.R
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -60,6 +62,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -82,10 +85,10 @@ private fun formatRelativeTime(timestamp: Timestamp): String {
     val diffH = TimeUnit.MILLISECONDS.toHours(diffMs)
     val diffD = TimeUnit.MILLISECONDS.toDays(diffMs)
     return when {
-        diffMin < 1  -> "Vừa xong"
-        diffMin < 60 -> "${diffMin} phút trước"
-        diffH < 24   -> "${diffH} giờ trước"
-        diffD < 7    -> "${diffD} ngày trước"
+        diffMin < 1  -> com.example.easyshop.AppUtil.getString(R.string.time_just_now)
+        diffMin < 60 -> com.example.easyshop.AppUtil.getString(R.string.time_minutes_ago, diffMin)
+        diffH < 24   -> com.example.easyshop.AppUtil.getString(R.string.time_hours_ago, diffH)
+        diffD < 7    -> com.example.easyshop.AppUtil.getString(R.string.time_days_ago, diffD)
         else         -> SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(timestamp.toDate())
     }
 }
@@ -108,6 +111,7 @@ private fun styleFor(type: String): NotifStyle = when (type) {
 @Composable
 fun AdminNotificationScreen(navController: NavController) {
     val db = FirebaseFirestore.getInstance()
+    val context = LocalContext.current
 
     var notifications by remember { mutableStateOf<List<NotificationModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -170,10 +174,26 @@ fun AdminNotificationScreen(navController: NavController) {
     // Gửi thông báo cho user khi Admin cập nhật trạng thái đơn hàng từ popup
     fun notifyUserOrderStatus(order: OrderModel, newStatus: String) {
         val (title, body, type) = when (newStatus) {
-            "SHIPPING"  -> Triple("Đơn hàng đang vận chuyển", "Đơn #${order.id.take(8).uppercase()} đang trên đường giao đến bạn.", "SHIPPING")
-            "DELIVERED" -> Triple("Đơn hàng đã giao thành công", "Đơn #${order.id.take(8).uppercase()} đã giao thành công. Cảm ơn bạn!", "DELIVERED")
-            "CANCELLED" -> Triple("Đơn hàng đã bị hủy", "Đơn #${order.id.take(8).uppercase()} đã bị hủy.", "CANCELLED")
-            else -> Triple("Cập nhật đơn hàng", "Trạng thái mới: $newStatus", "ORDER_STATUS")
+            "SHIPPING"  -> Triple(
+                com.example.easyshop.AppUtil.getString(R.string.order_notif_shipping_title),
+                com.example.easyshop.AppUtil.getString(R.string.order_notif_shipping_body, order.id.take(8).uppercase()),
+                "SHIPPING"
+            )
+            "DELIVERED" -> Triple(
+                com.example.easyshop.AppUtil.getString(R.string.order_notif_delivered_title),
+                com.example.easyshop.AppUtil.getString(R.string.order_notif_delivered_body, order.id.take(8).uppercase()),
+                "DELIVERED"
+            )
+            "CANCELLED" -> Triple(
+                com.example.easyshop.AppUtil.getString(R.string.order_notif_cancelled_title),
+                com.example.easyshop.AppUtil.getString(R.string.order_notif_cancelled_body, order.id.take(8).uppercase()),
+                "CANCELLED"
+            )
+            else -> Triple(
+                com.example.easyshop.AppUtil.getString(R.string.order_notif_update_title),
+                com.example.easyshop.AppUtil.getString(R.string.order_notif_update_body, order.id.take(8).uppercase(), newStatus),
+                "ORDER_STATUS"
+            )
         }
         val notif = hashMapOf(
             "userId" to order.userId,
@@ -207,10 +227,10 @@ fun AdminNotificationScreen(navController: NavController) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                     Text(
-                        text = "Thông báo",
+                        text = stringResource(R.string.notif_screen_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f).padding(start = 4.dp)
@@ -221,19 +241,19 @@ fun AdminNotificationScreen(navController: NavController) {
                     ) {
                         if (unreadCount > 0) {
                             TextButton(onClick = { markAllAsRead() }) {
-                                Text("Đọc tất cả", fontSize = 13.sp)
+                                Text(stringResource(R.string.read_all_btn), fontSize = 13.sp)
                             }
                         }
                         if (notifications.isNotEmpty()) {
                             IconButton(onClick = {
                                 notifications.forEach {
                                     db.collection("notifications").document(it.id).delete()
-                                        .addOnFailureListener { e -> com.example.easyshop.AppUtil.showError("Lỗi xóa: ${e.message}") }
+                                        .addOnFailureListener { e -> com.example.easyshop.AppUtil.showError(context.getString(R.string.delete_error_prefix, e.message)) }
                                 }
                                 notifications = emptyList() // Update UI ngay lập tức
-                                com.example.easyshop.AppUtil.showSuccess("Đã xóa tất cả thông báo")
+                                com.example.easyshop.AppUtil.showSuccess(context.getString(R.string.delete_all_success))
                             }) {
-                                Icon(Icons.Default.DeleteSweep, contentDescription = "Xóa tất cả", tint = Color.Red.copy(alpha=0.7f))
+                                Icon(Icons.Default.DeleteSweep, contentDescription = stringResource(R.string.notif_delete_all), tint = Color.Red.copy(alpha=0.7f))
                             }
                         }
                     }
@@ -274,7 +294,7 @@ fun AdminNotificationScreen(navController: NavController) {
                                             if (order != null) {
                                                 selectedOrder = order
                                             } else {
-                                                com.example.easyshop.AppUtil.showError("Đơn hàng không tồn tại!")
+                                                com.example.easyshop.AppUtil.showError(context.getString(R.string.order_not_exist))
                                             }
                                         }
                                     }
@@ -282,9 +302,9 @@ fun AdminNotificationScreen(navController: NavController) {
                                 onDelete = {
                                     db.collection("notifications").document(notif.id).delete()
                                         .addOnSuccessListener {
-                                            com.example.easyshop.AppUtil.showSuccess("Đã xóa thông báo thành công")
+                                            com.example.easyshop.AppUtil.showSuccess(context.getString(R.string.delete_notif_success))
                                         }
-                                        .addOnFailureListener { e -> com.example.easyshop.AppUtil.showError("Lỗi xóa: ${e.message}") }
+                                        .addOnFailureListener { e -> com.example.easyshop.AppUtil.showError(context.getString(R.string.delete_error_prefix, e.message)) }
                                     notifications = notifications.filter { it.id != notif.id } // Update UI ngay lập tức
                                 }
                             )
@@ -313,10 +333,10 @@ fun AdminNotificationScreen(navController: NavController) {
                             
                             selectedOrder = selectedOrder!!.copy(status = newStatus)
                             notifyUserOrderStatus(selectedOrder!!, newStatus)
-                            com.example.easyshop.AppUtil.showSuccess("Đã cập nhật trạng thái đơn hàng!")
+                            com.example.easyshop.AppUtil.showSuccess(context.getString(R.string.update_order_status_success))
                         }
                         .addOnFailureListener {
-                            com.example.easyshop.AppUtil.showError("Cập nhật thất bại: ${it.message}")
+                            com.example.easyshop.AppUtil.showError(context.getString(R.string.update_failed_prefix, it.message))
                         }
                 }
             )
@@ -344,7 +364,7 @@ private fun AdminNotifSummaryHeader(totalCount: Int, unreadCount: Int) {
         ) {
             SummaryChip(
                 value = totalCount.toString(),
-                label = "Tổng cộng",
+                label = stringResource(R.string.notif_total),
                 icon = Icons.Rounded.Notifications,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -354,7 +374,7 @@ private fun AdminNotifSummaryHeader(totalCount: Int, unreadCount: Int) {
             )
             SummaryChip(
                 value = unreadCount.toString(),
-                label = "Chưa đọc",
+                label = stringResource(R.string.notif_unread),
                 icon = Icons.Rounded.FiberNew,
                 color = if (unreadCount > 0) Color(0xFFE53935) else MaterialTheme.colorScheme.primary
             )
@@ -364,7 +384,7 @@ private fun AdminNotifSummaryHeader(totalCount: Int, unreadCount: Int) {
             )
             SummaryChip(
                 value = (totalCount - unreadCount).toString(),
-                label = "Đã đọc",
+                label = stringResource(R.string.notif_read),
                 icon = Icons.Rounded.DoneAll,
                 color = Color(0xFF388E3C)
             )
@@ -465,7 +485,7 @@ private fun NotificationItem(notif: NotificationModel, onClick: () -> Unit, onDe
                 ) {
                     Icon(
                         Icons.Default.DeleteOutline,
-                        contentDescription = "Xóa",
+                        contentDescription = stringResource(R.string.delete_action),
                         modifier = Modifier.size(22.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=0.6f)
                     )
@@ -478,13 +498,13 @@ private fun NotificationItem(notif: NotificationModel, onClick: () -> Unit, onDe
 @Composable
 private fun NotifTypeBadge(type: String, style: NotifStyle) {
     val label = when (type) {
-        "NEW_ORDER"    -> "Đơn mới"
-        "SHIPPING"     -> "Vận chuyển"
-        "DELIVERED"    -> "Đã giao"
-        "CANCELLED"    -> "Đã hủy"
-        "ORDER_STATUS" -> "Cập nhật"
-        "PROMO"        -> "Khuyến mãi"
-        else           -> "Hệ thống"
+        "NEW_ORDER"    -> stringResource(R.string.notif_type_new_order)
+        "SHIPPING"     -> stringResource(R.string.notif_type_shipping)
+        "DELIVERED"    -> stringResource(R.string.notif_type_delivered)
+        "CANCELLED"    -> stringResource(R.string.notif_type_cancelled)
+        "ORDER_STATUS" -> stringResource(R.string.notif_type_order_status)
+        "PROMO"        -> stringResource(R.string.notif_type_promo)
+        else           -> stringResource(R.string.notif_type_system)
     }
     Surface(
         shape = RoundedCornerShape(6.dp),
@@ -516,14 +536,14 @@ private fun EmptyNotificationState(modifier: Modifier = Modifier) {
         )
         Spacer(Modifier.height(16.dp))
         Text(
-            "Chưa có thông báo nào",
+            stringResource(R.string.notif_empty_title),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.SemiBold
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            "Khi có đơn mới hoặc cập nhật trạng thái,\nthông báo sẽ hiện ở đây.",
+            stringResource(R.string.notif_empty_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.outline,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center

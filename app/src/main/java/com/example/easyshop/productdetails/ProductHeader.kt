@@ -111,7 +111,7 @@ fun ProductHeader(
                 
                 if (inStock) {
                     Text(
-                        text = "Còn $stockCount sản phẩm",
+                        text = stringResource(id = R.string.items_in_stock, stockCount),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp, end = 4.dp)

@@ -1,5 +1,6 @@
 package com.example.easyshop.pages
 
+import android.content.Context
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -20,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -27,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.easyshop.AppUtil
+import com.example.easyshop.R
 import com.example.easyshop.components.PromoSection
 import com.example.easyshop.model.NotificationModel
 import com.example.easyshop.model.PromoCodeModel
@@ -41,17 +45,17 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.delay
 
 // ─── Hàm tiện ích: format thời gian tương đối ────────────────────────────────
-private fun formatRelativeTime(timestamp: Timestamp): String {
+private fun formatRelativeTime(timestamp: Timestamp, context: Context): String {
     val now = System.currentTimeMillis()
     val diffMs = now - timestamp.toDate().time
     val diffMin = TimeUnit.MILLISECONDS.toMinutes(diffMs)
     val diffH = TimeUnit.MILLISECONDS.toHours(diffMs)
     val diffD = TimeUnit.MILLISECONDS.toDays(diffMs)
     return when {
-        diffMin < 1  -> "Vừa xong"
-        diffMin < 60 -> "${diffMin} phút trước"
-        diffH < 24   -> "${diffH} giờ trước"
-        diffD < 7    -> "${diffD} ngày trước"
+        diffMin < 1  -> context.getString(R.string.just_now)
+        diffMin < 60 -> context.getString(R.string.time_minutes_ago, diffMin)
+        diffH < 24   -> context.getString(R.string.time_hours_ago, diffH)
+        diffD < 7    -> context.getString(R.string.time_days_ago, diffD)
         else         -> SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(timestamp.toDate())
     }
 }
@@ -126,16 +130,16 @@ fun NotificationsPage(navController: NavController) {
     // Function to save promo code
     fun savePromoCode(code: String) {
         if (uid == null) {
-            AppUtil.showToast(context, "Vui lòng đăng nhập để lưu mã")
+            AppUtil.showToast(context, context.getString(R.string.login_required_to_save_promo))
             return
         }
         db.collection("users").document(uid)
             .update("savedPromoCodes", FieldValue.arrayUnion(code))
             .addOnSuccessListener {
-                AppUtil.showSuccess("Đã lưu mã giảm giá vào ví!")
+                AppUtil.showSuccess(context.getString(R.string.promo_saved_success))
             }
             .addOnFailureListener {
-                AppUtil.showError("Lỗi", "Không thể lưu mã giảm giá")
+                AppUtil.showError(context.getString(R.string.promo_save_error_title), context.getString(R.string.promo_save_error_message))
             }
     }
 
@@ -178,10 +182,10 @@ fun NotificationsPage(navController: NavController) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                     Text(
-                        text = "Thông báo",
+                        text = stringResource(R.string.notification_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f).padding(start = 4.dp)
@@ -192,7 +196,7 @@ fun NotificationsPage(navController: NavController) {
                     ) {
                         if (unreadCount > 0) {
                             TextButton(onClick = { markAllAsRead() }) {
-                                Text("Đọc tất cả", fontSize = 13.sp)
+                                Text(stringResource(R.string.notif_read_all), fontSize = 13.sp)
                             }
                         }
                         if (notifications.isNotEmpty()) {
@@ -203,10 +207,10 @@ fun NotificationsPage(navController: NavController) {
                                 }
                                 batch.commit().addOnSuccessListener {
                                     notifications = emptyList()
-                                    com.example.easyshop.AppUtil.showSuccess("Đã xóa tất cả thông báo")
+                                    com.example.easyshop.AppUtil.showSuccess(context.getString(R.string.delete_all_success))
                                 }
                             }) {
-                                Icon(Icons.Default.DeleteSweep, contentDescription = "Xóa tất cả", tint = Color.Red.copy(alpha=0.7f))
+                                Icon(Icons.Default.DeleteSweep, contentDescription = stringResource(R.string.notif_delete_all), tint = Color.Red.copy(alpha=0.7f))
                             }
                         }
                     }
@@ -258,7 +262,7 @@ fun NotificationsPage(navController: NavController) {
                                 },
                                 onDelete = {
                                     db.collection("notifications").document(notif.id).delete().addOnSuccessListener {
-                                        com.example.easyshop.AppUtil.showSuccess("Đã xóa thông báo thành công")
+                                        com.example.easyshop.AppUtil.showSuccess(context.getString(R.string.delete_notif_success))
                                     }
                                     notifications = notifications.filter { it.id != notif.id } // Update UI ngay lập tức
                                 }
@@ -295,7 +299,7 @@ private fun UserNotifSummaryHeader(totalCount: Int, unreadCount: Int) {
         ) {
             SummaryChip(
                 value = totalCount.toString(),
-                label = "Tổng cộng",
+                label = stringResource(R.string.notif_total),
                 icon = Icons.Rounded.Notifications,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -305,7 +309,7 @@ private fun UserNotifSummaryHeader(totalCount: Int, unreadCount: Int) {
             )
             SummaryChip(
                 value = unreadCount.toString(),
-                label = "Chưa đọc",
+                label = stringResource(R.string.notif_unread),
                 icon = Icons.Rounded.FiberNew,
                 color = if (unreadCount > 0) Color(0xFFE53935) else MaterialTheme.colorScheme.primary
             )
@@ -394,8 +398,9 @@ private fun NotificationItem(notif: NotificationModel, onClick: () -> Unit, onDe
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
+                val ctx = LocalContext.current
                 Text(
-                    text = formatRelativeTime(notif.createdAt),
+                    text = formatRelativeTime(notif.createdAt, ctx),
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -406,7 +411,7 @@ private fun NotificationItem(notif: NotificationModel, onClick: () -> Unit, onDe
                 ) {
                     Icon(
                         Icons.Default.DeleteOutline,
-                        contentDescription = "Xóa",
+                        contentDescription = stringResource(R.string.delete),
                         modifier = Modifier.size(22.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=0.6f)
                     )
@@ -419,13 +424,13 @@ private fun NotificationItem(notif: NotificationModel, onClick: () -> Unit, onDe
 @Composable
 private fun NotifTypeBadge(type: String, style: NotifStyle) {
     val label = when (type) {
-        "NEW_ORDER"    -> "Đơn mới"
-        "SHIPPING"     -> "Vận chuyển"
-        "DELIVERED"    -> "Đã giao"
-        "CANCELLED"    -> "Đã hủy"
-        "ORDER_STATUS" -> "Cập nhật đơn"
-        "PROMO"        -> "Khuyến mãi"
-        else           -> "Hệ thống"
+        "NEW_ORDER"    -> stringResource(R.string.notif_type_new_order)
+        "SHIPPING"     -> stringResource(R.string.notif_type_shipping)
+        "DELIVERED"    -> stringResource(R.string.notif_type_delivered)
+        "CANCELLED"    -> stringResource(R.string.notif_type_cancelled)
+        "ORDER_STATUS" -> stringResource(R.string.notif_type_order_status)
+        "PROMO"        -> stringResource(R.string.notif_type_promo)
+        else           -> stringResource(R.string.notif_type_system)
     }
     Surface(
         shape = RoundedCornerShape(6.dp),
@@ -457,14 +462,14 @@ private fun EmptyNotificationState(modifier: Modifier = Modifier) {
         )
         Spacer(Modifier.height(16.dp))
         Text(
-            "Chưa có thông báo nào",
+            stringResource(R.string.notif_empty_title),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.SemiBold
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            "Khi có sự lựa chọn từ cửa hàng hoặc đơn hàng,\nthông báo sẽ hiển thị ở đây.",
+            stringResource(R.string.notif_empty_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.outline,
             textAlign = TextAlign.Center

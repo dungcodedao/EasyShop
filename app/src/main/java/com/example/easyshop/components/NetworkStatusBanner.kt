@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.easyshop.R
 import com.example.easyshop.util.ConnectivityObserver
 
 @Composable
@@ -28,7 +29,10 @@ fun NetworkStatusBanner(status: ConnectivityObserver.Status) {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = if (status == ConnectivityObserver.Status.Lost) "Mất kết nối Internet" else "Đang kết nối lại...",
+                text = if (status == ConnectivityObserver.Status.Lost)
+                    androidx.compose.ui.res.stringResource(R.string.network_lost)
+                else
+                    androidx.compose.ui.res.stringResource(R.string.network_reconnecting),
                 color = Color.White,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp

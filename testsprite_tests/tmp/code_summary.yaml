@@ -1,0 +1,73 @@
+version: "2"
+type: frontend
+tech_stack:
+  - Kotlin 2.0.21
+  - Jetpack Compose
+  - Firebase (Auth, Firestore, Storage, FCM)
+  - OkHttp & Retrofit
+  - Material3
+routes:
+  - path: ONBOARDING
+    file: app/src/main/java/com/example/easyshop/screen/OnboardingScreen.kt
+    auth_required: false
+    description: Onboarding flow for new users
+  - path: LOGIN
+    file: app/src/main/java/com/example/easyshop/screen/LoginScreen.kt
+    auth_required: false
+    description: User login screen
+  - path: SIGNUP
+    file: app/src/main/java/com/example/easyshop/screen/SignUpScreen.kt
+    auth_required: false
+    description: User registration screen
+  - path: HOME
+    file: app/src/main/java/com/example/easyshop/pages/HomePage.kt
+    auth_required: true
+    description: Main dashboard with banners and products
+  - path: CATEGORY_PRODUCTS
+    file: app/src/main/java/com/example/easyshop/pages/CategoryProductsPage.kt
+    auth_required: true
+    description: List of products by category
+  - path: PRODUCT_DETAILS
+    file: app/src/main/java/com/example/easyshop/productdetails/ProductDetailsPage.kt
+    auth_required: true
+    description: Detailed product information
+  - path: CART
+    file: app/src/main/java/com/example/easyshop/pages/CartPage.kt
+    auth_required: true
+    description: User shopping cart
+  - path: CHECKOUT
+    file: app/src/main/java/com/example/easyshop/pages/CheckoutPage.kt
+    auth_required: true
+    description: Payment and order placement
+  - path: ADMIN_DASHBOARD
+    file: app/src/main/java/com/example/easyshop/admin/AdminDashboard.kt
+    auth_required: true
+    description: Admin panel for management
+features:
+  - name: AI Shopping Assistant
+    description: AI-driven chat for product recommendations and support
+    files:
+      - app/src/main/java/com/example/easyshop/ai/repository/AiRepository.kt
+      - app/src/main/java/com/example/easyshop/screen/ChatScreen.kt
+    entry_route: CHAT_SUPPORT
+    user_interactions:
+      - Ask for product recommendations
+      - Ask about payment or promo codes
+      - View AI responses with product links
+    api_calls:
+      - method: POST
+        endpoint: Gemini API / Beeknoee API
+    auth_required: true
+  - name: Product Browsing
+    description: View and filter products by category
+    files:
+      - app/src/main/java/com/example/easyshop/pages/CategoryProductsPage.kt
+    entry_route: CATEGORY_PRODUCTS
+    user_interactions:
+      - Scroll through product list
+      - Click on product to see details
+    auth_required: true
+known_limitations:
+  - issue: Google Login DEVELOPER_ERROR
+    location: AuthViewModel.kt
+    impact: Users cannot login via Google without proper SHA-1 configuration on Firebase Console

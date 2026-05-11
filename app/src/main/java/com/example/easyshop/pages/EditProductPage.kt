@@ -48,6 +48,8 @@ fun EditProductPage(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var categoryExpanded by remember { mutableStateOf(false) }
     var categories by remember { mutableStateOf<List<CategoryModel>>(emptyList()) }
+    val pleaseFillAllFields = stringResource(R.string.please_fill_all_fields)
+    val failedLoadProduct = stringResource(R.string.failed_load_product)
 
     val scope = rememberCoroutineScope()
     val firestore = Firebase.firestore
@@ -91,7 +93,7 @@ fun EditProductPage(
             specifications = specs.toList()
 
         } catch (e: Exception) {
-            errorMessage = "${context.getString(R.string.failed_load_product)}: ${e.message}"
+            errorMessage = "$failedLoadProduct: ${e.message}"
         } finally {
             isLoadingData = false
         }
@@ -100,7 +102,7 @@ fun EditProductPage(
     // Update product
     fun updateProduct() {
         if (title.isBlank() || category.isBlank() || price.isBlank()) {
-            errorMessage = context.getString(R.string.please_fill_all_fields)
+            errorMessage = pleaseFillAllFields
             return
         }
 
@@ -113,7 +115,7 @@ fun EditProductPage(
                 val finalImageUrls = imageUrls.filter { it.isNotBlank() }
 
                 if (finalImageUrls.isEmpty()) {
-                    errorMessage = "Vui lòng thêm ít nhất 1 hình ảnh"
+                    errorMessage = context.getString(R.string.min_one_image_error)
                     isLoading = false
                     return@launch
                 }
@@ -144,7 +146,7 @@ fun EditProductPage(
                 showSuccessDialog = true
 
             } catch (e: Exception) {
-                errorMessage = "Lỗi: ${e.message}"
+                errorMessage = context.getString(R.string.update_product_error, e.message ?: "")
             } finally {
                 isLoading = false
             }
@@ -170,7 +172,7 @@ fun EditProductPage(
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(id = R.string.cd_back),
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -237,7 +239,7 @@ fun EditProductPage(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        "Dán URL hình ảnh",
+                        stringResource(id = R.string.paste_image_url_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -254,8 +256,8 @@ fun EditProductPage(
                                         this[index] = newUrl
                                     }
                                 },
-                                label = { Text("URL hình ảnh ${index + 1}") },
-                                placeholder = { Text("https://example.com/image.jpg") },
+                                label = { Text(stringResource(id = R.string.image_url_with_index, index + 1)) },
+                                placeholder = { Text(stringResource(id = R.string.image_url_placeholder)) },
                                 modifier = Modifier.weight(1f),
                                 leadingIcon = {
                                     Icon(Icons.Default.Link, null,
@@ -271,7 +273,7 @@ fun EditProductPage(
                                 ) {
                                     Icon(
                                         Icons.Default.Delete,
-                                        "Remove",
+                                        contentDescription = stringResource(id = R.string.cd_remove),
                                         tint = MaterialTheme.colorScheme.error
                                     )
                                 }
@@ -286,7 +288,7 @@ fun EditProductPage(
                         ) {
                             Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Thêm URL")
+                            Text(stringResource(id = R.string.add_url))
                         }
                     }
                 }
@@ -399,7 +401,7 @@ fun EditProductPage(
                                         ) {
                                             Icon(
                                                 Icons.Default.Delete,
-                                                contentDescription = "Remove",
+                                                contentDescription = stringResource(id = R.string.cd_remove),
                                                 tint = MaterialTheme.colorScheme.error
                                             )
                                         }
@@ -454,7 +456,7 @@ fun EditProductPage(
                             inStock = count > 0
                         }
                     },
-                    label = { Text("Số lượng tồn kho *") },
+                    label = { Text("${stringResource(id = R.string.stock_count_label)} *") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -540,7 +542,7 @@ fun EditProductPage(
                         value = specKey,
                         onValueChange = { specKey = it },
                         label = { Text(stringResource(id = R.string.specification_name)) },
-                        placeholder = { Text("e.g. Screen Size, RAM, CPU") },
+                        placeholder = { Text(stringResource(id = R.string.spec_key_hint)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -548,7 +550,7 @@ fun EditProductPage(
                         value = specValue,
                         onValueChange = { specValue = it },
                         label = { Text(stringResource(id = R.string.value)) },
-                        placeholder = { Text("e.g. 6.67 Inches, 8 GB") },
+                        placeholder = { Text(stringResource(id = R.string.spec_value_hint)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )

@@ -41,6 +41,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.easyshop.AppUtil
+import com.example.easyshop.R
 import com.example.easyshop.viewmodel.OnboardingViewModel
 import kotlinx.coroutines.launch
 
@@ -50,19 +51,20 @@ data class OnboardingPage(val title: String, val description: String)
 fun OnboardingScreen(navController: NavController, viewModel: OnboardingViewModel = viewModel()) {
     val context = LocalContext.current
     val urls by viewModel.onboardingUrls.collectAsState()
+    val res = context.resources
 
     val pages = listOf(
         OnboardingPage(
-            "Thế giới Công nghệ",
-            "Sở hữu ngay những thiết bị công nghệ đỉnh cao từ các thương hiệu hàng đầu với mức giá ưu đãi đặc quyền chỉ có tại EasyShop."
+            res.getString(R.string.onboarding_tech_title),
+            res.getString(R.string.onboarding_tech_desc)
         ),
         OnboardingPage(
-            "Trợ lý AI Thông minh",
-            "Trải nghiệm mua sắm cá nhân hóa hoàn toàn. AI của chúng tôi thấu hiểu phong cách và luôn sẵn sàng đề xuất những gì bạn cần."
+            res.getString(R.string.onboarding_ai_title),
+            res.getString(R.string.onboarding_ai_desc)
         ),
         OnboardingPage(
-            "An toàn & Thần tốc",
-            "Giao dịch bảo mật tuyệt đối, hỗ trợ tận tình 24/7. Nhận đơn hàng ngay tại nhà chỉ trong chớp mắt với dịch vụ chuyển phát siêu tốc."
+            res.getString(R.string.onboarding_secure_title),
+            res.getString(R.string.onboarding_secure_desc)
         )
     )
 
@@ -194,7 +196,10 @@ fun OnboardingScreen(navController: NavController, viewModel: OnboardingViewMode
                                 colors = ButtonDefaults.buttonColors(containerColor = primaryIndigo)
                             ) {
                                 Text(
-                                    text = if (pagerState.currentPage < pages.size - 1) "Tiếp theo" else "Bắt đầu ngay",
+                                    text = if (pagerState.currentPage < pages.size - 1)
+                                        context.getString(R.string.onboarding_next)
+                                    else
+                                        context.getString(R.string.onboarding_start),
                                     fontSize = 17.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White

@@ -1,5 +1,6 @@
 package com.example.easyshop.admin
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -40,6 +42,7 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
+@SuppressLint("LocalContextGetResourceValueCall")
 @Composable
 fun OrdersManagementScreen(
     navController: NavController,
@@ -85,10 +88,10 @@ fun OrdersManagementScreen(
 
     fun createNotificationForUser(order: OrderModel, newStatus: String) {
         val (title, body, type) = when (newStatus) {
-            "SHIPPING"  -> Triple("Đơn hàng đang vận chuyển 🚚", "Đơn #${order.id.take(8).uppercase()} đang trên đường giao đến bạn.", "SHIPPING")
-            "DELIVERED" -> Triple("Đơn hàng đã giao thành công ✅", "Đơn #${order.id.take(8).uppercase()} đã giao thành công.", "DELIVERED")
-            "CANCELLED" -> Triple("Đơn hàng đã bị hủy ❌", "Đơn #${order.id.take(8).uppercase()} đã bị hủy.", "CANCELLED")
-            else -> Triple("Cập nhật đơn hàng", "Đơn #${order.id.take(8).uppercase()} vừa cập nhật trạng thái: $newStatus", "ORDER_STATUS")
+            "SHIPPING"  -> Triple(context.getString(R.string.order_notif_shipping_title), context.getString(R.string.order_notif_shipping_body, order.id.take(8).uppercase()), "SHIPPING")
+            "DELIVERED" -> Triple(context.getString(R.string.order_notif_delivered_title), context.getString(R.string.order_notif_delivered_body, order.id.take(8).uppercase()), "DELIVERED")
+            "CANCELLED" -> Triple(context.getString(R.string.order_notif_cancelled_title), context.getString(R.string.order_notif_cancelled_body, order.id.take(8).uppercase()), "CANCELLED")
+            else -> Triple(context.getString(R.string.order_notif_update_title), context.getString(R.string.order_notif_update_body, order.id.take(8).uppercase(), newStatus), "ORDER_STATUS")
         }
 
         val notif = hashMapOf(
@@ -135,10 +138,10 @@ fun OrdersManagementScreen(
                 Firebase.firestore.collection("orders").document(order.id).update(
                     mapOf("archived" to true, "archivedAt" to FieldValue.serverTimestamp(), "archivedBy" to adminUid)
                 ).await()
-                AppUtil.showSuccess("Đã lưu trữ đơn #${order.id.take(8).uppercase()}")
+                AppUtil.showSuccess(context.getString(R.string.archive_success, order.id.take(8).uppercase()))
                 loadOrders()
             } catch (e: Exception) {
-                AppUtil.showError("Lưu trữ thất bại", e.message)
+                AppUtil.showError(context.getString(R.string.archive_failed), e.message)
             }
         }
     }
@@ -150,10 +153,10 @@ fun OrdersManagementScreen(
                 val auditData = hashMapOf("order" to order, "deletedBy" to adminUid, "deletedAt" to FieldValue.serverTimestamp(), "source" to "admin_orders_management")
                 Firebase.firestore.collection("deleted_orders").document(order.id).set(auditData).await()
                 Firebase.firestore.collection("orders").document(order.id).delete().await()
-                AppUtil.showSuccess("Đã xóa vĩnh viễn đơn #${order.id.take(8).uppercase()}")
+                AppUtil.showSuccess(context.getString(R.string.delete_permanent_success, order.id.take(8).uppercase()))
                 loadOrders()
             } catch (e: Exception) {
-                AppUtil.showError("Xóa vĩnh viễn thất bại", e.message)
+                AppUtil.showError(context.getString(R.string.delete_permanent_failed), e.message)
             }
         }
     }
@@ -168,8 +171,8 @@ fun OrdersManagementScreen(
                         style = MaterialTheme.typography.titleMedium
                     )
                 },
-                navigationIcon = { IconButton(onClick = { navController.navigateUp() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
-                actions = { IconButton(onClick = { loadOrders() }) { Icon(Icons.Default.Refresh, "Refresh") } },
+                navigationIcon = { IconButton(onClick = { navController.navigateUp() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back)) } },
+                actions = { IconButton(onClick = { loadOrders() }) { Icon(Icons.Default.Refresh, stringResource(R.string.reset)) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         }
@@ -179,10 +182,10 @@ fun OrdersManagementScreen(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Tìm theo mã đơn hoặc tên khách...") },
+                placeholder = { Text(stringResource(R.string.order_search_placeholder)) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = if (searchQuery.isNotEmpty()) {
-                    { IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Close, contentDescription = "Clear") } }
+                    { IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.order_action_clear)) } }
                 } else null,
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
@@ -210,11 +213,11 @@ fun OrdersManagementScreen(
             ) {
                 tabs.forEach { filter ->
                     val label = when (filter) {
-                        "ALL" -> "TẤT CẢ"
-                        "ORDERED" -> "ĐÃ ĐẶT"
-                        "SHIPPING" -> "ĐANG GIAO"
-                        "DELIVERED" -> "ĐÃ GIAO"
-                        "CANCELLED" -> "ĐÃ HỦY"
+                        "ALL" -> stringResource(R.string.order_status_all)
+                        "ORDERED" -> stringResource(R.string.order_status_ordered)
+                        "SHIPPING" -> stringResource(R.string.order_status_shipping)
+                        "DELIVERED" -> stringResource(R.string.order_status_delivered)
+                        "CANCELLED" -> stringResource(R.string.order_status_cancelled)
                         else -> filter
                     }
                     Tab(
@@ -264,14 +267,14 @@ fun OrdersManagementScreen(
                             }
                             Spacer(Modifier.height(24.dp))
                             Text(
-                                text = "Không tìm thấy đơn hàng",
+                                text = stringResource(R.string.order_empty_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                text = "Hãy thử thay đổi bộ lọc hoặc từ khóa tìm kiếm của bạn.",
+                                text = stringResource(R.string.order_empty_msg),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
@@ -324,9 +327,9 @@ fun OrderCard(
     onArchive: () -> Unit,
     onDeletePermanently: () -> Unit
 ) {
+    val locale = LocalConfiguration.current.locales[0]
     val context = LocalContext.current
-    val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("vi", "VN"))
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+    val dateFormat = remember(locale) { SimpleDateFormat("dd MMM yyyy, HH:mm", locale) }
     var showMenu by remember { mutableStateOf(false) }
     var showArchiveConfirm by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -366,7 +369,7 @@ fun OrderCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = order.date?.toDate()?.let { dateFormat.format(it) } ?: "N/A",
+                        text = order.date?.toDate()?.let { dateFormat.format(it) } ?: stringResource(R.string.not_available),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -377,16 +380,16 @@ fun OrderCard(
                     if (canManageFinalized) {
                         Box {
                             IconButton(onClick = { showMenu = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More", modifier = Modifier.size(20.dp))
+                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.order_action_more), modifier = Modifier.size(20.dp))
                             }
                             DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                                 DropdownMenuItem(
-                                    text = { Text("Lưu trữ (Ẩn)") },
+                                    text = { Text(stringResource(R.string.order_action_archive_label)) },
                                     leadingIcon = { Icon(Icons.Default.Delete, null) },
                                     onClick = { showMenu = false; showArchiveConfirm = true }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Xóa vĩnh viễn", color = MaterialTheme.colorScheme.error) },
+                                    text = { Text(stringResource(R.string.order_action_delete_permanent_label), color = MaterialTheme.colorScheme.error) },
                                     leadingIcon = { Icon(Icons.Default.DeleteForever, null, tint = MaterialTheme.colorScheme.error) },
                                     onClick = { showMenu = false; showDeleteConfirm = true }
                                 )
@@ -417,12 +420,12 @@ fun OrderCard(
                     }
                     Column {
                         Text(
-                            text = order.userName.ifBlank { "Khách hàng" },
+                            text = order.userName.ifBlank { stringResource(R.string.customer_label) },
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = order.userEmail.ifBlank { "Không có email" },
+                            text = order.userEmail.ifBlank { stringResource(R.string.no_email_label) },
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -490,12 +493,12 @@ fun OrderCard(
                 verticalAlignment = Alignment.Bottom
             ) {
                 Text(
-                    text = "${order.items.values.sum()} sản phẩm",
+                    text = stringResource(R.string.order_item_count, order.items.values.sum()),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = currencyFormat.format(order.total),
+                    text = AppUtil.formatCurrency(order.total),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary
@@ -518,7 +521,7 @@ fun OrderCard(
                             ) {
                                 Icon(Icons.Default.LocalShipping, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Giao hàng", fontSize = 13.sp)
+                                Text(stringResource(R.string.order_action_ship), fontSize = 13.sp)
                             }
                             OutlinedButton(
                                 onClick = { onUpdateStatus("CANCELLED") },
@@ -529,7 +532,7 @@ fun OrderCard(
                             ) {
                                 Icon(Icons.Default.Close, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Hủy đơn", fontSize = 13.sp)
+                                Text(stringResource(R.string.order_action_cancel), fontSize = 13.sp)
                             }
                         }
                         "SHIPPING" -> {
@@ -541,7 +544,7 @@ fun OrderCard(
                             ) {
                                 Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Hoàn thành đơn hàng")
+                                Text(stringResource(R.string.order_action_complete))
                             }
                         }
                     }
@@ -556,8 +559,8 @@ fun OrderCard(
     if (showArchiveConfirm) {
         AlertDialog(
             onDismissRequest = { showArchiveConfirm = false },
-            title = { Text("Xóa và Ẩn đơn hàng?") },
-            text = { Text("Đơn #${order.id.take(8).uppercase()} sẽ bị ẩn khỏi danh sách này nhưng VẪN ĐƯỢC tính vào doanh số trong phần Thống kê.") },
+            title = { Text(stringResource(R.string.order_archive_title)) },
+            text = { Text(stringResource(R.string.order_archive_msg, order.id.take(8).uppercase())) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -566,12 +569,12 @@ fun OrderCard(
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Xóa (Vẫn giữ thống kê)")
+                    Text(stringResource(R.string.order_archive_confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showArchiveConfirm = false }) {
-                    Text("Hủy")
+                    Text(stringResource(R.string.admin_chat_cancel))
                 }
             }
         )
@@ -580,9 +583,9 @@ fun OrderCard(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("⚠️ Xóa vĩnh viễn dữ liệu?") },
+            title = { Text(stringResource(R.string.order_delete_title)) },
             text = {
-                Text("Đơn #${order.id.take(8).uppercase()} sẽ bị xóa hoàn toàn. Dữ liệu này sẽ KHÔNG CÒN xuất hiện trong phần Thống kê doanh thu.\n\nBạn chắc chắn chứ?")
+                Text(stringResource(R.string.order_delete_msg, order.id.take(8).uppercase()))
             },
             confirmButton = {
                 TextButton(
@@ -591,12 +594,12 @@ fun OrderCard(
                         onDeletePermanently()
                     }
                 ) {
-                    Text("Tôi hiểu, cứ xóa đi", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.order_delete_confirm), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text("Hủy")
+                    Text(stringResource(R.string.admin_chat_cancel))
                 }
             }
         )
@@ -662,11 +665,11 @@ fun OrderProductThumbnails(productIds: List<String>) {
 @Composable
 fun OrderStatusBadge(status: String) {
     val (color, text, icon, contentColor) = when (status) {
-        "ORDERED" -> Quad(Color(0xFFFFC107), "Đã đặt", Icons.Default.ShoppingBag, Color.White)
-        "SHIPPING" -> Quad(Color(0xFF2196F3), "Đang giao", Icons.Default.LocalShipping, Color.White)
-        "DELIVERED" -> Quad(Color(0xFF4CAF50), "Đã giao", Icons.Default.CheckCircle, Color.White)
-        "CANCELLED" -> Quad(Color(0xFFF44336), "Đã hủy", Icons.Default.Cancel, Color.White)
-        else -> Quad(MaterialTheme.colorScheme.outline, status, Icons.Default.Help, Color.White)
+        "ORDERED" -> Quad(Color(0xFFFFC107), stringResource(R.string.order_status_ordered), Icons.Default.ShoppingBag, Color.White)
+        "SHIPPING" -> Quad(Color(0xFF2196F3), stringResource(R.string.order_status_shipping), Icons.Default.LocalShipping, Color.White)
+        "DELIVERED" -> Quad(Color(0xFF4CAF50), stringResource(R.string.order_status_delivered), Icons.Default.CheckCircle, Color.White)
+        "CANCELLED" -> Quad(Color(0xFFF44336), stringResource(R.string.order_status_cancelled), Icons.Default.Cancel, Color.White)
+        else -> Quad(MaterialTheme.colorScheme.outline, stringResource(R.string.unknown_label), Icons.Default.Help, Color.White)
     }
 
     Surface(
@@ -697,10 +700,10 @@ fun OrderDetailsDialog(
     onDismiss: () -> Unit,
     onUpdateStatus: (String) -> Unit
 ) {
-    val context = LocalContext.current
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+    val locale = LocalConfiguration.current.locales[0]
+    val dateFormat = remember(locale) { SimpleDateFormat("dd/MM/yyyy HH:mm", locale) }
     val productNames = remember { mutableStateMapOf<String, String>() }
+    val unknownProductLabel = stringResource(R.string.unknown_product)
 
     // Fetch product names for labels
     LaunchedEffect(order.items) {
@@ -709,7 +712,7 @@ fun OrderDetailsDialog(
                 .document("stock").collection("products")
                 .document(productId).get()
                 .addOnSuccessListener { doc ->
-                    productNames[productId] = doc.getString("title") ?: context.getString(R.string.unknown_product)
+                    productNames[productId] = doc.getString("title") ?: unknownProductLabel
                 }
         }
     }
@@ -751,7 +754,7 @@ fun OrderDetailsDialog(
                 DetailRow(stringResource(id = R.string.full_name), order.userName.ifBlank { stringResource(id = R.string.no_active_orders) })
                 DetailRow(stringResource(id = R.string.email), order.userEmail.ifBlank { stringResource(id = R.string.no_active_orders) })
                 DetailRow(stringResource(id = R.string.address), order.address.ifBlank { stringResource(id = R.string.no_active_orders) })
-                DetailRow(stringResource(id = R.string.payment_method_label), order.paymentMethod.ifBlank { "COD" })
+                DetailRow(stringResource(id = R.string.payment_method_label), order.paymentMethod.ifBlank { stringResource(R.string.order_payment_cod) })
 
                 if (order.note.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))
@@ -825,7 +828,7 @@ fun OrderDetailsDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = currencyFormat.format(subtotalVal),
+                        text = AppUtil.formatCurrency(subtotalVal),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -845,14 +848,14 @@ fun OrderDetailsDialog(
                             )
                             if (order.promoCode.isNotBlank()) {
                                 Text(
-                                    text = "Mã: ${order.promoCode}",
+                                    text = stringResource(R.string.promo_code_prefix, order.promoCode),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
                                 )
                             }
                         }
                         Text(
-                            text = "- ${currencyFormat.format(order.discount)}",
+                            text = "- ${AppUtil.formatCurrency(order.discount)}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.error,
                             fontWeight = FontWeight.SemiBold
@@ -874,7 +877,7 @@ fun OrderDetailsDialog(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = currencyFormat.format(order.total),
+                        text = AppUtil.formatCurrency(order.total),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.primary

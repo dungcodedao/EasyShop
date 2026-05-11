@@ -1,4 +1,4 @@
-﻿package com.example.easyshop.productdetails
+package com.example.easyshop.productdetails
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
@@ -42,6 +42,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -127,7 +129,7 @@ fun DescriptionTab(description: String) {
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = "Điểm nổi bật",
+                            text = stringResource(R.string.product_highlights),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -173,7 +175,7 @@ fun DescriptionTab(description: String) {
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Chi tiết sản phẩm",
+                        text = stringResource(R.string.product_detail_label),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -281,7 +283,7 @@ fun SpecificationsTab(specifications: Map<String, String>) {
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Bảng thông số kỹ thuật",
+                        text = stringResource(R.string.spec_table_label),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -292,7 +294,7 @@ fun SpecificationsTab(specifications: Map<String, String>) {
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
                     ) {
                         Text(
-                            text = "${specEntries.size} mục",
+                            text = stringResource(R.string.spec_items_count, specEntries.size),
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
@@ -429,7 +431,7 @@ fun ReviewsTab(productId: String, productRating: Float, totalReviews: Int) {
                 userName = review.userName,
                 rating = review.rating.toInt(),
                 comment = review.comment,
-                date = "Vừa xong" // In a real app, parse review.timestamp
+                date = stringResource(R.string.just_now)
             )
         }
 
@@ -457,7 +459,7 @@ fun OverallRatingCard(
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(end = 24.dp)) {
                 Text(
-                    text = String.format(Locale.getDefault(), "%.1f", averageRating),
+                    text = String.format(LocalConfiguration.current.locales[0], "%.1f", averageRating),
                     style = MaterialTheme.typography.displayMedium,
                     fontWeight = FontWeight.Bold,
                     color = WarningColor
@@ -522,6 +524,7 @@ fun RatingBar(stars: Int, count: Int, totalCount: Int) {
 
 @Composable
 private fun WriteReviewSection(productId: String, onReviewAdded: () -> Unit) {
+    val context = LocalContext.current
     val currentUser = FirebaseAuth.getInstance().currentUser
     var accountName by remember(currentUser?.uid) {
         mutableStateOf(currentUser?.displayName?.trim().orEmpty())
@@ -548,10 +551,10 @@ private fun WriteReviewSection(productId: String, onReviewAdded: () -> Unit) {
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(text = "Viết đánh giá", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(text = stringResource(R.string.write_review), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "Đánh giá của bạn:", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(text = stringResource(R.string.your_rating), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.width(8.dp))
                 repeat(5) { index ->
                     Icon(
@@ -568,8 +571,8 @@ private fun WriteReviewSection(productId: String, onReviewAdded: () -> Unit) {
             OutlinedTextField(
                 value = reviewText,
                 onValueChange = { reviewText = it },
-                label = { Text("Nội dung đánh giá") },
-                placeholder = { Text("Chia sẻ trải nghiệm của bạn về sản phẩm...") },
+                label = { Text(stringResource(R.string.review_content_label)) },
+                placeholder = { Text(stringResource(R.string.review_placeholder)) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
                 maxLines = 5,
@@ -585,7 +588,7 @@ private fun WriteReviewSection(productId: String, onReviewAdded: () -> Unit) {
                         id = reviewId,
                         productId = productId,
                         userId = user.uid,
-                        userName = accountName.ifBlank { user.email ?: "Người dùng" },
+                        userName = accountName.ifBlank { user.email ?: context.getString(R.string.guest_user) },
                         rating = selectedRating.toFloat(),
                         comment = reviewText.trim(),
                         timestamp = Timestamp.now()
@@ -611,7 +614,7 @@ private fun WriteReviewSection(productId: String, onReviewAdded: () -> Unit) {
                 if (isSubmitting) {
                     androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                 } else {
-                    Text("Gửi đánh giá", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.submit_review), fontWeight = FontWeight.SemiBold)
                 }
             }
         }

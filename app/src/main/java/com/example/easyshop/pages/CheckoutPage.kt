@@ -183,9 +183,9 @@ fun CheckoutPage(
                                 )
                             } else {
                                 Text(
-                                    text = if (selectedAddress == null) "⚠️ Chưa có địa chỉ giao hàng. Nhấn để chọn!" 
-                                           else if (selectedAddress!!.phone.isBlank()) "⚠️ Thiếu số điện thoại giao hàng"
-                                           else "⚠️ Địa chỉ chi tiết không được để trống",
+                                    text = if (selectedAddress == null) stringResource(R.string.no_address_warning) 
+                                           else if (selectedAddress!!.phone.isBlank()) stringResource(R.string.missing_phone_warning)
+                                           else stringResource(R.string.missing_detail_address_warning),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.error,
                                     fontWeight = FontWeight.Bold
@@ -243,8 +243,8 @@ fun CheckoutPage(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .navigationBarsPadding()
-                    .padding(bottom = 2.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Order Summary Card
@@ -319,14 +319,14 @@ fun CheckoutPage(
                         }
                     },
                     modifier = Modifier
-                        .width(220.dp)
-                        .height(48.dp),
-                    shape = RoundedCornerShape(24.dp),
+                        .fillMaxWidth(0.8f)
+                        .height(56.dp),
+                    shape = RoundedCornerShape(28.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         disabledContainerColor = Color.LightGray.copy(alpha = 0.5f)
                     ),
-                    elevation = ButtonDefaults.buttonElevation(4.dp)
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
                 ) {
                     Text(
                         text = stringResource(id = R.string.pay_now),
@@ -431,7 +431,7 @@ fun AddressSelectionContent(
             .padding(bottom = 32.dp)
     ) {
         Text(
-            "Chọn địa chỉ giao hàng",
+            stringResource(R.string.select_shipping_address),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -439,7 +439,7 @@ fun AddressSelectionContent(
         
         if (userModel.addressList.isEmpty()) {
             Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
-                Text("Bạn chưa có địa chỉ nào. Hãy thêm trong Hồ sơ!", color = Color.Gray)
+                Text(stringResource(R.string.no_address_msg), color = Color.Gray)
             }
         } else {
             userModel.addressList.forEach { address ->
@@ -468,7 +468,7 @@ fun AddressSelectionContent(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Text("Đóng")
+            Text(stringResource(R.string.close))
         }
     }
 }

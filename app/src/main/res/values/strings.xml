@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">EasyShop</string>
     
@@ -7,7 +8,19 @@
     <string name="ok">OK</string>
     <string name="read_more">Xem thêm</string>
     <string name="read_less">Thu gọn</string>
-    
+    <string name="close">Đóng</string>
+    <string name="apply">Áp dụng</string>
+    <string name="reset">Đặt lại</string>
+    <string name="success">Thành công</string>
+    <string name="loading_label">Đang tải...</string>
+    <string name="edit_action">Chỉnh sửa</string>
+    <string name="delete_action">Xóa</string>
+    <string name="add">Thêm</string>
+    <string name="stt_label">STT</string>
+    <string name="view_action">Xem</string>
+    <string name="currency_suffix_dong">đồng</string>
+    <string name="currency_symbol">đ</string>
+
     <!-- Profile Page -->
     <string name="profile">Hồ sơ</string>
     <string name="address">Địa chỉ</string>
@@ -28,8 +41,41 @@
     <string name="sign_out">Đăng xuất</string>
     <string name="edit_name">Sửa tên</string>
     <string name="full_name">Họ và tên</string>
+    <string name="language">Ngôn ngữ</string>
+    <string name="vietnamese">Tiếng Việt</string>
+    <string name="support_center">Trung tâm hỗ trợ</string>
+    <string name="version_format">Phiên bản: %s</string>
+    <string name="feature_under_development">Tính năng đang phát triển</string>
+    <string name="support_contact">Liên hệ: %s</string>
+    <string name="set_default">Đặt mặc định</string>
+    <string name="address_deleted">Đã xóa địa chỉ</string>
+    <string name="update_avatar">Cập nhật ảnh đại diện</string>
+    <string name="choose_from_gallery">Chọn từ thư viện</string>
+    <string name="take_new_photo">Chụp ảnh mới</string>
+    <string name="remove_current_photo">Gỡ ảnh hiện tại</string>
+    <string name="change_name">Đổi tên</string>
+    <string name="enter_new_name">Nhập tên mới</string>
+    <string name="change_phone">Đổi số điện thoại</string>
+    <string name="enter_new_phone">Nhập số điện thoại mới</string>
+    <string name="order_support_desc">Hỗ trợ, tư vấn đơn hàng</string>
+    <string name="default_label">Mặc định</string>
+    <string name="address_list">Danh sách địa chỉ</string>
+    <string name="add_new_address">Thêm địa chỉ mới</string>
+    <string name="edit_address">Sửa địa chỉ</string>
+    <string name="receiver_name">Tên người nhận</string>
+    <string name="phone_number">Số điện thoại</string>
+    <string name="detail_address_hint">Địa chỉ chi tiết (Số nhà, đường...)</string>
+    <string name="delete_address">Xóa địa chỉ</string>
+    <string name="add_address_hint">Chạm để thêm địa chỉ giao hàng</string>
+    <string name="update_avatar_success">Đã cập nhật ảnh đại diện</string>
+    <string name="home_label">Nhà riêng</string>
+    <string name="office_label">Văn phòng</string>
+    <string name="set_default_hint">Đặt làm địa chỉ mặc định</string>
+    <string name="your_addresses">Địa chỉ của bạn</string>
+    <string name="add_address">Thêm địa chỉ</string>
+    <string name="address_update_notice">Đã cập nhật danh sách khu vực. Chỉnh sửa địa chỉ của bạn để giao hàng chính xác.</string>
+    <string name="profile_load_error">Lỗi tải thông tin hồ sơ</string>
 
-    
     <!-- Home Page -->
     <string name="categories">Danh mục</string>
     <string name="welcome_back">Chào mừng trở lại</string>
@@ -67,7 +113,33 @@
     <string name="delete_account_warning_msg">Mọi thông tin của bạn sẽ bị xóa vĩnh viễn khỏi hệ thống. Bạn có chắc chắn muốn thực hiện?</string>
     <string name="delete_account_success">Đã xóa tài khoản thành công.</string>
     <string name="reauth_required_msg">Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để thực hiện xóa tài khoản.</string>
+    <string name="forgot_password">Quên mật khẩu?</string>
+    <string name="enter_email_prompt">Vui lòng nhập email</string>
+    <string name="reset_password_sent">Đã gửi mail đặt lại mật khẩu</string>
+    <string name="reset_password_failed">Lỗi gửi mail</string>
+    <string name="or_login_with"> Hoặc đăng nhập bằng </string>
+    <string name="auth_error">Lỗi xác thực</string>
+    <string name="continue_with_google">Tiếp tục với Google</string>
+    <string name="i_am_customer">Tôi là khách hàng</string>
+    <string name="are_you_admin">Bạn là Quản trị viên?</string>
+    <string name="admin_code_label">Mã xác thực Admin</string>
     
+    <!-- Promo Codes Input -->
+    <string name="promo_code_label">Mã giảm giá</string>
+    <string name="promo_code_hint_input">Nhập mã tại đây</string>
+    <string name="voucher_wallet_cd">Ví Voucher</string>
+    <string name="promo_empty_error">Vui lòng nhập mã giảm giá</string>
+    <string name="promo_apply_success">Áp dụng mã thành công!</string>
+    <string name="apply_btn">Áp dụng</string>
+    <string name="clear_code_cd">Xóa mã</string>
+    <string name="promo_not_found_error">Mã giảm giá không tồn tại</string>
+    <string name="promo_data_error">Lỗi dữ liệu mã giảm giá</string>
+    <string name="promo_unavailable_error">Mã giảm giá hiện không khả dụng</string>
+    <string name="promo_expired_error">Mã giảm giá đã hết hạn</string>
+    <string name="promo_min_order_error">Đơn hàng phải tối thiểu %s để dùng mã này</string>
+    <string name="promo_limit_reached_error">Mã giảm giá đã hết lượt sử dụng</string>
+    <string name="server_error">Lỗi kết nối máy chủ</string>
+
     <!-- Product Details -->
     <string name="product_details">Chi tiết sản phẩm</string>
     <string name="add_to_cart">Thêm vào giỏ</string>
@@ -75,7 +147,18 @@
     <string name="write_a_review">Viết đánh giá</string>
     <string name="overall_rating">Đánh giá chung</string>
     <string name="reviews_count_suffix">đánh giá</string>
-    
+    <string name="reviews_count">(%d đánh giá)</string>
+    <string name="tab_reviews">Đánh giá</string>
+    <string name="product_highlights">Điểm nổi bật</string>
+    <string name="product_detail_label">Chi tiết sản phẩm</string>
+    <string name="spec_table_label">Bảng thông số kỹ thuật</string>
+    <string name="spec_items_count">%d mục</string>
+    <string name="write_review">Viết đánh giá</string>
+    <string name="your_rating">Đánh giá của bạn:</string>
+    <string name="review_content_label">Nội dung đánh giá</string>
+    <string name="review_placeholder">Chia sẻ trải nghiệm của bạn về sản phẩm&#8230;</string>
+    <string name="submit_review">Gửi đánh giá</string>
+
     <!-- Payment -->
     <string name="payment">Thanh toán</string>
     <string name="payment_subtitle">Hoàn tất thanh toán an toàn</string>
@@ -101,8 +184,6 @@
     <string name="secure_notice_real">🔒 Thanh toán an toàn bởi Razorpay</string>
     <string name="test_card_hint">Thanh toán bị từ chối. Sử dụng thẻ test 4111 1111 1111 1111</string>
     <string name="redirect_notice">Bạn sẽ được chuyển đến trang thanh toán an toàn của Razorpay để hoàn tất giao dịch.</string>
-    
-    <!-- Payment Methods -->
     <string name="method_mock_card">Thẻ tín dụng (Demo)</string>
     <string name="method_razorpay">Razorpay (Thật)</string>
     <string name="method_paypal">PayPal</string>
@@ -111,7 +192,16 @@
     <string name="momo_qr_label">MoMo QR</string>
     <string name="save_qr_msg">Đã lưu mã QR vào thư viện ảnh</string>
     <string name="open_app_msg">Đang mở ứng dụng %s...</string>
-    
+    <string name="payment_error_title">Lỗi thanh toán</string>
+    <string name="change_payment_method">Thay đổi phương thức thanh toán</string>
+    <string name="payment_mb_confirmed">Đã nhận tiền - Nhấn để Hoàn tất</string>
+    <string name="payment_mb_checking">Kiểm tra thanh toán</string>
+    <string name="payment_momo_confirm">Xác nhận đã chuyển tiền</string>
+    <string name="payment_subtitle_credit_card">Thẻ quốc tế (Visa/Master)</string>
+    <string name="payment_subtitle_cod">Thanh toán khi nhận hàng</string>
+    <string name="payment_subtitle_mb">Ngân hàng MB</string>
+    <string name="payment_subtitle_momo">Ví điện tử MoMo</string>
+
     <!-- Receipt -->
     <string name="e_receipt">Hóa đơn điện tử</string>
     <string name="transaction_summary">Tóm tắt giao dịch</string>
@@ -135,6 +225,25 @@
     <string name="no_keep_order">Không, giữ đơn</string>
     <string name="quantity">Số lượng</string>
     <string name="product_info_not_available">Thông tin sản phẩm không khả dụng</string>
+    <string name="retail_invoice">HÓA ĐƠN BÁN LẺ</string>
+    <string name="order_id_label">Mã đơn hàng</string>
+    <string name="date_time_label">Ngày giờ</string>
+    <string name="customer_label">Khách hàng</string>
+    <string name="guest_customer">Khách hàng lẻ</string>
+    <string name="payment_label">Thanh toán</string>
+    <string name="product_column">Sản phẩm</string>
+    <string name="quantity_column">SL</string>
+    <string name="amount_column">Thành tiền</string>
+    <string name="shipping_fee">Phí vận chuyển</string>
+    <string name="brand_subtitle">Chuyên linh kiện &amp; Phụ kiện PC cao cấp</string>
+    <string name="free_shipping">Miễn phí</string>
+    <string name="promo_discount_label">Giảm giá Promo</string>
+    <string name="applied_code_prefix">Mã áp dụng: %s</string>
+    <string name="total_all_caps">TỔNG CỘNG</string>
+    <string name="thank_you_customer">Cảm ơn quý khách đã mua hàng!</string>
+    <string name="warranty_qr_note">Quét QR để tra cứu bảo hành điện tử</string>
+
+    <!-- Filters & Sort -->
     <string name="filter_sort">Lọc &amp; Sắp xếp</string>
     <string name="filter_sort_products">Lọc &amp; Sắp xếp sản phẩm</string>
     <string name="brand">Thương hiệu</string>
@@ -142,15 +251,17 @@
     <string name="sort_default">Mặc định</string>
     <string name="sort_price_low_high">Giá: Thấp đến Cao</string>
     <string name="sort_price_high_low">Giá: Cao đến Thấp</string>
-    <string name="apply">Áp dụng</string>
-    <string name="reset">Đặt lại</string>
+    <string name="all_brands">Tất cả thương hiệu</string>
+    <string name="products_count">%d sản phẩm</string>
+    <string name="reset_filters">Xóa bộ lọc</string>
+
+    <!-- Favorites -->
     <string name="your_favorites">Yêu thích</string>
     <string name="favorites">Yêu thích</string>
     <string name="no_favorites_yet">Chưa có sản phẩm yêu thích</string>
     <string name="no_favorites">Chưa có sản phẩm yêu thích</string>
-    <string name="all_brands">Tất cả thương hiệu</string>
-    <string name="products_count">%d sản phẩm</string>
-    <string name="reset_filters">Xóa bộ lọc</string>
+
+    <!-- Network -->
     <string name="lost_internet">Mất kết nối Internet</string>
     <string name="no_internet">Vui lòng kiểm tra kết nối Internet!</string>
     <string name="restored_internet">Đã khôi phục kết nối</string>
@@ -158,6 +269,9 @@
     <string name="no_internet_desc">Vui lòng kết nối Wi-Fi hoặc bật dữ liệu di động để có trải nghiệm tốt hơn</string>
     <string name="connect_now">Kết nối mạng</string>
     <string name="cancel_dialog">Hủy</string>
+    <string name="no_internet_message">Mất kết nối Internet. Vui lòng kiểm tra lại!</string>
+    <string name="network_lost">Mất kết nối Internet</string>
+    <string name="network_reconnecting">Đang kết nối lại…</string>
 
     <!-- Admin -->
     <string name="admin_dashboard_title">Bảng điều khiển</string>
@@ -180,11 +294,23 @@
     <string name="add_specification">Thêm thông số</string>
     <string name="save_product">Lưu sản phẩm</string>
     <string name="please_fill_all_fields">Vui lòng điền đầy đủ thông tin</string>
-    <string name="success">Thành công</string>
     <string name="product_saved">Sản phẩm đã được lưu thành công</string>
     <string name="key">Tên (vd: RAM)</string>
     <string name="value">Giá trị (vd: 16GB)</string>
-    <string name="add">Thêm</string>
+    <string name="upload_image_progress">Đang upload ảnh %1$d/%2$d...</string>
+    <string name="select_image_error">Vui lòng chọn ảnh hoặc nhập URL</string>
+    <string name="saving_product">Đang lưu sản phẩm...</string>
+    <string name="upload_error_prefix">Lỗi upload: %s</string>
+    <string name="add_label_short">Thêm</string>
+    <string name="stock_count_label">Số lượng tồn kho *</string>
+    <string name="spec_key_hint">vd: Kích thước màn hình, RAM, CPU</string>
+    <string name="spec_value_hint">vd: 6.67 Inches, 8 GB</string>
+    <string name="add_image_title">Thêm hình ảnh</string>
+    <string name="gallery_label">Thư viện ảnh</string>
+    <string name="gallery_desc">Chọn ảnh có sẵn trong máy</string>
+    <string name="url_link_label">Nhập link URL</string>
+    <string name="url_link_desc">Sử dụng ảnh từ internet</string>
+    <string name="enter_image_url_title">Nhập Link Ảnh</string>
     <string name="add_more_url">Thêm URL</string>
     <string name="image_url_label">URL hình ảnh</string>
     <string name="original_price">Giá gốc</string>
@@ -213,14 +339,11 @@
     <string name="deliver_btn">Đã giao</string>
     <string name="cancel_btn">Hủy</string>
     <string name="mark_as_delivered">Đánh dấu đã giao</string>
-    <string name="customer_label">Khách hàng</string>
     <string name="customer_info_title">Thông tin khách hàng</string>
     <string name="payment_method_label">Thanh toán</string>
     <string name="update_status_label">Cập nhật trạng thái</string>
     <string name="close_btn">Đóng</string>
     <string name="unknown_product">Sản phẩm không xác định</string>
-    <string name="loading_label">Đang tải...</string>
-    <string name="order_id_label">Mã đơn hàng</string>
 
     <!-- Users Management -->
     <string name="manage_users_title">Quản lý người dùng</string>
@@ -261,6 +384,13 @@
     <string name="usage_limit_label">Giới hạn sử dụng</string>
     <string name="expires_in_days_label">Hết hạn sau (ngày)</string>
     <string name="create_btn">Tạo</string>
+    <string name="edit_promo_code_title">Chỉnh sửa mã giảm giá</string>
+    <string name="extend_days_label">Gia hạn thêm (ngày)</string>
+    <string name="current_expiry_label">HSD hiện tại: %s</string>
+    <string name="used_count_readonly">Đã dùng: %d lượt (không thể sửa)</string>
+    <string name="save_changes_btn">Lưu thay đổi</string>
+    <string name="updated_promo_msg">Cập nhật mã %s thành công!</string>
+    <string name="error_updating_promo">Lỗi khi cập nhật</string>
 
     <!-- Categories Management -->
     <string name="product_categories_title">Danh mục sản phẩm</string>
@@ -288,6 +418,26 @@
     <string name="avg_value_label">Giá trị TB</string>
     <string name="pending_status_legend">Chờ xử lý</string>
     <string name="items_sold_label">%d sản phẩm đã bán</string>
+    <string name="no_data_title">Không có dữ liệu</string>
+    <string name="no_data_message">Danh sách đơn hàng đang trống</string>
+    <string name="permission_failed_title">Cấp quyền thất bại</string>
+    <string name="permission_failed_message">Ứng dụng cần quyền bộ nhớ để lưu báo cáo.</string>
+    <string name="export_error_title">Lỗi xuất file</string>
+    <string name="export_report_btn">Xuất báo cáo</string>
+    <string name="preview_export_title">Xem trước dữ liệu xuất</string>
+    <string name="report_name">Báo cáo kinh doanh</string>
+    <string name="report_order_count">Tổng cộng: %d đơn hàng đã sẵn sàng</string>
+    <string name="report_col_code">Mã</string>
+    <string name="report_col_date">Ngày</string>
+    <string name="report_col_customer">Khách</string>
+    <string name="report_col_amount">Tiền</string>
+    <string name="report_product_detail">Chi tiết sản phẩm:</string>
+    <string name="report_promo_applied">Khuyến mãi: %1$s (-%2$s)</string>
+    <string name="report_exporting">Đang xử lý dữ liệu...</string>
+    <string name="report_confirm_download">Xác nhận &amp; Tải file CSV</string>
+    <string name="report_csv_notice">Lưu ý: File CSV sẽ bao gồm đầy đủ chi tiết các sản phẩm trong mỗi đơn hàng.</string>
+    <string name="updated_at_format">Cập nhật lúc %s</string>
+    <string name="updated_at_empty">Cập nhật lúc --</string>
 
     <!-- Products Management (Admin) -->
     <string name="manage_products_title">Quản lý sản phẩm</string>
@@ -295,40 +445,485 @@
     <string name="no_products_in_category">Không có sản phẩm trong danh mục</string>
     <string name="delete_product_title">Xóa sản phẩm?</string>
     <string name="delete_product_confirm_msg">Bạn có chắc muốn xóa \"%s\"? Hành động này không thể hoàn tác.</string>
-
     <string name="add_to_cart_btn">Thêm vào giỏ</string>
     <string name="out_of_stock_btn">Hết hàng</string>
-    <string name="reviews_count">(%d đánh giá)</string>
     <string name="off_label">GIẢM</string>
     <string name="profiles_incomplete_title">Thông tin giao hàng chưa đầy đủ</string>
     <string name="profiles_incomplete_msg">Bạn cần cung cấp địa chỉ giao hàng và số điện thoại để có thể tiếp tục thanh toán.</string>
     <string name="go_to_profile">Đi tới Hồ sơ</string>
 
-    <!-- Edit Promo Code Dialog -->
-    <string name="edit_promo_code_title">Chỉnh sửa mã giảm giá</string>
-    <string name="extend_days_label">Gia hạn thêm (ngày)</string>
-    <string name="current_expiry_label">HSD hiện tại: %s</string>
-    <string name="used_count_readonly">Đã dùng: %d lượt (không thể sửa)</string>
-    <string name="save_changes_btn">Lưu thay đổi</string>
-    <string name="updated_promo_msg">Cập nhật mã %s thành công!</string>
-    <string name="error_updating_promo">Lỗi khi cập nhật</string>
-
     <!-- Orders Management Feedback -->
     <string name="order_updated_msg">Đã cập nhật đơn #%s</string>
     <string name="order_update_failed">Cập nhật trạng thái thất bại</string>
-    
-    <!-- New Order Note & Messaging -->
     <string name="order_note_label">Ghi chú cho cửa hàng</string>
     <string name="order_note_hint">Nhập yêu cầu đặc biệt (ví dụ: giao giờ hành chính...)</string>
     <string name="message_customer">Nhắn tin cho khách</string>
     <string name="customer_note_title">Ghi chú của khách hàng</string>
+    <string name="archive_success">Đã lưu trữ đơn #%s</string>
+    <string name="archive_failed">Lưu trữ thất bại</string>
+    <string name="delete_permanent_success">Đã xóa vĩnh viễn đơn #%s</string>
+    <string name="delete_permanent_failed">Xóa vĩnh viễn thất bại</string>
+    <string name="order_action_archive_label">Lưu trữ (Ẩn)</string>
+    <string name="order_action_delete_permanent_label">Xóa vĩnh viễn</string>
+    <string name="no_email_label">Không có email</string>
+    <string name="unknown_label">Không xác định</string>
 
-    <!-- Chat -->
-    <string name="chat_with_shop">Nhắn tin với cửa hàng</string>
-    <string name="admin_chat_title">Tin nhắn khách</string>
-    <string name="delete_chat_confirm_title">Xoá cuộc trò chuyện</string>
-    <string name="delete_chat_confirm_msg">Bạn có chắc chắn muốn xóa dữ liệu cuộc trò chuyện này không?</string>
-    <string name="delete_action">Xóa</string>
+    <!-- Admin Home & Migration -->
+    <string name="admin_home_sync_start">Đang bắt đầu đồng bộ...</string>
+    <string name="admin_home_sync_success">Đã cập nhật %1$d sản phẩm thành công!</string>
+    <string name="admin_home_sync_no_change">Tất cả sản phẩm đã có số lượng kho.</string>
+    <string name="admin_home_sync_error">Lỗi đồng bộ: %1$s</string>
+    <string name="admin_home_init_stock_btn">Khởi tạo số lượng kho mặc định (5)</string>
+    <string name="admin_home_stock_label">Kho: %d</string>
+    <string name="admin_label">Quản trị viên</string>
+    <string name="pending_orders_label">Chờ xử lý</string>
+    <string name="admin_profile_title">Hồ sơ Admin</string>
+    <string name="account_info_label">Thông tin tài khoản</string>
+    <string name="role_label">Vai trò</string>
+    <string name="analytics_period_today">Hôm nay</string>
+    <string name="analytics_period_7days">7 ngày</string>
+    <string name="analytics_period_30days">30 ngày</string>
+    <string name="analytics_period_60days">60 ngày</string>
+    <string name="error_permission_denied_title">Cấp quyền thất bại</string>
+    <string name="error_permission_denied_msg">Ứng dụng cần quyền bộ nhớ để lưu báo cáo.</string>
+    <string name="last_updated_at">Cập nhật lúc %s</string>
+    <string name="last_updated_none">Cập nhật lúc --</string>
+    <string name="error_no_data_title">Không có dữ liệu</string>
+    <string name="error_no_data_msg">Danh sách đơn hàng đang trống</string>
+    <string name="error_export_failed_title">Lỗi xuất file</string>
+    <string name="processing_data">Đang xử lý dữ liệu...</string>
+    <string name="confirm_download_csv">Xác nhận &amp; Tải file CSV</string>
+    <string name="business_report_label">Báo cáo kinh doanh</string>
+    <string name="orders_ready_msg">Tổng cộng: %d đơn hàng đã sẵn sàng</string>
+    <string name="id_short_label">Mã</string>
+    <string name="date_short_label">Ngày</string>
+    <string name="customer_short_label">Khách</string>
+    <string name="amount_short_label">Tiền</string>
+    <string name="product_details_label">Chi tiết sản phẩm:</string>
+    <string name="promo_applied_msg">Khuyến mãi: %1$s (-%2$s)</string>
+    <string name="csv_export_note">Lưu ý: File CSV sẽ bao gồm đầy đủ chi tiết các sản phẩm trong mỗi đơn hàng.</string>
+    <string name="promo_broadcast_title">Ưu đãi mới từ EasyShop!</string>
+    <string name="promo_broadcast_body">Mã [%1$s] đã sẵn sàng. Nhận ngay ưu đãi: %2$s</string>
+    <string name="promo_broadcast_success">Đã phát hành và gửi thông báo tới người dùng!</string>
+    <string name="promo_broadcast_error">Lỗi gửi thông báo: %s</string>
+    <string name="promo_retracted_msg">Đã thu hồi mã [%s]</string>
+    <string name="confirm_publish_title">Xác nhận phát hành</string>
+    <string name="confirm_publish_msg">Bạn có chắc chắn muốn phát hành mã giảm giá %s tới tất cả người dùng không? Sau khi phát hành, mã sẽ xuất hiện trong Thông báo của User.</string>
+    <string name="publish_now_btn">Phát hành ngay</string>
+    <string name="order_action_clear">Xóa</string>
+    <string name="order_action_more">Thêm</string>
+    <string name="order_payment_cod">COD</string>
+    <string name="url_placeholder">https://...</string>
+    <string name="id_prefix">ID: %s</string>
+    <string name="promo_code_prefix">Mã: %s</string>
+    <string name="cd_admin_avatar">Ảnh đại diện Admin</string>
+    <string name="csv_header_orders">Mã đơn hàng,Ngày đặt,Khách hàng,Tên Sản phẩm,Số lượng,Đơn giá,Thành tiền,Tổng hóa đơn,Trạng thái,Email,SĐT</string>
+
+    <!-- Admin Notification -->
+    <string name="notif_screen_title">Thông báo</string>
+    <string name="read_all_btn">Đọc tất cả</string>
+    <string name="delete_error_prefix">Lỗi xóa: %s</string>
+    <string name="delete_all_success">Đã xóa tất cả thông báo</string>
+    <string name="order_not_exist">Đơn hàng không tồn tại!</string>
+    <string name="delete_notif_success">Đã xóa thông báo thành công</string>
+    <string name="update_order_status_success">Đã cập nhật trạng thái đơn hàng!</string>
+    <string name="update_failed_prefix">Cập nhật thất bại: %s</string>
+    <string name="notif_total">Tổng cộng</string>
+    <string name="notif_unread">Chưa đọc</string>
+    <string name="notif_read">Đã đọc</string>
+    <string name="notif_empty_title">Chưa có thông báo nào</string>
+    <string name="notif_empty_desc">Khi có đơn mới hoặc cập nhật trạng thái,\nthông báo sẽ hiện ở đây.</string>
+    <string name="notif_empty_subtitle">Khi có cập nhật từ cửa hàng hoặc đơn hàng,\nthông báo sẽ hiển thị ở đây.</string>
+    <string name="notif_type_new_order">Đơn mới</string>
+    <string name="notif_type_shipping">Vận chuyển</string>
+    <string name="notif_type_delivered">Đã giao</string>
+    <string name="notif_type_cancelled">Đã hủy</string>
+    <string name="notif_type_order_status">Cập nhật</string>
+    <string name="notif_type_promo">Khuyến mãi</string>
+    <string name="notif_type_system">Hệ thống</string>
+    <string name="notif_read_all">Đọc tất cả</string>
+    <string name="notif_delete_all">Xóa tất cả</string>
+
+    <!-- Notifications Page -->
+    <string name="notification_title">Thông báo</string>
+    <string name="promo_saved_success">Đã lưu mã giảm giá vào ví!</string>
+    <string name="promo_save_error_title">Lỗi</string>
+    <string name="promo_save_error_message">Không thể lưu mã giảm giá</string>
+    <string name="login_required_to_save_promo">Vui lòng đăng nhập để lưu mã</string>
+    <string name="time_minutes_ago">%d phút trước</string>
+    <string name="time_hours_ago">%d giờ trước</string>
+    <string name="time_days_ago">%d ngày trước</string>
+    <string name="time_just_now">vừa xong</string>
+
+    <!-- Bottom Navigation Tabs -->
+    <string name="tab_home">Trang chủ</string>
+    <string name="tab_favorite">Yêu thích</string>
+    <string name="tab_cart">Giỏ hàng</string>
+    <string name="tab_profile">Hồ sơ</string>
+
+    <!-- Exit Dialog -->
+    <string name="exit_dialog_title">Thoát EasyShop?</string>
+    <string name="exit_dialog_message">Bạn có chắc chắn muốn đóng ứng dụng không? Giỏ hàng của bạn vẫn sẽ được lưu lại.</string>
+    <string name="exit_confirm">Thoát</string>
+
+    <!-- Stock -->
+    <string name="items_in_stock">Còn %d sản phẩm</string>
+
+    <!-- Auth Extras -->
+    <string name="auth_heading">Bắt đầu hành trình mua sắm ngay</string>
+    <string name="auth_subheading">Nền tảng mua sắm tốt nhất với giá tốt nhất</string>
+    <string name="auth_login">Đăng nhập</string>
+    <string name="auth_register">Đăng ký</string>
+    <string name="auth_guest">Tiếp tục với tư cách khách</string>
+    <string name="guest_user">Người dùng</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_tech_title">Thế giới Công nghệ</string>
+    <string name="onboarding_tech_desc">Sở hữu ngay những thiết bị công nghệ đỉnh cao từ các thương hiệu hàng đầu với mức giá ưu đãi đặc quyền chỉ có tại EasyShop.</string>
+    <string name="onboarding_ai_title">Trợ lý AI Thông minh</string>
+    <string name="onboarding_ai_desc">Trải nghiệm mua sắm cá nhân hóa hoàn toàn. AI của chúng tôi thấu hiểu phong cách và luôn sẵn sàng đề xuất những gì bạn cần.</string>
+    <string name="onboarding_secure_title">An toàn &amp; Thần tốc</string>
+    <string name="onboarding_secure_desc">Giao dịch bảo mật tuyệt đối, hỗ trợ tận tình 24/7. Nhận đơn hàng ngay tại nhà chỉ trong chớp mắt với dịch vụ chuyển phát siêu tốc.</string>
+    <string name="onboarding_next">Tiếp theo</string>
+    <string name="onboarding_start">Bắt đầu ngay</string>
+
+    <!-- Error State -->
+    <string name="error_title">Đã có lỗi xảy ra</string>
+    <string name="error_message">Không thể tải dữ liệu. Vui lòng thử lại sau.</string>
+    <string name="error_retry">Thử lại</string>
+    <string name="error_mediastore">Không thể tạo file qua MediaStore</string>
+    <string name="error_with_details">%1$s: %2$s</string>
+
+    <!-- Cart Extras -->
+    <string name="cart_empty_hint">Dạo một vòng cửa hàng và tìm món đồ bạn yêu thích nhé!</string>
+    <string name="cart_stock_limit">Đã đạt giới hạn tồn kho (%1$d)</string>
+
+    <!-- Checkout Extras -->
+    <string name="checkout_no_address">⚠️ Chưa có địa chỉ giao hàng. Nhấn để chọn!</string>
+    <string name="checkout_no_phone">⚠️ Thiếu số điện thoại giao hàng</string>
+    <string name="checkout_empty_address">⚠️ Địa chỉ chi tiết không được để trống</string>
+    <string name="checkout_select_address">Chọn địa chỉ giao hàng</string>
+    <string name="checkout_no_saved_address">Bạn chưa có địa chỉ nào. Hãy thêm trong Hồ sơ!</string>
+    <string name="no_address_warning">⚠️ Chưa có địa chỉ giao hàng. Nhấn để chọn!</string>
+    <string name="missing_phone_warning">⚠️ Thiếu số điện thoại giao hàng</string>
+    <string name="missing_detail_address_warning">⚠️ Địa chỉ chi tiết không được để trống</string>
+    <string name="select_shipping_address">Chọn địa chỉ giao hàng</string>
+    <string name="no_address_msg">Bạn chưa có địa chỉ nào. Hãy thêm trong Hồ sơ!</string>
+
+    <!-- Promo Extras -->
+    <string name="promo_section_title">🎁 Ưu Đãi Dành Cho Bạn</string>
+    <string name="promo_min_order">Đơn từ %s</string>
+    <string name="discount_label_caps">GIẢM GIÁ</string>
+    <string name="min_order_prefix">Đơn từ %s</string>
+    <string name="collect_label">Lưu</string>
+    <string name="select_voucher_title">Chọn Mã Giảm Giá</string>
+    <string name="empty_voucher_msg">Ví voucher trống</string>
+    <string name="applicable_vouchers">Mã có thể áp dụng</string>
+    <string name="ineligible_vouchers">Chưa đủ điều kiện</string>
+    <string name="discount_amount_prefix">Giảm %s</string>
+    <string name="min_order_required_prefix">Đơn tối thiểu: %s</string>
+    <string name="amount_missing_prefix">Còn thiếu %s</string>
+    <string name="expiring_soon_days">Sắp hết hạn: %1$d ngày</string>
+    <string name="expiry_date_prefix">HSD: %s</string>
+
+    <!-- Voucher Extras -->
+    <string name="voucher_title">Chọn Mã Giảm Giá</string>
+    <string name="voucher_empty">Ví voucher trống</string>
+    <string name="voucher_applicable">Mã có thể áp dụng</string>
+    <string name="voucher_not_eligible">Chưa đủ điều kiện</string>
+    <string name="voucher_discount_percent">Giảm %d%%</string>
+    <string name="voucher_discount_amount">Giảm %s</string>
+    <string name="voucher_min_order">Đơn tối thiểu: %s</string>
+    <string name="voucher_need_more">Còn thiếu %s</string>
+    <string name="voucher_expiring_soon">Sắp hết hạn: %d ngày</string>
+    <string name="voucher_expiry_date">HSD: %s</string>
+
+    <!-- Receipt Extras -->
+    <string name="receipt_order_id">Mã đơn hàng</string>
+    <string name="receipt_date">Ngày giờ</string>
+    <string name="receipt_customer">Khách hàng</string>
+    <string name="receipt_payment">Thanh toán</string>
+    <string name="receipt_products">Sản phẩm</string>
+    <string name="receipt_amount">Thành tiền</string>
+    <string name="receipt_subtotal">Tạm tính</string>
+    <string name="receipt_shipping">Phí vận chuyển</string>
+    <string name="receipt_free">Miễn phí</string>
+    <string name="receipt_promo_discount">Giảm giá Promo</string>
+    <string name="receipt_promo_code_applied">Mã áp dụng: %s</string>
+    <string name="receipt_thank_you">Cảm ơn quý khách đã mua hàng!</string>
+    <string name="receipt_warranty_hint">Vui lòng quét QR để tra cứu bảo hành điện tử</string>
+    <string name="receipt_wallet_store_info">Chuyên linh kiện &amp; Phụ kiện PC cao cấp</string>
+    <string name="receipt_unknown_product">Sản phẩm</string>
+    <string name="receipt_unknown_customer">Khách hàng lẻ</string>
+
+    <!-- QR Payment Extras -->
+    <string name="mbbank_label">MBBank</string>
+    <string name="momo_label">Ví MoMo</string>
+    <string name="transfer_note_label">Nội dung chuyển khoản:</string>
+    <string name="loading_qr_msg">Đang tải mã QR...</string>
+    <string name="save_qr_error">Lưu ảnh thất bại, vui lòng thử lại</string>
+    <string name="save_qr_btn">Lưu mã QR</string>
+    <string name="open_app_msg_format">Đang mở ứng dụng %s...</string>
+    <string name="open_mbbank_btn">Mở App MBBank</string>
+    <string name="open_momo_btn">Mở App MoMo</string>
+    <string name="payment_instruction_title">🏦 Hướng dẫn thanh toán</string>
+    <string name="payment_instruction_title_momo">📲 Hướng dẫn thanh toán</string>
+    <string name="mb_step_1">Bước 1: Quét mã QR hoặc chuyển khoản vào STK bên trên.</string>
+    <string name="mb_step_2">Bước 2: Đảm bảo nội dung chuyển khoản khớp với mã màu hồng.</string>
+    <string name="mb_step_3">Bước 3: Chờ 1-2 phút để SePay tự động xác nhận.</string>
+    <string name="momo_step_1">Cách 1: Nhấn \'Mở App MoMo\' để thanh toán nhanh.</string>
+    <string name="momo_step_2">Cách 2: Quét mã QR bằng ứng dụng MoMo của bạn.</string>
+    <string name="momo_not_installed">Ứng dụng MoMo chưa được cài đặt trên thiết bị</string>
+
+    <!-- AI Chat & STT Extras -->
+    <string name="stt_not_supported">Thiết bị không hỗ trợ nhận diện giọng nói</string>
+    <string name="stt_error_audio">Lỗi âm thanh</string>
+    <string name="stt_error_client">Lỗi phía khách (Client)</string>
+    <string name="stt_error_permissions">Cần quyền truy cập Microphone</string>
+    <string name="stt_error_network">Lỗi mạng khi nhận diện</string>
+    <string name="stt_error_generic">Lỗi nhận diện: %1$d</string>
+    <string name="stt_error_mic_init">Không thể khởi động Mic: %1$s</string>
+    <string name="error_generic_retry">Đã xảy ra lỗi, vui lòng thử lại.</string>
+    <string name="ai_busy_msg">Cửa hàng đang bận, bạn đợi vài giây rồi thử lại nhé!</string>
+    <string name="ai_auth_error">Lỗi xác thực API, vui lòng liên hệ shop để hỗ trợ.</string>
+    <string name="ai_network_error">Kết nối không ổn định, hãy kiểm tra Wifi/4G và thử lại.</string>
+    <string name="ai_generic_error">Trợ lý AI đang gặp chút sự cố, hãy thử lại sau ít phút!</string>
+    <string name="ai_welcome_msg">Xin chào! Tôi là Trợ lý AI của EasyShop. Tôi có thể giúp gì cho bạn hôm nay?</string>
+    <string name="login_required_msg">Vui lòng đăng nhập</string>
+    <string name="ai_not_connected">Không thể kết nối AI lúc này.</string>
+    <string name="ai_unknown_customer">Khách hàng</string>
+    <string name="ai_new_customer">Khách hàng mới</string>
+    <string name="ai_out_of_stock">Hết hàng</string>
+    <string name="ai_in_stock">Còn hàng</string>
+    <string name="ai_no_products_found">Không tìm thấy sản phẩm phù hợp trong kho.</string>
+    <string name="ai_no_promos_found">Hiện không có mã giảm giá nào khả dụng.</string>
+    <string name="ai_no_limit_time">Vô thời hạn</string>
+    <string name="ai_prompt_focus_promo">TRỌNG TÂM: Khách hỏi về khuyến mãi. Liệt kê mã giảm giá rõ ràng, KHÔNG gợi ý sản phẩm trừ khi được hỏi.</string>
+    <string name="ai_prompt_focus_payment">TRỌNG TÂM: Khách hỏi về thanh toán. Giải thích phương thức, KHÔNG đi lan man sang khuyến mãi.</string>
+    <string name="ai_prompt_focus_comparison">TRỌNG TÂM: So sánh sản phẩm. Phân tích ưu nhược điểm các món khách quan tâm.</string>
+    <string name="ai_prompt_focus_budget">TRỌNG TÂM: Tư vấn theo giá. Tìm các món khớp với túi tiền của khách.</string>
+    <string name="ai_prompt_focus_general">TRỌNG TÂM: Tư vấn/Hỗ trợ mua sắm chung.</string>
+    <string name="ai_prompt_system_role">BẠN LÀ CHUYÊN VIÊN TƯ VẤN KHÁCH HÀNG CỦA EASYSHOP.</string>
+    <string name="ai_prompt_user_context">NGỮ CẢNH KHÁCH HÀNG:</string>
+    <string name="ai_prompt_available_products">DANH SÁCH SẢN PHẨM HIỆN CÓ:</string>
+    <string name="ai_prompt_available_promos">VOUCHER / MÃ GIẢM GIÁ HIỆN TẠI:</string>
+    <string name="ai_prompt_payment_methods">PHƯƠNG THỨC THANH TOÁN HỖ TRỢ:\n1. Chuyển khoản MB Bank (MBBank) — Quét mã QR, xác nhận tự động qua SePay.\n2. Ví điện tử MoMo — Quét mã QR MoMo để trả.\n3. Thẻ quốc tế (Visa / Mastercard) — Nhập số thẻ, tên, ngày hết hạn và CVV.\n4. Thanh toán khi nhận hàng (COD) — Trả tiền mặt khi nhận đồ.</string>
+    <string name="ai_prompt_order_process">QUY TRÌNH ĐẶT HÀNG:\nThêm vào giỏ → Vào Giỏ hàng → Nhấn \"Thanh toán\" → Nhập/chọn địa chỉ giao hàng → Nhập mã giảm giá (nếu có) → Chọn phương thức thanh toán → Xác nhận đơn hàng.</string>
+    <string name="ai_prompt_intent_prefix">Ý ĐỊNH NGƯỜI DÙNG: %1$s</string>
+    <string name="ai_prompt_common_rules">QUY TẮC PHẢN HỒI BẮT BUỘC:\n1. KHÔNG ID: Tuyệt đối không hiển thị mã ID nội bộ (như 3qifh...) trong chat.\n2. PRODUCT TAGGING: Khi nhắc đến sản phẩm, phải dùng thẻ [PID_id] ngay sau tên.\n3. HẾT HÀNG: Nếu hết hàng, thông báo lịch sự và gợi ý món thay thế.\n4. MÃ GIẢM GIÁ: Trả lời dựa trên danh sách được cung cấp, rõ mã và điều kiện.\n5. THANH TOÁN: Trả lời dựa trên danh sách phương thức hỗ trợ.\n6. ĐÚNG TRỌNG TÂM: Đừng đi lan man quảng cáo không liên quan.\n7. PHONG CÁCH: Thân thiện, ngắn gọn (Xưng hô: Shop - Bạn).\n8. NGÔN NGỮ: Tiếng Việt.</string>
+    <string name="ai_vision_prompt_role">BẠN LÀ CHUYÊN VIÊN TƯ VẤN HÌNH ẢNH CỦA EASYSHOP.</string>
+    <string name="ai_vision_prompt_task">NHIỆM VỤ CỦA BẠN:\n1. PHÂN TÍCH ẢNH: Nhận diện sản phẩm trong hình.\n2. TRA CỨU KHO: Khớp với danh sách sản phẩm hiện có.\n3. TƯ VẤN: Nếu khớp, báo giá; nếu không, gợi ý các món tương tự.</string>
+    <string name="ai_user_context_format">Tên: %1$s\nGiỏ hàng: %2$s\nĐơn hàng gần đây: %3$s</string>
+    <string name="ai_product_item_format">- %1$s [%2$s] | Giá: %3$s | Trạng thái: %4$s</string>
+    <string name="ai_promo_item_format">- Mã: %1$s | %2$s | %3$s | %4$s</string>
+    <string name="ai_discount_percent_format">Giảm %1$d%% (tối đa %2$s)</string>
+    <string name="ai_discount_fixed_format">Giảm %1$s</string>
+    <string name="ai_min_order_format">đơn từ %1$s</string>
+    <string name="ai_no_min_order">không giới hạn đơn tối thiểu</string>
+    <string name="ai_expiry_date_format">HSD: %1$s</string>
+    <string name="speech_lang_code">vi-VN</string>
+    <string name="ai_chat_title">Trợ lý AI</string>
+    <string name="ai_status_online">Trực tuyến</string>
+    <string name="ai_welcome_card_title">Tư vấn nhanh theo nhu cầu</string>
+    <string name="ai_welcome_card_desc">Gửi tin nhắn, giọng nói hoặc ảnh sản phẩm để được hỗ trợ nhanh nhất!</string>
+    <string name="ai_listening">Đang nghe…</string>
+    <string name="ai_input_placeholder">Nhập nội dung...</string>
+    <string name="ai_thinking">AI đang suy nghĩ…</string>
+    <string name="ai_view_product">Xem sản phẩm</string>
+    <string name="ai_suggestion_1">Laptop tầm 15 triệu</string>
+    <string name="ai_suggestion_2">Máy tính chơi game</string>
+    <string name="ai_suggestion_3">Ưu đãi hời</string>
+    <string name="ai_suggest_iphone">iPhone mới nhất</string>
+
+    <!-- Admin Chat Extras -->
+    <string name="admin_chat_no_sessions">Chưa có cuộc hội thoại nào</string>
+    <string name="admin_chat_default_customer">Khách hàng</string>
+    <string name="admin_chat_loading">Đang tải...</string>
+    <string name="admin_chat_active">Đang hoạt động</string>
+    <string name="admin_chat_active_minutes_ago">Hoạt động %1$d phút trước</string>
+    <string name="admin_chat_active_hours_ago">Hoạt động %1$d giờ trước</string>
+    <string name="admin_chat_active_days_ago">Hoạt động %1$d ngày trước</string>
+    <string name="admin_chat_delete_confirm">Xóa</string>
+    <string name="admin_chat_cancel">Hủy</string>
+    <string name="admin_chat_send_image">Gửi ảnh</string>
+    <string name="admin_chat_reply_placeholder">Nhập phản hồi...</string>
+    <string name="admin_chat_title">Hỗ trợ khách hàng</string>
+
+    <!-- Order Management Extras -->
+    <string name="order_status_all">TẤT CẢ</string>
+    <string name="order_status_ordered">ĐÃ ĐẶT</string>
+    <string name="order_status_shipping">ĐANG GIAO</string>
+    <string name="order_status_delivered">ĐÃ GIAO</string>
+    <string name="order_status_cancelled">ĐÃ HỦY</string>
+    <string name="order_search_placeholder">Tìm theo mã hoặc tên khách...</string>
+    <string name="order_empty_title">Không tìm thấy đơn hàng</string>
+    <string name="order_empty_msg">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.</string>
+    <string name="order_item_count">%1$d sản phẩm</string>
+    <string name="order_action_ship">Giao hàng</string>
+    <string name="order_action_cancel">Hủy đơn</string>
+    <string name="order_action_complete">Hoàn tất</string>
+    <string name="order_menu_archive">Lưu trữ (Ẩn đi)</string>
+    <string name="order_menu_delete">Xóa vĩnh viễn</string>
+    <string name="order_archive_title">Lưu trữ đơn hàng?</string>
+    <string name="order_archive_msg">Đơn #%1$s sẽ bị ẩn khỏi danh sách này nhưng VẪN được tính vào doanh thu trong Thống kê.</string>
+    <string name="order_archive_confirm">Lưu trữ (Giữ thống kê)</string>
+    <string name="order_delete_title">⚠️ Xóa vĩnh viễn?</string>
+    <string name="order_delete_msg">Đơn #%1$s sẽ bị xóa hoàn toàn. Dữ liệu này sẽ KHÔNG CÒN xuất hiện trong Thống kê bán hàng.\n\nBạn có chắc chắn?</string>
+    <string name="order_delete_confirm">Tôi hiểu, hãy xóa</string>
+    <string name="order_notif_shipping_title">Đơn hàng đang giao 🚚</string>
+    <string name="order_notif_shipping_body">Đơn hàng #%1$s đang trên đường đến với bạn.</string>
+    <string name="order_notif_delivered_title">Giao hàng thành công ✅</string>
+    <string name="order_notif_delivered_body">Đơn hàng #%1$s đã được giao đến bạn.</string>
+    <string name="order_notif_cancelled_title">Đơn hàng đã bị hủy ❌</string>
+    <string name="order_notif_cancelled_body">Đơn hàng #%1$s của bạn đã bị hủy.</string>
+    <string name="order_notif_update_title">Cập nhật đơn hàng</string>
+    <string name="order_notif_update_body">Đơn hàng #%1$s đã cập nhật trạng thái: %2$s</string>
+
+    <!-- Avatar Picker Extras -->
+    <string name="avatar_picker_title">Chọn ảnh đại diện</string>
+    <string name="avatar_picker_gallery">Chọn từ Thư viện</string>
+    <string name="avatar_picker_success">Tải ảnh lên thành công!</string>
+    <string name="avatar_picker_error">Lỗi tải lên: %1$s</string>
+    <string name="avatar_picker_cancel">Hủy</string>
+
+    <!-- Checkout & Order Extras -->
+    <string name="checkout_error_loading">Lỗi tải dữ liệu: %1$s</string>
+    <string name="checkout_error_no_address">Vui lòng chọn hoặc thêm địa chỉ nhận hàng</string>
+    <string name="checkout_error_out_of_stock">Sản phẩm %1$s đã hết hoặc không đủ số lượng</string>
+    <string name="checkout_error_promo_inactive">Mã giảm giá không còn khả dụng</string>
+    <string name="checkout_error_promo_limit">Mã giảm giá đã đạt giới hạn sử dụng</string>
+    <string name="checkout_error_generic">Đã xảy ra lỗi khi đặt hàng</string>
+    <string name="checkout_notif_admin_title">Có đơn hàng mới!</string>
+    <string name="checkout_notif_admin_body">Khách %1$s vừa đặt đơn #%2$s trị giá %3$s</string>
+    <string name="checkout_sepay_not_found">Chưa tìm thấy giao dịch chuyển khoản cho mã %1$s. Vui lòng thử lại sau 1-2 phút hoặc liên hệ hỗ trợ.</string>
+    <string name="checkout_sepay_error">Lỗi hệ thống SePay: %1$s</string>
+    <string name="checkout_sepay_connect_error">Lỗi kết nối khi kiểm tra thanh toán: %1$s</string>
+
+    <!-- Auth Errors Extras -->
+    <string name="error_auth_invalid_credential">Email hoặc mật khẩu không chính xác</string>
+    <string name="error_auth_user_not_found">Tài khoản này không tồn tại</string>
+    <string name="error_auth_wrong_password">Sai mật khẩu</string>
+    <string name="error_auth_email_in_use">Email này đã được sử dụng</string>
+    <string name="error_auth_invalid_email">Định dạng email không hợp lệ</string>
+    <string name="error_auth_too_many_attempts">Quá nhiều lần thử thất bại. Vui lòng quay lại sau</string>
+    <string name="error_auth_user_disabled">Tài khoản của bạn đã bị khóa</string>
+    <string name="error_auth_op_not_allowed">Phương thức đăng nhập này chưa được kích hoạt</string>
+
+    <!-- Payment Errors Extras -->
+    <string name="error_payment_unauthenticated">Phiên làm việc hết hạn. Vui lòng đăng nhập lại</string>
+    <string name="error_payment_config">Lỗi cấu hình tài khoản thanh toán</string>
+    <string name="error_payment_insufficient_balance">Số dư không đủ để thực hiện giao dịch</string>
+    <string name="error_payment_invalid_amount">Số tiền giao dịch không hợp lệ</string>
+    <string name="error_payment_invalid_ref">Mã tham chiếu thanh toán không hợp lệ</string>
+
+    <!-- Common Errors Extras -->
+    <string name="error_common_network">Lỗi kết nối mạng. Vui lòng kiểm tra lại</string>
+    <string name="error_common_server">Lỗi hệ thống máy chủ. Vui lòng thử lại sau</string>
+    <string name="error_common_expired">Phiên làm việc hoặc mã đã hết hạn</string>
+    <string name="error_common_permission">Bạn không có quyền thực hiện hành động này</string>
+    <string name="error_common_unavailable">Dịch vụ hiện không khả dụng. Vui lòng thử lại sau</string>
+
+    <!-- AppUtil Strings Extras -->
+    <string name="app_util_login_required_fav">Vui lòng đăng nhập để dùng yêu thích</string>
+    <string name="app_util_fav_remove_title">Gỡ yêu thích</string>
+    <string name="app_util_fav_remove_msg">Đã xóa sản phẩm khỏi danh sách</string>
+    <string name="app_util_fav_add_title">Yêu thích</string>
+    <string name="app_util_fav_add_msg">Đã thêm vào danh sách yêu thích</string>
+    <string name="app_util_sync_error_title">Lỗi đồng bộ</string>
+    <string name="app_util_sync_error_remove">Không thể gỡ yêu thích</string>
+    <string name="app_util_sync_error_add">Không thể lưu yêu thích</string>
+    <string name="app_util_login_required_cart">Vui lòng đăng nhập để dùng giỏ hàng</string>
+    <string name="app_util_cart_add_success">Đã thêm vào giỏ hàng!</string>
+    <string name="app_util_cart_add_failed">Lỗi thêm vào giỏ hàng</string>
+    <string name="app_util_cart_update_error">Lỗi cập nhật giỏ hàng</string>
+    <string name="app_util_cart_removed">Đã xóa khỏi giỏ hàng</string>
+    <string name="app_util_no_network">Không có kết nối mạng</string>
+    <string name="app_util_order_notif_title">Thông báo đơn hàng</string>
+    <string name="app_util_order_notif_body">Bạn có đơn hàng mới đang chờ xử lý.</string>
+    <string name="app_util_order_error">Lỗi đơn hàng</string>
+    <string name="app_util_order_error_detail">Không thể tải thông tin đơn hàng</string>
+    <string name="app_util_history_error">Lỗi tải lịch sử</string>
+    <string name="app_util_update_failed">Cập nhật thất bại</string>
+    <string name="app_util_demo_payment_title">Thanh toán Demo</string>
+    <string name="app_util_demo_payment_msg">Đây là môi trường thử nghiệm.</string>
+    <string name="app_util_demo_payment_success">Giao dịch thành công (Demo)</string>
+    <string name="app_util_demo_payment_failed">Giao dịch thất bại (Demo)</string>
+    <string name="app_util_demo_payment_cancel">Giao dịch bị hủy (Demo)</string>
+    <string name="app_util_export_success_title">Xuất báo cáo thành công</string>
+    <string name="app_util_export_success_msg">Báo cáo đã được lưu vào thư mục Tải về.</string>
+    <string name="app_util_export_error_title">Lỗi xuất báo cáo</string>
+
+    <!-- Content Descriptions -->
+    <string name="google_logo_cd">Logo Google</string>
+    <string name="cd_back">Quay lại</string>
+    <string name="cd_delete_chat">Xóa cuộc trò chuyện</string>
+    <string name="cd_send">Gửi</string>
+    <string name="cd_user_avatar">Ảnh đại diện người dùng</string>
+    <string name="cd_selected">Đã chọn</string>
+    <string name="cd_clear_chat">Xóa tin nhắn</string>
+    <string name="cd_chat_image">Ảnh tin nhắn</string>
+    <string name="cd_search">Tìm kiếm</string>
+    <string name="cd_notifications">Thông báo</string>
+    <string name="cd_avatar">Ảnh đại diện</string>
+    <string name="cd_menu">Menu</string>
+    <string name="cd_filter">Lọc</string>
+    <string name="cd_remove">Xóa bỏ</string>
+    <string name="cd_clear">Xóa sạch</string>
+    <string name="cd_more">Thêm</string>
+    <string name="cd_close">Đóng</string>
+    <string name="cd_chat">Trò chuyện</string>
+
+    <!-- Admin Chat Dialogs -->
+    <string name="delete_chat_confirm_title">Xóa cuộc trò chuyện?</string>
+    <string name="delete_chat_confirm_msg">Toàn bộ tin nhắn với người dùng này sẽ bị xóa vĩnh viễn. Bạn có chắc chắn không?</string>
+
+    <!-- Compile fallback strings -->
+    <string name="not_available">Không có dữ liệu</string>
+    <string name="just_now">Vừa xong</string>
+    <string name="back">Quay lại</string>
+    <string name="delete">Xóa</string>
+    <string name="generic_error">Đã xảy ra lỗi</string>
+    <string name="product_not_found">Không tìm thấy sản phẩm</string>
+    <string name="quantity_label">Số lượng</string>
+    <string name="name_updated_success">Đã cập nhật tên</string>
+    <string name="name_update_error">Cập nhật tên thất bại</string>
+    <string name="phone_updated_success">Đã cập nhật số điện thoại</string>
+    <string name="phone_update_error">Cập nhật số điện thoại thất bại</string>
+    <string name="address_saved">Đã lưu địa chỉ</string>
+    <string name="address_save_error">Lưu địa chỉ thất bại</string>
+    <string name="chat_with_shop">Nhắn tin với Shop</string>
+    <string name="ai_suggest_laptop">Laptop 15 triệu</string>
+    <string name="ai_suggest_gaming">PC Gaming</string>
+    <string name="ai_suggest_deals">Deal tốt</string>
     <string name="shop_support_title">Hỗ trợ EasyShop</string>
     <string name="shop_support_status">Hỗ trợ trực tuyến</string>
+
+    <string name="error_loading_revenue">Lỗi tải doanh thu</string>
+    <string name="month_format">Tháng %d</string>
+    <string name="year_format">Năm %d</string>
+    <string name="order_status_distribution">Phân bổ trạng thái đơn hàng</string>
+    <string name="error_loading_name">Lỗi tải tên</string>
+    <string name="revenue_milestone_label">Mốc: %1$s - %2$s</string>
+    <string name="promo_issue_error">Lỗi phát hành: %1$s</string>
+    <string name="chart_scale_label">Mốc: %1$s - %2$s</string>
+    <string name="loading_product_name">Đang tải...</string>
+    <string name="unnamed_product">Sản phẩm không tên</string>
+    <string name="add_image_title">Thêm hình ảnh</string>
+    <string name="gallery_label">Thư viện</string>
+    <string name="gallery_desc">Chọn ảnh từ điện thoại</string>
+    <string name="url_link_label">Đường dẫn URL</string>
+    <string name="url_link_desc">Dán link ảnh từ internet</string>
+    <string name="enter_image_url_title">Nhập URL hình ảnh</string>
+    <string name="image_url_label">URL hình ảnh</string>
+    <string name="add_label_short">Thêm</string>
+    <string name="add_url">Thêm URL</string>
+    <string name="paste_image_url_hint">Dán URL hình ảnh</string>
+    <string name="image_url_with_index">URL hình ảnh %d</string>
+    <string name="image_url_placeholder">https://example.com/image.jpg</string>
+    <string name="stock_count_label">Số lượng tồn kho</string>
+    <string name="spec_key_hint">Ví dụ: Kích thước, RAM, CPU</string>
+    <string name="spec_value_hint">Ví dụ: 6.67 Inches, 8 GB</string>
+    <string name="min_one_image_error">Vui lòng thêm ít nhất 1 hình ảnh</string>
+    <string name="upload_image_error">Lỗi tải ảnh lên</string>
+    <string name="update_product_error">Lỗi cập nhật sản phẩm</string>
 </resources>

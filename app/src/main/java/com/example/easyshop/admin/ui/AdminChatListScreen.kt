@@ -28,10 +28,13 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
@@ -39,10 +42,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.easyshop.R
 import com.example.easyshop.admin.viewmodel.AdminChatViewModel
 import com.example.easyshop.model.ChatSession
 import java.text.SimpleDateFormat
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,20 +54,23 @@ fun AdminChatListScreen(
     viewModel: AdminChatViewModel = viewModel()
 ) {
     val sessions by viewModel.chatSessions.collectAsState()
+    val noSessionsText = stringResource(R.string.admin_chat_no_sessions)
+    val defaultCustomerText = stringResource(R.string.admin_chat_default_customer)
+    val backCd = stringResource(R.string.cd_back)
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        "Tin nhắn khách hàng",
+                        stringResource(R.string.admin_chat_title),
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, backCd)
                     }
                 }
             )
@@ -72,17 +78,26 @@ fun AdminChatListScreen(
     ) { padding ->
         if (sessions.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Chưa có cuộc hội thoại nào", color = Color.Gray)
+                Text(noSessionsText, color = Color.Gray)
             }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
                 items(sessions) { session ->
-                    ChatSessionItem(session) {
-                        val encodedName = java.net.URLEncoder.encode(session.userName.ifBlank { "Khách hàng" }, "UTF-8")
-                        val encodedAvatar = session.userProfileImage?.let { java.net.URLEncoder.encode(it, "UTF-8") } ?: "null"
-                        navController.navigate("admin-chat-detail/${session.userId}?userName=$encodedName&userAvatar=$encodedAvatar")
+                    ChatSessionItem(session, defaultCustomerName = defaultCustomerText) {
+                        val encodedName = java.net.URLEncoder.encode(
+                            session.userName.ifBlank { defaultCustomerText }, "UTF-8"
+                        )
+                        val encodedAvatar = session.userProfileImage
+                            ?.let { java.net.URLEncoder.encode(it, "UTF-8") } ?: "null"
+                        navController.navigate(
+                            "admin-chat-detail/${session.userId}?userName=$encodedName&userAvatar=$encodedAvatar"
+                        )
                     }
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = Color.LightGray)
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        thickness = 0.5.dp,
+                        color = Color.LightGray
+                    )
                 }
             }
         }
@@ -90,7 +105,11 @@ fun AdminChatListScreen(
 }
 
 @Composable
-fun ChatSessionItem(session: ChatSession, onClick: () -> Unit) {
+fun ChatSessionItem(
+    session: ChatSession,
+    defaultCustomerName: String,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -120,12 +139,15 @@ fun ChatSessionItem(session: ChatSession, onClick: () -> Unit) {
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = session.userName.ifBlank { "Khách hàng" },
+                    text = session.userName.ifBlank { defaultCustomerName },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = if (session.unreadCountByAdmin > 0) FontWeight.Bold else FontWeight.Normal,
                     modifier = Modifier.weight(1f)
                 )
-                val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(session.lastTimestamp.toDate())
+                val locale = LocalConfiguration.current.locales[0]
+                val time = remember(locale) {
+                    SimpleDateFormat("HH:mm", locale).format(session.lastTimestamp.toDate())
+                }
                 Text(time, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
             }
             Text(

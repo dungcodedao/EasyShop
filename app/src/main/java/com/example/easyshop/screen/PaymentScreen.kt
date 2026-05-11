@@ -85,6 +85,10 @@ fun PaymentScreen(
     // Đưa chuỗi ra ngoài Composable để tránh lỗi IDE trong lambda
     val testCardHint = stringResource(R.string.test_card_hint)
     val paymentLabel = stringResource(R.string.payment)
+    val strPaymentMbConfirmed = stringResource(R.string.payment_mb_confirmed)
+    val strPaymentMbChecking = stringResource(R.string.payment_mb_checking)
+    val strPaymentMomoConfirm = stringResource(R.string.payment_momo_confirm)
+    val strChangePaymentMethod = stringResource(R.string.change_payment_method)
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -123,12 +127,14 @@ fun PaymentScreen(
             is CheckoutResult.Success -> {
                 isProcessing = false
                 navController.navigate("receipt/${totalAmount.toFloat()}/${result.orderId}") {
-                    popUpTo("payment") { inclusive = true }
+                    popUpTo("home") { inclusive = false }
+                    launchSingleTop = true
                 }
+                viewModel.resetResult()
             }
             is CheckoutResult.Error -> {
                 isProcessing = false
-                AppUtil.showError("Lỗi thanh toán", result.message)
+                AppUtil.showError(context.getString(R.string.payment_error_title), result.message)
             }
             is CheckoutResult.Loading -> {
                 isProcessing = true
@@ -234,7 +240,7 @@ fun PaymentScreen(
                     shape = RoundedCornerShape(12.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f))
                 ) {
-                    Text("Thay đổi phương thức thanh toán", color = MaterialTheme.colorScheme.primary)
+                    Text(strChangePaymentMethod, color = MaterialTheme.colorScheme.primary)
                 }
             }
 
@@ -330,8 +336,8 @@ fun PaymentScreen(
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                     } else {
                         val buttonText = when (selectedPaymentMethod) {
-                            "MB" -> if (isPaymentConfirmed) "Đã nhận tiền - Nhấn để Hoàn tất" else "Kiểm tra thanh toán"
-                            "MoMo QR" -> "Xác nhận đã chuyển tiền"
+                            "MB" -> if (isPaymentConfirmed) strPaymentMbConfirmed else strPaymentMbChecking
+                            "MoMo QR" -> strPaymentMomoConfirm
                             else -> paymentLabel + " " + AppUtil.formatPrice(totalAmount)
                         }
                         Text(
@@ -361,10 +367,10 @@ private fun PaymentMethodSelector(
     onMethodSelected: (String) -> Unit
 ) {
     val methods = listOf(
-        Triple("MB", "https://vietqr.net/portal-static/img/bank_logo/mbb.png", "Ngân hàng MB"),
-        Triple("MoMo QR", "https://img.vietqr.io/image/momo.png", "Ví điện tử MoMo"),
-        Triple("Credit Card", "💳", "Thẻ quốc tế (Visa/Master)"),
-        Triple("Cash on Delivery", "💵", "Thanh toán khi nhận hàng")
+        Triple("MB", "https://vietqr.net/portal-static/img/bank_logo/mbb.png", stringResource(R.string.payment_subtitle_mb)),
+        Triple("MoMo QR", "https://img.vietqr.io/image/momo.png", stringResource(R.string.payment_subtitle_momo)),
+        Triple("Credit Card", "💳", stringResource(R.string.payment_subtitle_credit_card)),
+        Triple("Cash on Delivery", "💵", stringResource(R.string.payment_subtitle_cod))
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

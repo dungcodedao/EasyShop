@@ -60,7 +60,7 @@ fun MoMoQRSection(totalAmount: Double) {
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Ví điện tử MoMo", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.momo_label), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
                     Text(accountNo, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                     Text(accountName, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                 }
@@ -100,12 +100,12 @@ fun MoMoQRSection(totalAmount: Double) {
             OutlinedButton(
                 onClick = {
                     scope.launch {
-                        AppUtil.showToast(context, "Đang tải mã QR...")
+                        AppUtil.showToast(context, context.getString(R.string.loading_qr_msg))
                         val success = ImageSaver.saveQrToGallery(context, qrUrl)
                         if (success) {
                             AppUtil.showToast(context, saveQrMsg)
                         } else {
-                            AppUtil.showToast(context, "Lỗi khi lưu ảnh, vui lòng thử lại")
+                            AppUtil.showToast(context, context.getString(R.string.save_qr_error))
                         }
                     }
                 },
@@ -115,7 +115,7 @@ fun MoMoQRSection(totalAmount: Double) {
             ) {
                 Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color(0xFFAE2070))
                 Spacer(Modifier.width(8.dp))
-                Text("Lưu mã", color = Color(0xFFAE2070))
+                Text(stringResource(R.string.save_qr_btn), color = Color(0xFFAE2070))
             }
 
             Button(
@@ -126,7 +126,7 @@ fun MoMoQRSection(totalAmount: Double) {
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFAE2070))
             ) {
-                Text("Mở ví MoMo", color = Color.White)
+                Text(stringResource(R.string.open_momo_btn), color = Color.White)
             }
         }
 
@@ -141,9 +141,9 @@ fun MoMoQRSection(totalAmount: Double) {
                 modifier = Modifier.padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text("📲 Hướng dẫn thanh toán", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFAE2070))
-                Text("Cách 1: Nhấn 'Mở ví MoMo' để thanh toán nhanh.", fontSize = 12.sp, color = Color.DarkGray)
-                Text("Cách 2: Quét mã QR bằng ứng dụng MoMo của bạn.", fontSize = 12.sp, color = Color.DarkGray)
+                Text(stringResource(R.string.payment_instruction_title_momo), fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFAE2070))
+                Text(stringResource(R.string.momo_step_1), fontSize = 12.sp, color = Color.DarkGray)
+                Text(stringResource(R.string.momo_step_2), fontSize = 12.sp, color = Color.DarkGray)
             }
         }
     }
@@ -156,6 +156,6 @@ private fun openMoMoApp(context: android.content.Context, phone: String, amount:
     try {
         context.startActivity(intent)
     } catch (e: Exception) {
-        android.widget.Toast.makeText(context, "Máy chưa cài ứng dụng MoMo", android.widget.Toast.LENGTH_SHORT).show()
+        android.widget.Toast.makeText(context, context.getString(R.string.momo_not_installed), android.widget.Toast.LENGTH_SHORT).show()
     }
 }

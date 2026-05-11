@@ -37,6 +37,7 @@ app/build/outputs/mapping/
 .agent/
 planProject/
 .kotlin/
+.testsprite/
 
 # Thesis Documentation
 thesis_docs/

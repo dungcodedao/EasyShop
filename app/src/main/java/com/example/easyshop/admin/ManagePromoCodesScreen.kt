@@ -1,5 +1,6 @@
 package com.example.easyshop.admin
 
+import android.annotation.SuppressLint
 import com.example.easyshop.AppUtil
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.navigation.NavController
 import com.example.easyshop.R
 import com.example.easyshop.model.PromoCodeModel
@@ -30,6 +32,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("LocalContextGetResourceValueCall")
 @Composable
 fun ManagePromoCodesScreen(
     navController: NavController,
@@ -63,8 +66,8 @@ fun ManagePromoCodesScreen(
 
     // Hàm gửi thông báo quảng bá tới người dùng khi phát hành mã
     fun broadcastPromoNotification(promo: PromoCodeModel) {
-        val title = "Ưu đãi mới từ EasyShop!"
-        val body = "Mã [${promo.code}] đã sẵn sàng. Nhận ngay ưu đãi: ${promo.description}"
+        val title = context.getString(R.string.promo_broadcast_title)
+        val body = context.getString(R.string.promo_broadcast_body, promo.code, promo.description)
 
         val notif = hashMapOf(
             "userId" to "broadcast",
@@ -77,10 +80,10 @@ fun ManagePromoCodesScreen(
         )
         firestore.collection("notifications").add(notif)
             .addOnSuccessListener {
-                AppUtil.showSuccess("Đã phát hành và gửi thông báo tới người dùng!")
+                AppUtil.showSuccess(context.getString(R.string.promo_broadcast_success))
             }
             .addOnFailureListener { e ->
-                AppUtil.showError("Lỗi gửi thông báo: ${e.message}")
+                AppUtil.showError(context.getString(R.string.promo_broadcast_error, e.message))
             }
 
         // Gửi FCM push tới tất cả user (hoạt động kể cả khi app đã tắt)
@@ -155,7 +158,7 @@ fun ManagePromoCodesScreen(
                                     .update("isIssued", false)
                                     .addOnSuccessListener {
                                         silentReload()
-                                        AppUtil.showSuccess("Đã thu hồi mã [${promo.code}]")
+                                        AppUtil.showSuccess(context.getString(R.string.promo_retracted_msg, promo.code))
                                     }
                             },
                             onEdit = { editingPromo = promo },
@@ -163,7 +166,7 @@ fun ManagePromoCodesScreen(
                                 firestore.collection("promoCodes").document(promo.docId).delete()
                                     .addOnSuccessListener {
                                         loadPromoCodes()
-                                        AppUtil.showSuccess(context.getString(R.string.deleted_promo_msg, promo.code))
+                                        AppUtil.showSuccess(context.getString(R.string.deleted_promo_msg, promo.code)) // format arg in callback
                                     }
                             }
                         )
@@ -224,8 +227,8 @@ fun ManagePromoCodesScreen(
     publishingPromo?.let { promo ->
         AlertDialog(
             onDismissRequest = { publishingPromo = null },
-            title = { Text("Xác nhận phát hành") },
-            text = { Text("Bạn có chắc chắn muốn phát hành mã giảm giá ${promo.code} tới tất cả người dùng không? Sau khi phát hành, mã sẽ xuất hiện trong Thông báo của User.") },
+            title = { Text(stringResource(R.string.confirm_publish_title)) },
+            text = { Text(stringResource(R.string.confirm_publish_msg, promo.code)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -238,18 +241,18 @@ fun ManagePromoCodesScreen(
                                 broadcastPromoNotification(p)
                             }
                             .addOnFailureListener { e ->
-                                AppUtil.showError("Lỗi phát hành: ${e.message}")
+                                AppUtil.showError(context.getString(R.string.promo_issue_error, e.message ?: ""))
                             }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800)),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Phát hành ngay", color = Color.White)
+                    Text(stringResource(R.string.publish_now_btn), color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { publishingPromo = null }) {
-                    Text("Hủy")
+                    Text(stringResource(R.string.cancel))
                 }
             },
             shape = RoundedCornerShape(24.dp)
@@ -266,7 +269,8 @@ fun PromoCodeItem(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val locale = LocalConfiguration.current.locales[0]
+    val dateFormat = remember(locale) { SimpleDateFormat("dd/MM/yyyy", locale) }
     val isExpired = promo.isExpired()
 
     Card(
@@ -289,7 +293,7 @@ fun PromoCodeItem(
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
-                            if (promo.type == "percentage") "${promo.value.toInt()}%" else "$${promo.value}",
+                            if (promo.type == "percentage") "${promo.value.toInt()}%" else AppUtil.formatPrice(promo.value),
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
@@ -421,7 +425,8 @@ fun EditPromoCodeDialog(
     onDismiss: () -> Unit,
     onConfirm: (PromoCodeModel) -> Unit
 ) {
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val locale = LocalConfiguration.current.locales[0]
+    val dateFormat = remember(locale) { SimpleDateFormat("dd/MM/yyyy", locale) }
     var description by remember { mutableStateOf(promo.description) }
     var type by remember { mutableStateOf(promo.type) }
     var value by remember { mutableStateOf(promo.value.toString()) }

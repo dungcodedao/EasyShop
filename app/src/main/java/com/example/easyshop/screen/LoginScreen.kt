@@ -83,7 +83,12 @@ fun LoginScreen(
     val context = LocalContext.current
     val isFormValid = email.isNotBlank() && password.isNotBlank()
     val loginFailedMsg = stringResource(id = R.string.login_failed)
-    
+    val enterEmailPrompt = stringResource(R.string.enter_email_prompt)
+    val resetPasswordSent = stringResource(R.string.reset_password_sent)
+    val resetPasswordFailed = stringResource(R.string.reset_password_failed)
+    val authError = stringResource(R.string.auth_error)
+    val somethingWentWrong = stringResource(R.string.something_went_wrong)
+
     val primaryIndigo = Color(0xFF4F46E5)
 
     Box(
@@ -195,15 +200,19 @@ fun LoginScreen(
                     )
                     
                     Text(
-                        text = "Quên mật khẩu?",
+                        text = stringResource(id = R.string.forgot_password),
                         modifier = Modifier
                             .align(Alignment.End)
                             .clickableOnce {
-                                if (email.isBlank()) {
-                                    AppUtil.showToast(context, "Vui lòng nhập email")
+                                if (email.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                                    AppUtil.showToast(context, enterEmailPrompt)
                                 } else {
                                     authViewModel.resetPassword(email) { success, _ ->
-                                        AppUtil.showToast(context, if (success) "Đã gửi mail đặt lại mật khẩu" else "Lỗi gửi mail")
+                                        AppUtil.showToast(
+                                            context, 
+                                            if (success) resetPasswordSent
+                                            else resetPasswordFailed
+                                        )
                                     }
                                 }
                             },
@@ -255,7 +264,12 @@ fun LoginScreen(
             // Divider
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 8.dp)) {
                 HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
-                Text(" Hoặc đăng nhập bằng ", modifier = Modifier.padding(horizontal = 12.dp), style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                Text(
+                    text = stringResource(id = R.string.or_login_with),
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.Gray
+                )
                 HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
             }
 
@@ -292,12 +306,12 @@ fun LoginScreen(
                                             launchSingleTop = true
                                         }
                                     } else {
-                                        AppUtil.showToast(context, error ?: "Lỗi xác thực")
+                                        AppUtil.showToast(context, error ?: authError)
                                     }
                                 }
                             }
                         } catch (e: Exception) {
-                            AppUtil.showToast(context, "Lỗi: ${e.message}")
+                            AppUtil.showToast(context, context.getString(R.string.error_with_details, somethingWentWrong, e.message ?: ""))
                         }
                     }
                 },
@@ -313,11 +327,16 @@ fun LoginScreen(
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_google),
-                        contentDescription = "Google Logo",
+                        contentDescription = stringResource(R.string.google_logo_cd),
                         modifier = Modifier.size(22.dp)
                     )
                     Spacer(Modifier.width(12.dp))
-                    Text("Tiếp tục với Google", style = MaterialTheme.typography.titleSmall, color = Color.DarkGray, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = stringResource(id = R.string.continue_with_google),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = Color.DarkGray,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
 

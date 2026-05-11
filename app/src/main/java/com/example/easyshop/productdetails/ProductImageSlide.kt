@@ -94,11 +94,14 @@ fun ProductImageSlider(
             val imageScale = lerp(start = 0.94f, stop = 1f, fraction = 1f - pageOffset)
             val imageAlpha = lerp(start = 0.64f, stop = 1f, fraction = 1f - pageOffset)
 
-            val imageRequest = ImageRequest.Builder(context)
-                .data(images[page])
-                .crossfade(true)
-                .size(800)
-                .build()
+            // Cache ImageRequest ngoài graphicsLayer để tránh allocation mỗi frame
+            val imageRequest = remember(page, images.getOrNull(page)) {
+                ImageRequest.Builder(context)
+                    .data(images.getOrNull(page))
+                    .crossfade(true)
+                    .size(800)
+                    .build()
+            }
 
             AsyncImage(
                 model = imageRequest,

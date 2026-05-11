@@ -1,5 +1,7 @@
 package com.example.easyshop.model
 
+import com.google.firebase.firestore.PropertyName
+
 data class PromoCodeModel (
     val code: String = "",
     val type: String = "percentage", // "percentage" hoặc "fixed"
@@ -11,7 +13,8 @@ data class PromoCodeModel (
     val active: Boolean = true,
     val usageLimit: Int = -1, // -1 = không giới hạn
     val usedCount: Int = 0,
-    val isIssued: Boolean = false,
+    @get:PropertyName("isIssued") @set:PropertyName("isIssued")
+    var isIssued: Boolean = false,
     val issuedAt: Long = 0L,
     val docId: String = "" // Trường này để lưu ID tài liệu Firestore
 )

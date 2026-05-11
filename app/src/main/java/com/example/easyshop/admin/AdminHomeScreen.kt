@@ -72,17 +72,25 @@ import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
+import com.example.easyshop.util.LanguageManager
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminHomeScreen(
     modifier: Modifier = Modifier,
     navController: NavController
 ) {
+    val context = LocalContext.current
+    // Áp dụng ngôn ngữ của Admin khi vào section này
+    LaunchedEffect(Unit) {
+        LanguageManager.applyAdminLocale(context)
+    }
+
     var products by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var isMigrating by remember { mutableStateOf(false) }
+    var isSyncError by remember { mutableStateOf(false) }
     var migrationMessage by remember { mutableStateOf<String?>(null) }
-    
     var showDeleteDialog by remember { mutableStateOf(false) }
     var productToDelete by remember { mutableStateOf<ProductModel?>(null) }
     var categories by remember { mutableStateOf<List<CategoryModel>>(emptyList()) }
@@ -113,7 +121,7 @@ fun AdminHomeScreen(
     fun restoreStockData() {
         scope.launch {
             isMigrating = true
-            migrationMessage = "Đang bắt đầu đồng bộ..."
+            migrationMessage = context.getString(R.string.admin_home_sync_start)
             try {
                 val snapshot = firestore.collection("data").document("stock")
                     .collection("products").get().await()
@@ -135,14 +143,17 @@ fun AdminHomeScreen(
                 
                 if (updatedCount > 0) {
                     batch.commit().await()
-                    migrationMessage = "Đã cập nhật $updatedCount sản phẩm thành công!"
+                    isSyncError = false
+                    migrationMessage = context.getString(R.string.admin_home_sync_success, updatedCount)
                 } else {
-                    migrationMessage = "Tất cả sản phẩm đã có số lượng kho."
+                    isSyncError = false
+                    migrationMessage = context.getString(R.string.admin_home_sync_no_change)
                 }
                 
                 loadProducts()
             } catch (e: Exception) {
-                migrationMessage = "Lỗi đồng bộ: ${e.message}"
+                isSyncError = true
+                migrationMessage = context.getString(R.string.admin_home_sync_error, e.message ?: "")
             } finally {
                 // Tự động tắt thông báo sau 3s
                 kotlinx.coroutines.delay(3000)
@@ -209,7 +220,7 @@ fun AdminHomeScreen(
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
                             ) {
                                 Row(Modifier.padding(12.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    if (isMigrating && !msg.startsWith("Lỗi") && !msg.contains("thành công")) {
+                                    if (isMigrating && !isSyncError) {
                                         CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                                         Spacer(Modifier.width(12.dp))
                                     }
@@ -227,7 +238,7 @@ fun AdminHomeScreen(
                              ) {
                                  Icon(Icons.Default.Inventory, null, Modifier.size(18.dp))
                                  Spacer(Modifier.width(8.dp))
-                                 Text("Khởi tạo số lượng kho mặc định (5)", style = MaterialTheme.typography.labelLarge)
+                                 Text(stringResource(R.string.admin_home_init_stock_btn), style = MaterialTheme.typography.labelLarge)
                              }
                         }
 
@@ -389,7 +400,7 @@ private fun AdminProductItem(
                             shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
-                                text = "Kho: ${product.stockCount}",
+                                text = stringResource(R.string.admin_home_stock_label, product.stockCount),
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold
@@ -417,7 +428,7 @@ private fun AdminProductItem(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 ProductActionButton(
-                    label = "Xem",
+                    label = stringResource(R.string.view_action),
                     icon = Icons.Default.Visibility,
                     onClick = onViewDetails,
                     modifier = Modifier.weight(1f),
@@ -425,7 +436,7 @@ private fun AdminProductItem(
                     content = MaterialTheme.colorScheme.primary
                 )
                 ProductActionButton(
-                    label = "Sửa",
+                    label = stringResource(R.string.edit_action),
                     icon = Icons.Default.Edit,
                     onClick = onEdit,
                     modifier = Modifier.weight(1f),
@@ -433,7 +444,7 @@ private fun AdminProductItem(
                     content = MaterialTheme.colorScheme.secondary
                 )
                 ProductActionButton(
-                    label = "Xóa",
+                    label = stringResource(R.string.delete_action),
                     icon = Icons.Default.Delete,
                     onClick = onDelete,
                     modifier = Modifier.weight(1f),

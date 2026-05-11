@@ -45,7 +45,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.easyshop.R
 import com.example.easyshop.model.NavItemModel
 import com.example.easyshop.pages.CartPage
 import com.example.easyshop.pages.FavoritePage
@@ -69,14 +69,16 @@ import com.example.easyshop.pages.HomePage
 import com.example.easyshop.pages.ProfilePage
 import com.example.easyshop.viewmodel.FavoriteViewModel
 import com.example.easyshop.viewmodel.HomeViewModel
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier, navController: NavController) {
     val navItemList = listOf(
-        NavItemModel("Trang chủ", Icons.Filled.Home, Icons.Outlined.Home, "home"),
-        NavItemModel("Yêu thích", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder, "favorite"),
-        NavItemModel("Giỏ hàng", Icons.Filled.ShoppingCart, Icons.Outlined.ShoppingCart, "cart"),
-        NavItemModel("Hồ sơ", Icons.Filled.Person, Icons.Outlined.Person, "profile"),
+        NavItemModel(stringResource(R.string.tab_home), Icons.Filled.Home, Icons.Outlined.Home, "home"),
+        NavItemModel(stringResource(R.string.tab_favorite), Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder, "favorite"),
+        NavItemModel(stringResource(R.string.tab_cart), Icons.Filled.ShoppingCart, Icons.Outlined.ShoppingCart, "cart"),
+        NavItemModel(stringResource(R.string.tab_profile), Icons.Filled.Person, Icons.Outlined.Person, "profile"),
     )
 
     var selectedIndex by rememberSaveable { mutableStateOf(0) }
@@ -126,7 +128,7 @@ fun HomeScreen(modifier: Modifier = Modifier, navController: NavController) {
                 ) {
                     Icon(
                         imageVector = Icons.Filled.AutoAwesome,
-                        contentDescription = "AI Assistant",
+                        contentDescription = stringResource(R.string.ai_chat_title),
                         modifier = Modifier.size(28.dp)
                     )
                 }
@@ -285,14 +287,14 @@ fun ExitConfirmationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
         ),
         title = {
             Text(
-                "Thoát EasyShop?",
+                stringResource(R.string.exit_dialog_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
         },
         text = {
             Text(
-                "Bạn có chắc chắn muốn đóng ứng dụng không? Giỏ hàng của bạn vẫn sẽ được lưu lại.",
+                stringResource(R.string.exit_dialog_message),
                 style = MaterialTheme.typography.bodyMedium
             )
         },
@@ -305,12 +307,12 @@ fun ExitConfirmationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Thoát", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.exit_confirm), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             androidx.compose.material3.TextButton(onClick = onDismiss) {
-                Text("Hủy", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
         shape = RoundedCornerShape(24.dp),

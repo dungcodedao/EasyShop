@@ -107,11 +107,11 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.floor
 
-enum class TimePeriod(val label: String, val days: Int) {
-    DAY("Hôm nay", 1),
-    WEEK("7 ngày", 7),
-    MONTH("30 ngày", 30),
-    TWO_MONTHS("60 ngày", 60)
+enum class TimePeriod(@androidx.annotation.StringRes val labelRes: Int, val days: Int) {
+    DAY(R.string.analytics_period_today, 1),
+    WEEK(R.string.analytics_period_7days, 7),
+    MONTH(R.string.analytics_period_30days, 30),
+    TWO_MONTHS(R.string.analytics_period_60days, 60)
 }
 
 data class ProductStat(val id: String, val count: Int, val revenue: Double, val imageUrl: String? = null, val title: String? = null)
@@ -148,7 +148,10 @@ fun AnalyticsScreen(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (!isGranted) {
-            com.example.easyshop.AppUtil.showError("Cấp quyền thất bại", "Ứng dụng cần quyền bộ nhớ để lưu báo cáo.")
+            com.example.easyshop.AppUtil.showError(
+                context.getString(R.string.error_permission_denied_title),
+                context.getString(R.string.error_permission_denied_msg)
+            )
         }
     }
 
@@ -300,7 +303,7 @@ fun AnalyticsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -341,8 +344,8 @@ fun AnalyticsScreen(
                     ) {
                         Text(
                             text = lastUpdatedAt?.let {
-                                "Cập nhật lúc ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(it)}"
-                            } ?: "Cập nhật lúc --",
+                                stringResource(R.string.last_updated_at, SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(it))
+                            } ?: stringResource(R.string.last_updated_none),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -353,7 +356,10 @@ fun AnalyticsScreen(
                                 if (orders.isNotEmpty()) {
                                     showPreviewDialog = true
                                 } else {
-                                    com.example.easyshop.AppUtil.showError("Không có dữ liệu", "Danh sách đơn hàng đang trống")
+                                    com.example.easyshop.AppUtil.showError(
+                                        context.getString(R.string.error_no_data_title),
+                                        context.getString(R.string.error_no_data_msg)
+                                    )
                                 }
                             },
                             color = GreenSuccess.copy(alpha = 0.12f),
@@ -371,7 +377,7 @@ fun AnalyticsScreen(
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Text(
-                                    "Xuất báo cáo",
+                                    stringResource(R.string.export_report_btn),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = GreenSuccess,
                                     fontWeight = FontWeight.Bold
@@ -417,7 +423,7 @@ fun AnalyticsScreen(
                 // ── Revenue Trend Bar Chart ────────────────────────────────
                 item {
                     SectionTitle(
-                        title = "${stringResource(id = R.string.revenue_trend_title)} (${selectedPeriod.label})",
+                        title = "${stringResource(id = R.string.revenue_trend_title)} (${stringResource(selectedPeriod.labelRes)})",
                         icon = Icons.AutoMirrored.Filled.TrendingUp,
                         tint = PurpleAccent
                     )
@@ -438,7 +444,7 @@ fun AnalyticsScreen(
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text(
-                                    text = period.label,
+                                    text = stringResource(period.labelRes),
                                     modifier = Modifier.padding(vertical = 8.dp),
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
@@ -522,7 +528,7 @@ fun AnalyticsScreen(
                                 val doc = firestore.collection("data").document("stock").collection("products")
                                     .document(id).get().await()
                                 productNames[id] = doc.getString("title") ?: id
-                                // Xử lý giá: xóa "đ", xóa dấu phẩy và chuyển sang Double
+                                // Xử lý giá: xóa \"đ\", xóa dấu phẩy và chuyển sang Double
                                 val priceRaw = doc.get("actualPrice")?.toString() ?: "0"
                                 val priceCleaned = priceRaw.replace("đ", "").replace(",", "").trim()
                                 productPrices[id] = priceCleaned.toDoubleOrNull() ?: 0.0
@@ -531,7 +537,7 @@ fun AnalyticsScreen(
                             com.example.easyshop.AppUtil.exportOrdersToCSV(context, orders, productNames, productPrices)
                             showPreviewDialog = false
                         } catch (e: Exception) {
-                            com.example.easyshop.AppUtil.showError("Lỗi xuất file", e.message)
+                            com.example.easyshop.AppUtil.showError(context.getString(R.string.error_export_failed_title), e.message)
                         } finally {
                             isExporting = false
                         }
@@ -552,7 +558,6 @@ fun PreviewReportDialog(
     onConfirm: () -> Unit
 ) {
     var expandedOrderId by remember { mutableStateOf<String?>(null) }
-    val context = LocalContext.current
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
@@ -570,14 +575,14 @@ fun PreviewReportDialog(
                     TopAppBar(
                         title = {
                             Text(
-                                "Xem trước dữ liệu xuất",
+                                stringResource(R.string.preview_export_title),
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.titleMedium
                             )
                         },
                         navigationIcon = {
                             IconButton(onClick = onDismiss) {
-                                Icon(Icons.Default.Close, contentDescription = "Đóng")
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
@@ -605,11 +610,11 @@ fun PreviewReportDialog(
                             if (isExporting) {
                                 CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
                                 Spacer(Modifier.width(12.dp))
-                                Text("Đang xử lý dữ liệu...", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text(stringResource(R.string.processing_data), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             } else {
                                 Icon(Icons.Default.FileDownload, null)
                                 Spacer(Modifier.width(8.dp))
-                                Text("Xác nhận & Tải file CSV", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text(stringResource(R.string.confirm_download_csv), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
                         }
                     }
@@ -636,8 +641,8 @@ fun PreviewReportDialog(
                             Icon(Icons.Default.CheckCircle, null, tint = GreenSuccess)
                             Spacer(Modifier.width(12.dp))
                             Column {
-                                Text("Báo cáo kinh doanh", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                Text("Tổng cộng: ${orders.size} đơn hàng đã sẵn sàng", style = MaterialTheme.typography.bodySmall)
+                                Text(stringResource(R.string.business_report_label), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.orders_ready_msg, orders.size), style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
@@ -658,22 +663,22 @@ fun PreviewReportDialog(
                             Row(modifier = Modifier.width(65.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Receipt, null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.width(2.dp))
-                                Text("Mã", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+                                Text(stringResource(R.string.id_short_label), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
                             }
                             Row(modifier = Modifier.width(85.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.DateRange, null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.width(2.dp))
-                                Text("Ngày", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+                                Text(stringResource(R.string.date_short_label), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
                             }
                             Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Person, null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.width(2.dp))
-                                Text("Khách", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+                                Text(stringResource(R.string.customer_short_label), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
                             }
                             Row(modifier = Modifier.width(90.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
                                 Icon(Icons.Default.MonetizationOn, null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.width(2.dp))
-                                Text("Tiền", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+                                Text(stringResource(R.string.amount_short_label), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -718,7 +723,7 @@ fun PreviewReportDialog(
                                         }
                                     }
                                     Text(
-                                        com.example.easyshop.AppUtil.formatDate(order.date).substringBefore(" "),
+                                        com.example.easyshop.AppUtil.formatDate(order.date).substringBefore(\" \"),
                                         modifier = Modifier.width(85.dp),
                                         style = MaterialTheme.typography.bodySmall
                                     )
@@ -750,8 +755,8 @@ fun PreviewReportDialog(
                                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
                                             .padding(start = 73.dp, end = 16.dp, top = 8.dp, bottom = 12.dp)
                                     ) {
-                                        Text(
-                                            "Chi tiết sản phẩm:", 
+                                            Text(
+                                            stringResource(R.string.product_details_label), 
                                             style = MaterialTheme.typography.labelSmall, 
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.primary
@@ -765,7 +770,7 @@ fun PreviewReportDialog(
                                         if (order.promoCode.isNotEmpty()) {
                                             Spacer(Modifier.height(4.dp))
                                             Text(
-                                                "Khuyến mãi: ${order.promoCode} (-${com.example.easyshop.AppUtil.formatPrice(order.discount)})",
+                                                stringResource(R.string.promo_applied_msg, order.promoCode, com.example.easyshop.AppUtil.formatPrice(order.discount)),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = GreenSuccess
                                             )
@@ -780,7 +785,7 @@ fun PreviewReportDialog(
                     
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        "Lưu ý: File CSV sẽ bao gồm đầy đủ chi tiết các sản phẩm trong mỗi đơn hàng.",
+                        stringResource(R.string.csv_export_note),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
@@ -793,80 +798,7 @@ fun PreviewReportDialog(
 }
 
 
-
-// ── Hero Revenue Card ────────────────────────────────────────────────────────
-@Composable
-fun HeroRevenueCard(totalRevenue: Double, totalOrders: Int, currencyFmt: NumberFormat) {
-    val gradient = Brush.linearGradient(
-        colors = listOf(Color(0xFF6A11CB), Color(0xFF2575FC)),
-        start = Offset(0f, 0f), end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-    )
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(elevation = 12.dp, shape = RoundedCornerShape(28.dp))
-            .clip(RoundedCornerShape(28.dp))
-            .background(gradient)
-            .padding(24.dp)
-    ) {
-        // Decorative circle
-        Box(
-            modifier = Modifier
-                .size(120.dp)
-                .align(Alignment.TopEnd)
-                .offset(x = 30.dp, y = (-30).dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.08f))
-        )
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color.White.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.MonetizationOn, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                }
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    stringResource(id = R.string.total_revenue_label),
-                    color = Color.White.copy(alpha = 0.85f),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = currencyFmt.format(totalRevenue),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.ExtraBold,
-                color = Color.White,
-                fontSize = 28.sp
-            )
-            Spacer(Modifier.height(20.dp))
-            HorizontalDivider(color = Color.White.copy(alpha = 0.15f))
-            Spacer(Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                HeroStatItem(
-                    label = stringResource(id = R.string.orders),
-                    value = totalOrders.toString(),
-                    icon = Icons.Default.Inventory2
-                )
-                HeroStatItem(
-                    label = stringResource(id = R.string.avg_value_label),
-                    value = if (totalOrders > 0) currencyFmt.format(totalRevenue / totalOrders) else "0đ",
-                    icon = Icons.AutoMirrored.Filled.TrendingUp
-                )
-            }
-        }
-    }
-}
-
+// ── Hero Stat Item ────────────────────────────────────────────────────────────
 @Composable
 fun HeroStatItem(label: String, value: String, icon: ImageVector) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -957,12 +889,10 @@ fun PremiumBarChart(data: List<Pair<String, Double>>, currencyFmt: NumberFormat)
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Mốc: ${compactCurrency(midRevenue)} - ${currencyFmt.format(maxRevenue)}",
+                        text = stringResource(id = R.string.chart_scale_label, compactCurrency(midRevenue), currencyFmt.format(maxRevenue)),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
-
                 }
                 Spacer(Modifier.height(8.dp))
             }
@@ -981,7 +911,7 @@ fun PremiumBarChart(data: List<Pair<String, Double>>, currencyFmt: NumberFormat)
                     val animFraction by animateFloatAsState(
                         targetValue = fraction,
                         animationSpec = tween(900),
-                        label = "bar_$date"
+                        label = \"bar_$date\"
                     )
                     val isMaxBar = value == data.maxOfOrNull { it.second } && value > 0
 
@@ -1071,9 +1001,9 @@ fun PremiumBarChart(data: List<Pair<String, Double>>, currencyFmt: NumberFormat)
 // ── Premium Order Distribution ────────────────────────────────────────────────
 private fun compactCurrency(value: Double): String {
     return when {
-        value >= 1_000_000_000 -> "${(value / 1_000_000_000).toInt()}B"
-        value >= 1_000_000 -> "${(value / 1_000_000).toInt()}M"
-        value >= 1_000 -> "${(value / 1_000).toInt()}K"
+        value >= 1_000_000_000 -> \"${(value / 1_000_000_000).toInt()}B\"
+        value >= 1_000_000 -> \"${(value / 1_000_000).toInt()}M\"
+        value >= 1_000 -> \"${(value / 1_000).toInt()}K\"
         else -> value.toInt().toString()
     }
 }
@@ -1153,7 +1083,7 @@ fun DistributionLegend(label: String, count: Int, percent: Int, color: Color) {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "$percent%",
+                text = \"$percent%\",
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 12.sp,
                 color = color
@@ -1182,7 +1112,7 @@ fun PremiumTopProductItem(rank: Int, stat: ProductStat, currencyFmt: NumberForma
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(0.dp), // Loai bo shadow xam
+        elevation = CardDefaults.cardElevation(0.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (rank == 1)
                 MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
@@ -1205,7 +1135,7 @@ fun PremiumTopProductItem(rank: Int, stat: ProductStat, currencyFmt: NumberForma
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "#$rank",
+                    text = \"#$rank\",
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 13.sp,
                     color = rankColor
@@ -1267,9 +1197,6 @@ fun PremiumTopProductItem(rank: Int, stat: ProductStat, currencyFmt: NumberForma
                     textAlign = TextAlign.End,
                     maxLines = 1
                 )
-//                if (rank == 1) {
-//                    Text("🏆 Best", style = MaterialTheme.typography.labelSmall, color = Color(0xFFFFD700), fontWeight = FontWeight.Bold)
-//                }
             }
         }
     }
@@ -1277,18 +1204,21 @@ fun PremiumTopProductItem(rank: Int, stat: ProductStat, currencyFmt: NumberForma
 
 @Composable
 fun ProductItemDetailRow(productId: String, quantity: Long) {
-    var productName by remember { mutableStateOf("Đang tải...") }
+    val loadingText = stringResource(id = R.string.loading_product_name)
+    val errorNameText = stringResource(id = R.string.error_loading_name)
+    val unnamedText = stringResource(id = R.string.unnamed_product)
+    var productName by remember { mutableStateOf(loadingText) }
     val db = com.google.firebase.Firebase.firestore
     
     LaunchedEffect(productId) {
-        db.collection("data")
-            .document("stock").collection("products")
+        db.collection(\"data\")
+            .document(\"stock\").collection(\"products\")
             .document(productId).get()
             .addOnSuccessListener { doc ->
-                productName = doc.getString("title") ?: "Sản phẩm không tên"
+                productName = doc.getString(\"title\") ?: unnamedText
             }
             .addOnFailureListener {
-                productName = "Lỗi tải tên"
+                productName = errorNameText
             }
     }
     
@@ -1316,7 +1246,7 @@ fun ProductItemDetailRow(productId: String, quantity: Long) {
             )
         }
         Text(
-            text = "x$quantity",
+            text = \"x$quantity\",
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface

@@ -13,6 +13,7 @@ import android.provider.MediaStore
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.FileProvider
+import com.example.easyshop.R
 import com.example.easyshop.components.NotifBannerController
 import com.example.easyshop.model.OrderModel
 import com.example.easyshop.model.ProductModel
@@ -34,7 +35,11 @@ object AppUtil {
     private const val FAVORITES_KEY = "favorite_ids"
     private const val ONBOARDING_COMPLETED_KEY = "onboarding_completed"
 
-    private fun appContext(): Context = FirebaseAuth.getInstance().app.applicationContext
+    fun appContext(): Context = FirebaseAuth.getInstance().app.applicationContext
+
+    fun getString(resId: Int, vararg formatArgs: Any): String {
+        return appContext().getString(resId, *formatArgs)
+    }
 
     private fun getFavoriteIds(context: Context): MutableSet<String> {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -65,7 +70,7 @@ object AppUtil {
     fun showToast(context: Context, message: String) {
         // Tự động dịch nếu là lỗi hệ thống (Firebase, SePay, v.v.)
         val translatedMessage = translateSystemError(message)
-        NotifBannerController.show("Thông báo", translatedMessage)
+        NotifBannerController.show(getString(R.string.notification_title), translatedMessage)
     }
 
     fun showSuccess(title: String, message: String? = "") {
@@ -80,33 +85,33 @@ object AppUtil {
         NotifBannerController.show(title, finalMessage, "ERROR")
     }
 
-    private fun translateSystemError(message: String?): String {
+    internal fun translateSystemError(message: String?): String {
         if (message == null || message.isBlank()) return ""
         val msgLower = message.lowercase()
         return when {
             // Auth Errors
-            msgLower.contains("auth credential is incorrect") || msgLower.contains("invalid-credential") -> "Email hoặc mật khẩu không chính xác"
-            msgLower.contains("no user record") || msgLower.contains("user-not-found") -> "Tài khoản này không tồn tại"
-            msgLower.contains("password is invalid") || msgLower.contains("wrong-password") -> "Mật khẩu không chính xác"
-            msgLower.contains("email address is already in use") || msgLower.contains("email-already-in-use") -> "Email này đã được sử dụng"
-            msgLower.contains("email address is badly formatted") || msgLower.contains("invalid-email") -> "Định dạng email không hợp lệ"
-            msgLower.contains("too many unsuccessful login attempts") -> "Thử đăng nhập sai quá nhiều lần. Vui lòng quay lại sau"
-            msgLower.contains("user-disabled") -> "Tài khoản của bạn đã bị khóa"
-            msgLower.contains("operation-not-allowed") -> "Phương thức đăng nhập này chưa được kích hoạt"
+            msgLower.contains("auth credential is incorrect") || msgLower.contains("invalid-credential") -> getString(R.string.error_auth_invalid_credential)
+            msgLower.contains("no user record") || msgLower.contains("user-not-found") -> getString(R.string.error_auth_user_not_found)
+            msgLower.contains("password is invalid") || msgLower.contains("wrong-password") -> getString(R.string.error_auth_wrong_password)
+            msgLower.contains("email address is already in use") || msgLower.contains("email-already-in-use") -> getString(R.string.error_auth_email_in_use)
+            msgLower.contains("email address is badly formatted") || msgLower.contains("invalid-email") -> getString(R.string.error_auth_invalid_email)
+            msgLower.contains("too many unsuccessful login attempts") -> getString(R.string.error_auth_too_many_attempts)
+            msgLower.contains("user-disabled") -> getString(R.string.error_auth_user_disabled)
+            msgLower.contains("operation-not-allowed") -> getString(R.string.error_auth_op_not_allowed)
             
             // SePay & Payment Errors
-            msgLower.contains("unauthenticated") -> "Phiên làm việc hết hạn. Vui lòng đăng nhập lại"
-            msgLower.contains("account not found") || msgLower.contains("merchant") -> "Lỗi cấu hình tài khoản thanh toán"
-            msgLower.contains("insufficient balance") -> "Số dư không đủ để thực hiện giao dịch"
-            msgLower.contains("invalid amount") -> "Số tiền giao dịch không hợp lệ"
-            msgLower.contains("payment reference") -> "Mã tham chiếu thanh toán không hợp lệ"
+            msgLower.contains("unauthenticated") -> getString(R.string.error_payment_unauthenticated)
+            msgLower.contains("account not found") || msgLower.contains("merchant") -> getString(R.string.error_payment_config)
+            msgLower.contains("insufficient balance") -> getString(R.string.error_payment_insufficient_balance)
+            msgLower.contains("invalid amount") -> getString(R.string.error_payment_invalid_amount)
+            msgLower.contains("payment reference") -> getString(R.string.error_payment_invalid_ref)
             
             // Common Errors
-            msgLower.contains("network error") || msgLower.contains("network-request-failed") || msgLower.contains("timeout") -> "Lỗi kết nối mạng. Vui lòng kiểm tra lại"
-            msgLower.contains("internal error") || msgLower.contains("500") -> "Lỗi hệ thống máy chủ. Vui lòng thử lại sau"
-            msgLower.contains("expired") -> "Phiên làm việc đã hết hạn hoặc mã đã hết hiệu lực"
-            msgLower.contains("permission-denied") -> "Bạn không có quyền thực hiện hành động này"
-            msgLower.contains("unavailable") -> "Dịch vụ hiện không khả dụng. Vui lòng thử lại sau"
+            msgLower.contains("network error") || msgLower.contains("network-request-failed") || msgLower.contains("timeout") -> getString(R.string.error_common_network)
+            msgLower.contains("internal error") || msgLower.contains("500") -> getString(R.string.error_common_server)
+            msgLower.contains("expired") -> getString(R.string.error_common_expired)
+            msgLower.contains("permission-denied") -> getString(R.string.error_common_permission)
+            msgLower.contains("unavailable") -> getString(R.string.error_common_unavailable)
             
             else -> message
         }
@@ -127,14 +132,14 @@ object AppUtil {
 
     fun checkNetworkAndNotify(context: Context): Boolean {
         if (!isNetworkAvailable(context)) {
-            showToast(context, "Mất kết nối Internet. Vui lòng kiểm tra lại!")
+            showToast(context, context.getString(R.string.no_internet_message))
             return false
         }
         return true
     }
 
     fun formatCurrency(amount: Double): String {
-        return "đ" + String.format("%,.0f", amount)
+        return getString(R.string.currency_symbol) + String.format("%,.0f", amount)
     }
 
     /**
@@ -173,7 +178,7 @@ object AppUtil {
     fun addOrRemoveFromFavorite(context: Context, product: ProductModel) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid == null) {
-            showToast(context, "Vui lòng đăng nhập để dùng yêu thích")
+            showToast(context, getString(R.string.app_util_login_required_fav))
             return
         }
 
@@ -188,10 +193,10 @@ object AppUtil {
         // ✅ 2. CẬP NHẬT TỨC THÌ (Optimistic UI)
         if (isRemoving) {
             favoriteIds.remove(productId)
-            showSuccess("Gỡ yêu thích", "Đã xóa sản phẩm khỏi danh sách")
+            showSuccess(getString(R.string.app_util_fav_remove_title), getString(R.string.app_util_fav_remove_msg))
         } else {
             favoriteIds.add(productId)
-            showSuccess("Yêu thích", "Đã thêm vào danh sách yêu thích của bạn")
+            showSuccess(getString(R.string.app_util_fav_add_title), getString(R.string.app_util_fav_add_msg))
         }
         saveFavoriteIds(context, favoriteIds)
 
@@ -199,18 +204,16 @@ object AppUtil {
         if (isRemoving) {
             favoritesRef.document(productId).delete()
                 .addOnFailureListener {
-                    // Rollback nếu lỗi
                     favoriteIds.add(productId)
                     saveFavoriteIds(context, favoriteIds)
-                    showError("Lỗi đồng bộ", "Không thể xóa yêu thích")
+                    showError(getString(R.string.app_util_sync_error_title), getString(R.string.app_util_sync_error_remove))
                 }
         } else {
             favoritesRef.document(productId).set(product)
                 .addOnFailureListener {
-                    // Rollback nếu lỗi
                     favoriteIds.remove(productId)
                     saveFavoriteIds(context, favoriteIds)
-                    showError("Lỗi đồng bộ", "Không thể thêm yêu thích")
+                    showError(getString(R.string.app_util_sync_error_title), getString(R.string.app_util_sync_error_add))
                 }
         }
     }
@@ -222,7 +225,7 @@ object AppUtil {
     fun addItemToCart(context: Context, productId: String, quantity: Int = 1) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid == null) {
-            showToast(context, "Vui lòng đăng nhập để thêm vào giỏ hàng")
+            showToast(context, getString(R.string.app_util_login_required_cart))
             return
         }
         if (productId.isBlank()) return
@@ -232,14 +235,14 @@ object AppUtil {
         
         // Cách tiếp cận an toàn nhất: Thử update, nếu lỗi (do doc/field thiếu) thì dùng set merge
         userRef.update("cartItems.$productId", FieldValue.increment(quantity.toLong()))
-            .addOnSuccessListener { showSuccess("Đã thêm vào giỏ hàng") }
+            .addOnSuccessListener { showSuccess(getString(R.string.app_util_cart_add_success)) }
             .addOnFailureListener {
                 // Nếu update thất bại, ta dùng set merge để khởi tạo cấu trúc map
                 val data = mapOf("cartItems" to mapOf(productId to quantity.toLong()))
                 userRef.set(data, SetOptions.merge())
-                    .addOnSuccessListener { showSuccess("Đã thêm vào giỏ hàng") }
+                    .addOnSuccessListener { showSuccess(getString(R.string.app_util_cart_add_success)) }
                     .addOnFailureListener { e -> 
-                        showError("Thêm vào giỏ hàng thất bại")
+                        showError(getString(R.string.app_util_cart_add_failed))
                     }
             }
     }
@@ -256,8 +259,9 @@ object AppUtil {
         val userRef = db.collection("users").document(uid)
         
         db.runTransaction { transaction ->
-            val snapshot = transaction.get(userRef)
-            val cartItems = snapshot.get("cartItems") as? Map<String, Long> ?: emptyMap()
+            val userDoc = transaction.get(userRef)
+            @Suppress("UNCHECKED_CAST")
+            val cartItems = userDoc.get("cartItems") as? Map<String, Long> ?: emptyMap()
             val currentQty = cartItems[productId] ?: 0L
             
             if (currentQty <= 1L) {
@@ -266,7 +270,7 @@ object AppUtil {
                 transaction.update(userRef, "cartItems.$productId", FieldValue.increment(-1))
             }
         }.addOnFailureListener { e ->
-             showError("Lỗi cập nhật giỏ hàng", e.message)
+             showError(getString(R.string.app_util_cart_update_error), e.message)
         }
     }
 
@@ -278,7 +282,7 @@ object AppUtil {
             db.collection("users").document(uid)
                 .update("cartItems.$productId", FieldValue.delete())
                 .addOnSuccessListener {
-                    showToast(context, "Đã xóa khỏi giỏ hàng")
+                    showToast(context, getString(R.string.app_util_cart_removed))
                 }
         } else {
             decrementCartItem(productId)
@@ -292,7 +296,7 @@ object AppUtil {
         onFailure: (String) -> Unit
     ) {
         if (!checkNetworkAndNotify(context)) {
-            onFailure("Không có kết nối mạng")
+            onFailure(getString(R.string.app_util_no_network))
             return
         }
 
@@ -306,15 +310,15 @@ object AppUtil {
                 
                 // Gửi thông báo tới các Admin
                 com.example.easyshop.services.FcmSender.sendToAdmins(
-                    title = "Đơn hàng mới 📦",
-                    body = "Đơn #${order.id.take(8).uppercase()} vừa được đặt bởi ${order.userName}",
+                    title = getString(R.string.app_util_order_notif_title),
+                    body = getString(R.string.app_util_order_notif_body, order.id.take(8).uppercase(), order.userName),
                     type = "NEW_ORDER"
                 )
                 
                 onSuccess()
             }
             .addOnFailureListener { e ->
-                onFailure(e.message ?: "Có lỗi xảy ra khi đặt hàng")
+                onFailure(e.message ?: getString(R.string.app_util_order_error))
             }
     }
 
@@ -374,7 +378,7 @@ object AppUtil {
             placeOrder(context, order, {
                 // Success handled by page
             }, { 
-                showToast(context, "Lỗi đặt hàng: $it")
+                showToast(context, getString(R.string.app_util_order_error_detail, it))
             })
         }
     }
@@ -400,7 +404,7 @@ object AppUtil {
                 onSuccess(orders)
             }
             .addOnFailureListener { e ->
-                onFailure(e.message ?: "Không thể lấy lịch sử đơn hàng")
+                onFailure(e.message ?: getString(R.string.app_util_history_error))
             }
     }
 
@@ -414,7 +418,7 @@ object AppUtil {
         db.collection("orders").document(orderId)
             .update("status", newStatus)
             .addOnSuccessListener { onSuccess() }
-            .addOnFailureListener { e -> onFailure(e.message ?: "Cập nhật thất bại") }
+            .addOnFailureListener { e -> onFailure(e.message ?: getString(R.string.app_util_update_failed)) }
     }
 
     fun startMockPayment(
@@ -424,13 +428,11 @@ object AppUtil {
         onFailure: () -> Unit
     ) {
         val builder = AlertDialog.Builder(context)
-        builder.setTitle("💳 Thanh toán Demo")
+        builder.setTitle(getString(R.string.app_util_demo_payment_title))
             .setMessage(
-                "Thanh toán thử nghiệm\n" +
-                        "Số tiền: ${formatCurrency(amount.toDouble())}\n\n" +
-                        "Chọn kết quả:"
+                getString(R.string.app_util_demo_payment_msg, formatCurrency(amount.toDouble()))
             )
-            .setPositiveButton("✅ Thành công") { dialog: DialogInterface, _: Int ->
+            .setPositiveButton(getString(R.string.app_util_demo_payment_success)) { dialog: DialogInterface, _: Int ->
                 if (!checkNetworkAndNotify(context)) {
                     dialog.dismiss()
                     return@setPositiveButton
@@ -440,10 +442,10 @@ object AppUtil {
                     onSuccess()
                 }, 1500)
             }
-            .setNegativeButton("❌ Thất bại") { _: DialogInterface, _: Int ->
+            .setNegativeButton(getString(R.string.app_util_demo_payment_failed)) { _: DialogInterface, _: Int ->
                 onFailure()
             }
-            .setNeutralButton("Hủy", null)
+            .setNeutralButton(getString(R.string.app_util_demo_payment_cancel), null)
             .setCancelable(true)
             .show()
     }
@@ -542,7 +544,7 @@ object AppUtil {
 
     private fun formatCurrencyCSV(amount: Double): String {
         val formatter = java.text.NumberFormat.getInstance(java.util.Locale("vi", "VN"))
-        return "${formatter.format(amount)} đồng"
+        return "${formatter.format(amount)} " + getString(R.string.currency_suffix_dong)
     }
 
     /**
@@ -563,7 +565,7 @@ object AppUtil {
             csvBuilder.append("\uFEFF")
             
             // Header
-            csvBuilder.append("Mã đơn hàng,Ngày đặt,Khách hàng,Tên Sản phẩm,Số lượng,Đơn giá,Thành tiền,Tổng hóa đơn,Trạng thái,Email,SĐT\n")
+            csvBuilder.append(getString(R.string.csv_header_orders) + "\n")
             
             // Data rows 
             orders.forEach { order ->
@@ -615,9 +617,9 @@ object AppUtil {
                     }
                     context.startActivity(openIntent)
 
-                    showSuccess("Lưu file thành công", "Báo cáo đã được lưu vào: Bộ nhớ máy/Download/EasyShop_Reports")
+                    showSuccess(getString(R.string.app_util_export_success_title), getString(R.string.app_util_export_success_msg, "Bộ nhớ máy/Download/EasyShop_Reports"))
                 } else {
-                    throw Exception("Không thể tạo file qua MediaStore")
+                    throw Exception(getString(R.string.error_mediastore))
                 }
             } else {
                 // Cách lưu cho các bản Android cũ hơn (Sử dụng File API truyền thống)
@@ -639,12 +641,12 @@ object AppUtil {
                 }
                 context.startActivity(openIntent)
 
-                showSuccess("Lưu file thành công", "Báo cáo đã được lưu tại: Bộ nhớ máy/Download/EasyShop_Reports")
+                showSuccess(getString(R.string.app_util_export_success_title), getString(R.string.app_util_export_success_msg, "Bộ nhớ máy/Download/EasyShop_Reports"))
             }
 
         } catch (e: Exception) {
             e.printStackTrace()
-            showError("Lỗi xuất file", e.message)
+            showError(getString(R.string.app_util_export_error_title), e.message)
         }
     }
 

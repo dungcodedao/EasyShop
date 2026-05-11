@@ -58,13 +58,15 @@ fun BannerView(
     ) {
         val pagerState = rememberPagerState(0) { bannerList.size }
 
-        // Auto-scroll
-        LaunchedEffect(key1 = bannerList) {
-            while (true) {
-                delay(4000)
-                if (!pagerState.isScrollInProgress) {
-                    val nextPage = if (bannerList.isNotEmpty()) (pagerState.currentPage + 1) % bannerList.size else 0
-                    pagerState.animateScrollToPage(nextPage, animationSpec = tween(800))
+        // Auto-scroll (chỉ scroll khi có > 1 banner)
+        if (bannerList.size > 1) {
+            LaunchedEffect(pagerState) {
+                while (true) {
+                    delay(4000)
+                    if (!pagerState.isScrollInProgress) {
+                        val nextPage = (pagerState.currentPage + 1) % bannerList.size
+                        pagerState.animateScrollToPage(nextPage, animationSpec = tween(800))
+                    }
                 }
             }
         }

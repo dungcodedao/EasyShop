@@ -1,5 +1,6 @@
 package com.example.easyshop.model
 
+import com.google.firebase.firestore.PropertyName
 import java.util.UUID
 
 data class AddressModel(
@@ -8,7 +9,8 @@ data class AddressModel(
     val fullName: String = "",
     val phone: String = "",
     val detailedAddress: String = "",
-    val isDefault: Boolean = false
+    @get:PropertyName("isDefault") @set:PropertyName("isDefault")
+    var isDefault: Boolean = false
 )
 
 data class UserModel(

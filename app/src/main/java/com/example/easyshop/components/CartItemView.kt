@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.easyshop.AppUtil
+import com.example.easyshop.R
 import com.example.easyshop.model.ProductModel
 
 @Composable
@@ -109,7 +110,7 @@ fun CartItemView(modifier: Modifier = Modifier, product: ProductModel, qty: Long
                                 if (qty < product.stockCount) {
                                     AppUtil.incrementCartItem(productId)
                                 } else {
-                                    AppUtil.showToast(context, "Đã đạt giới hạn tồn kho (${product.stockCount})")
+                                    AppUtil.showToast(context, context.getString(R.string.cart_stock_limit, product.stockCount))
                                 }
                             },
                             modifier = Modifier.size(28.dp)

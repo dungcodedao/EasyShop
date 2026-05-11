@@ -32,8 +32,11 @@ import com.example.easyshop.R
 import com.example.easyshop.model.ProductModel
 import com.example.easyshop.productdetails.*
 import com.example.easyshop.components.ErrorStateView
+import com.example.easyshop.util.LanguageManager
+import com.example.easyshop.util.TranslationManager
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
+import com.google.mlkit.nl.translate.TranslateLanguage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,9 +45,15 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId: String) {
     var selectedTab by remember { mutableIntStateOf(0) }
     var screenState by remember { mutableStateOf(ScreenState.LOADING) }
     var selectedQuantity by remember { mutableIntStateOf(1) }
-    
+
+    // Translated states — cập nhật khi product load xong và ngôn ngữ là EN
+    var displayTitle by remember { mutableStateOf("") }
+    var displayDescription by remember { mutableStateOf("") }
+    var displayOtherDetails by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val isEnglish = LanguageManager.getCurrentLang(context) == LanguageManager.LANG_EN
 
     fun fetchProduct() {
         screenState = ScreenState.LOADING
@@ -69,6 +78,33 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId: String) {
         fetchProduct()
     }
 
+    // Dịch nội dung sản phẩm khi load xong và đang dùng tiếng Anh
+    LaunchedEffect(product.title, isEnglish) {
+        if (product.title.isEmpty()) return@LaunchedEffect
+        if (isEnglish) {
+            displayTitle = TranslationManager.translate(
+                text = product.title,
+                sourceLang = TranslateLanguage.VIETNAMESE,
+                targetLang = TranslateLanguage.ENGLISH
+            )
+            displayDescription = TranslationManager.translate(
+                text = product.description,
+                sourceLang = TranslateLanguage.VIETNAMESE,
+                targetLang = TranslateLanguage.ENGLISH
+            )
+            displayOtherDetails = TranslationManager.translateMap(
+                map = product.otherDetails,
+                sourceLang = TranslateLanguage.VIETNAMESE,
+                targetLang = TranslateLanguage.ENGLISH
+            )
+        } else {
+            // Tiếng Việt — dùng dữ liệu gốc
+            displayTitle = product.title
+            displayDescription = product.description
+            displayOtherDetails = product.otherDetails
+        }
+    }
+
     Scaffold(
         topBar = {
             Surface(
@@ -90,7 +126,7 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId: String) {
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.cd_back),
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -119,7 +155,7 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId: String) {
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.height(16.dp))
                         Text(
-                            "Đang tải sản phẩm...",
+                            stringResource(R.string.loading_product),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -134,7 +170,7 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId: String) {
 
                 ScreenState.EMPTY -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Sản phẩm không tồn tại.")
+                        Text(stringResource(R.string.product_not_found))
                     }
                 }
 
@@ -162,7 +198,7 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId: String) {
                         ) {
                             Column(modifier = Modifier.padding(20.dp)) {
                                 ProductHeader(
-                                    title = product.title,
+                                    title = displayTitle.ifEmpty { product.title },
                                     inStock = product.inStock,
                                     stockCount = product.stockCount,
                                     rating = product.rating,
@@ -185,7 +221,7 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId: String) {
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            text = "Số lượng",
+                                            text = stringResource(R.string.quantity_label),
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -242,7 +278,7 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId: String) {
                                     ) {
                                         Icon(
                                             Icons.AutoMirrored.Filled.Message, 
-                                            contentDescription = "Chat",
+                                            contentDescription = stringResource(R.string.cd_chat),
                                             tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(24.dp)
                                         )
@@ -267,8 +303,8 @@ fun ProductDetailsPage(modifier: Modifier = Modifier, productId: String) {
 
                                 ProductTabContent(
                                     selectedTab = selectedTab,
-                                    description = product.description,
-                                    specifications = product.otherDetails,
+                                    description = displayDescription.ifEmpty { product.description },
+                                    specifications = displayOtherDetails.ifEmpty { product.otherDetails },
                                     productId = productId
                                 )
 

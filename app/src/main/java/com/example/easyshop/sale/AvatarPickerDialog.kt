@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -67,11 +68,11 @@ fun AvatarPickerDialog(
             scope.launch {
                 productRepository.uploadProductImage(uri, folder = "avatars").collect { result ->
                     result.onSuccess { downloadUrl ->
-                        com.example.easyshop.AppUtil.showToast(context, "Đã tải ảnh lên thành công!")
+                        com.example.easyshop.AppUtil.showToast(context, context.getString(R.string.avatar_picker_success))
                         onAvatarSelected(downloadUrl)
                         isLoading = false
                     }.onFailure { e ->
-                        com.example.easyshop.AppUtil.showToast(context, "Lỗi tải ảnh: ${e.message}")
+                        com.example.easyshop.AppUtil.showToast(context, context.getString(R.string.avatar_picker_error, e.message))
                         isLoading = false
                     }
                 }
@@ -92,7 +93,7 @@ fun AvatarPickerDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Chọn ảnh đại diện",
+                    text = stringResource(R.string.avatar_picker_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -113,7 +114,7 @@ fun AvatarPickerDialog(
                 ) {
                     Icon(Icons.Default.Add, null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Chọn từ thư viện")
+                    Text(stringResource(R.string.avatar_picker_gallery))
                 }
 
                 Spacer(Modifier.height(20.dp))
@@ -161,7 +162,7 @@ fun AvatarPickerDialog(
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Hủy bỏ")
+                    Text(stringResource(R.string.avatar_picker_cancel))
                 }
             }
         }

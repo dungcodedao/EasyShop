@@ -179,7 +179,7 @@ fun CategoryFormDialog(
                     placeholder = { Text(stringResource(id = R.string.display_name_hint)) }, singleLine = true,
                     modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp))
                 OutlinedTextField(value = imageUrl, onValueChange = onImageUrlChange, label = { Text(stringResource(id = R.string.category_image_url_label)) },
-                    placeholder = { Text("https://...") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp))
+                    placeholder = { Text(stringResource(R.string.url_placeholder)) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp))
             }
         },
         confirmButton = { Button(onClick = onConfirm, shape = RoundedCornerShape(12.dp)) { Text(if (isEdit) stringResource(id = R.string.update_btn) else stringResource(id = R.string.add)) } },
@@ -210,7 +210,7 @@ fun CategoryItem(category: CategoryModel, productCount: Int, onEdit: () -> Unit,
             Column(modifier = Modifier.weight(1f)) {
                 Text(category.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("ID: ${category.id}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.id_prefix, category.id), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.width(8.dp))
                     Badge(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer) {
                         Text(stringResource(id = R.string.products_count_label, productCount), style = MaterialTheme.typography.labelSmall)
