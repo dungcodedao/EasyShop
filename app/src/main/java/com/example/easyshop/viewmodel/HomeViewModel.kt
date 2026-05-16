@@ -49,7 +49,6 @@ class HomeViewModel : ViewModel() {
     private suspend fun initData() {
         _screenState.value = ScreenState.LOADING
         try {
-            // Parallel Fetch using async
             val bannersDeferred = viewModelScope.async { firestore.collection("data").document("banners").get().await() }
             val categoriesDeferred = viewModelScope.async { firestore.collection("data").document("stock").collection("categories").get().await() }
             val promosDeferred = viewModelScope.async { 

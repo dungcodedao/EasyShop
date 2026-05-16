@@ -827,8 +827,11 @@ fun ProfilePage(
                                     showLanguageDialog = false
                                     val activity = (context as? Activity)
                                     LanguageManager.setUserLang(context, tag)
-                                    activity?.overridePendingTransition(0, 0)
-                                    activity?.recreate()
+                                    // Chờ một chút để hệ thống xử lý AppCompatDelegate trước khi chủ động restart với hiệu ứng fade
+                                    activity?.let { act ->
+                                        act.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+                                        act.recreate()
+                                    }
                                 }
                                 .background(
                                     if (currentUserLang == tag)

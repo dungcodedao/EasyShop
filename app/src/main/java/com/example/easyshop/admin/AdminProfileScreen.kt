@@ -329,8 +329,11 @@ fun AdminProfileScreen(navController: NavController) {
                                     currentAdminLang = tag
                                     val activity = (context as? Activity)
                                     LanguageManager.setAdminLang(context, tag)
-                                    activity?.overridePendingTransition(0, 0)
-                                    activity?.recreate()
+                                    // Restart activity mượt mà với hiệu ứng fade
+                                    activity?.let { act ->
+                                        act.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+                                        act.recreate()
+                                    }
                                 }
                                 .background(
                                     if (currentAdminLang == tag)

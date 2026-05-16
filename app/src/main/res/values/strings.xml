@@ -12,7 +12,7 @@
     <string name="apply">Áp dụng</string>
     <string name="reset">Đặt lại</string>
     <string name="success">Thành công</string>
-    <string name="loading_label">Đang tải...</string>
+    <string name="loading_label">Đang tải&#8230;</string>
     <string name="edit_action">Chỉnh sửa</string>
     <string name="delete_action">Xóa</string>
     <string name="add">Thêm</string>
@@ -79,7 +79,7 @@
     <!-- Home Page -->
     <string name="categories">Danh mục</string>
     <string name="welcome_back">Chào mừng trở lại</string>
-    <string name="search_hint">Tìm kiếm sản phẩm...</string>
+    <string name="search_hint">Tìm kiếm sản phẩm&#8230;</string>
     <string name="no_products_found">Không tìm thấy sản phẩm</string>
     <string name="in_stock">Còn hàng</string>
     <string name="out_of_stock">Hết hàng</string>
@@ -409,15 +409,15 @@
     <string name="delete_category_confirm_msg">Bạn có chắc muốn xóa \'%s\'?</string>
 
     <!-- Analytics Management -->
-    <string name="business_analytics_title">Phân tích kinh doanh</string>
-    <string name="total_revenue_label">Tổng doanh thu</string>
+    <string name="business_analytics_title">Thống kê Kinh doanh</string>
+    <string name="total_revenue_label">Tổng Doanh thu</string>
     <string name="revenue_trend_title">Xu hướng doanh thu</string>
     <string name="order_distribution_title">Phân bố đơn hàng</string>
     <string name="top_selling_products_title">Sản phẩm bán chạy</string>
     <string name="no_sales_data">Không có dữ liệu bán hàng</string>
     <string name="avg_value_label">Giá trị TB</string>
-    <string name="pending_status_legend">Chờ xử lý</string>
-    <string name="items_sold_label">%d sản phẩm đã bán</string>
+    <string name="pending_status_legend">Đang xử lý</string>
+    <string name="items_sold_label">Đã bán: %d sản phẩm</string>
     <string name="no_data_title">Không có dữ liệu</string>
     <string name="no_data_message">Danh sách đơn hàng đang trống</string>
     <string name="permission_failed_title">Cấp quyền thất bại</string>
@@ -515,7 +515,7 @@
     <string name="order_payment_cod">COD</string>
     <string name="url_placeholder">https://...</string>
     <string name="id_prefix">ID: %s</string>
-    <string name="promo_code_prefix">Mã: %s</string>
+    <string     name="promo_code_prefix">Mã: %s</string>
     <string name="cd_admin_avatar">Ảnh đại diện Admin</string>
     <string name="csv_header_orders">Mã đơn hàng,Ngày đặt,Khách hàng,Tên Sản phẩm,Số lượng,Đơn giá,Thành tiền,Tổng hóa đơn,Trạng thái,Email,SĐT</string>
 
@@ -839,18 +839,18 @@
     <string name="app_util_cart_removed">Đã xóa khỏi giỏ hàng</string>
     <string name="app_util_no_network">Không có kết nối mạng</string>
     <string name="app_util_order_notif_title">Thông báo đơn hàng</string>
-    <string name="app_util_order_notif_body">Bạn có đơn hàng mới đang chờ xử lý.</string>
+    <string name="app_util_order_notif_body">Đơn hàng #%1$s từ %2$s đang chờ xử lý.</string>
     <string name="app_util_order_error">Lỗi đơn hàng</string>
     <string name="app_util_order_error_detail">Không thể tải thông tin đơn hàng</string>
     <string name="app_util_history_error">Lỗi tải lịch sử</string>
     <string name="app_util_update_failed">Cập nhật thất bại</string>
     <string name="app_util_demo_payment_title">Thanh toán Demo</string>
-    <string name="app_util_demo_payment_msg">Đây là môi trường thử nghiệm.</string>
+    <string name="app_util_demo_payment_msg">Xác nhận thanh toán thử nghiệm số tiền %s?</string>
     <string name="app_util_demo_payment_success">Giao dịch thành công (Demo)</string>
     <string name="app_util_demo_payment_failed">Giao dịch thất bại (Demo)</string>
     <string name="app_util_demo_payment_cancel">Giao dịch bị hủy (Demo)</string>
     <string name="app_util_export_success_title">Xuất báo cáo thành công</string>
-    <string name="app_util_export_success_msg">Báo cáo đã được lưu vào thư mục Tải về.</string>
+    <string name="app_util_export_success_msg">Báo cáo đã được lưu tại: %s</string>
     <string name="app_util_export_error_title">Lỗi xuất báo cáo</string>
 
     <!-- Content Descriptions -->
@@ -908,22 +908,12 @@
     <string name="chart_scale_label">Mốc: %1$s - %2$s</string>
     <string name="loading_product_name">Đang tải...</string>
     <string name="unnamed_product">Sản phẩm không tên</string>
-    <string name="add_image_title">Thêm hình ảnh</string>
-    <string name="gallery_label">Thư viện</string>
-    <string name="gallery_desc">Chọn ảnh từ điện thoại</string>
-    <string name="url_link_label">Đường dẫn URL</string>
-    <string name="url_link_desc">Dán link ảnh từ internet</string>
-    <string name="enter_image_url_title">Nhập URL hình ảnh</string>
-    <string name="image_url_label">URL hình ảnh</string>
-    <string name="add_label_short">Thêm</string>
     <string name="add_url">Thêm URL</string>
     <string name="paste_image_url_hint">Dán URL hình ảnh</string>
     <string name="image_url_with_index">URL hình ảnh %d</string>
     <string name="image_url_placeholder">https://example.com/image.jpg</string>
-    <string name="stock_count_label">Số lượng tồn kho</string>
-    <string name="spec_key_hint">Ví dụ: Kích thước, RAM, CPU</string>
-    <string name="spec_value_hint">Ví dụ: 6.67 Inches, 8 GB</string>
     <string name="min_one_image_error">Vui lòng thêm ít nhất 1 hình ảnh</string>
     <string name="upload_image_error">Lỗi tải ảnh lên</string>
     <string name="update_product_error">Lỗi cập nhật sản phẩm</string>
+    <string name="total_orders_label">Tổng đơn hàng</string>
 </resources>

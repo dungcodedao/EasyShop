@@ -12,7 +12,7 @@
     <string name="apply">Apply</string>
     <string name="reset">Reset</string>
     <string name="success">Success</string>
-    <string name="loading_label">Loading...</string>
+    <string name="loading_label">Loading&#8230;</string>
     <string name="edit_action">Edit</string>
     <string name="delete_action">Delete</string>
     <string name="add">Add</string>
@@ -79,7 +79,7 @@
     <!-- Home Page -->
     <string name="categories">Categories</string>
     <string name="welcome_back">Welcome back</string>
-    <string name="search_hint">Search products...</string>
+    <string name="search_hint">Search products&#8230;</string>
     <string name="no_products_found">No products found</string>
     <string name="in_stock">In Stock</string>
     <string name="out_of_stock">Out of Stock</string>
@@ -191,7 +191,7 @@
     <string name="mbbank_qr_label">SePay (MBBank QR)</string>
     <string name="momo_qr_label">MoMo QR</string>
     <string name="save_qr_msg">QR code saved to gallery</string>
-    <string name="open_app_msg">Opening %s...</string>
+    <string name="open_app_msg">Opening %s&#8230;</string>
     <string name="payment_error_title">Payment Error</string>
     <string name="change_payment_method">Change Payment Method</string>
     <string name="payment_mb_confirmed">Payment received - Tap to Complete</string>
@@ -416,8 +416,8 @@
     <string name="top_selling_products_title">Top Selling Products</string>
     <string name="no_sales_data">No sales data available</string>
     <string name="avg_value_label">Avg. Value</string>
-    <string name="pending_status_legend">Pending</string>
-    <string name="items_sold_label">%d items sold</string>
+    <string name="pending_status_legend">Processing</string>
+    <string name="items_sold_label">Sold: %d items</string>
     <string name="no_data_title">No Data</string>
     <string name="no_data_message">Order list is empty</string>
     <string name="permission_failed_title">Permission Denied</string>
@@ -839,18 +839,18 @@
     <string name="app_util_cart_removed">Removed from cart</string>
     <string name="app_util_no_network">No network connection</string>
     <string name="app_util_order_notif_title">Order Notification</string>
-    <string name="app_util_order_notif_body">You have a new order waiting for processing.</string>
+    <string name="app_util_order_notif_body">Order #%1$s from %2$s is waiting for processing.</string>
     <string name="app_util_order_error">Order Error</string>
     <string name="app_util_order_error_detail">Could not load order info</string>
     <string name="app_util_history_error">Error loading history</string>
     <string name="app_util_update_failed">Update failed</string>
     <string name="app_util_demo_payment_title">Demo Payment</string>
-    <string name="app_util_demo_payment_msg">This is a demo environment.</string>
+    <string name="app_util_demo_payment_msg">Confirm demo payment for amount %s?</string>
     <string name="app_util_demo_payment_success">Transaction successful (Demo)</string>
     <string name="app_util_demo_payment_failed">Transaction failed (Demo)</string>
     <string name="app_util_demo_payment_cancel">Transaction cancelled (Demo)</string>
     <string name="app_util_export_success_title">Report exported successfully</string>
-    <string name="app_util_export_success_msg">Report has been saved to Downloads folder.</string>
+    <string name="app_util_export_success_msg">Report saved to: %s</string>
     <string name="app_util_export_error_title">Export report error</string>
 
     <!-- Content Descriptions -->
@@ -877,6 +877,27 @@
     <string name="delete_chat_confirm_title">Delete conversation?</string>
     <string name="delete_chat_confirm_msg">All messages with this user will be permanently deleted. Are you sure?</string>
 
+    <!-- Compile fallback strings -->
+    <string name="not_available">Not Available</string>
+    <string name="just_now">Just now</string>
+    <string name="back">Back</string>
+    <string name="delete">Delete</string>
+    <string name="generic_error">Something went wrong</string>
+    <string name="product_not_found">Product not found</string>
+    <string name="quantity_label">Quantity</string>
+    <string name="name_updated_success">Name updated successfully</string>
+    <string name="name_update_error">Failed to update name</string>
+    <string name="phone_updated_success">Phone updated successfully</string>
+    <string name="phone_update_error">Failed to update phone</string>
+    <string name="address_saved">Address saved successfully</string>
+    <string name="address_save_error">Failed to save address</string>
+    <string name="chat_with_shop">Chat with Shop</string>
+    <string name="ai_suggest_laptop">Laptop around 15M</string>
+    <string name="ai_suggest_gaming">Gaming PC</string>
+    <string name="ai_suggest_deals">Good deals</string>
+    <string name="shop_support_title">EasyShop Support</string>
+    <string name="shop_support_status">Online Support</string>
+
     <string name="error_loading_revenue">Error loading revenue</string>
     <string name="month_format">Month %d</string>
     <string name="year_format">Year %d</string>
@@ -887,22 +908,12 @@
     <string name="chart_scale_label">Scale: %1$s - %2$s</string>
     <string name="loading_product_name">Loading...</string>
     <string name="unnamed_product">Unnamed product</string>
-    <string name="add_image_title">Add images</string>
-    <string name="gallery_label">Gallery</string>
-    <string name="gallery_desc">Choose from phone</string>
-    <string name="url_link_label">URL link</string>
-    <string name="url_link_desc">Paste image link from internet</string>
-    <string name="enter_image_url_title">Enter image URL</string>
-    <string name="image_url_label">Image URL</string>
-    <string name="add_label_short">Add</string>
     <string name="add_url">Add URL</string>
     <string name="paste_image_url_hint">Paste image URL</string>
     <string name="image_url_with_index">Image URL %d</string>
     <string name="image_url_placeholder">https://example.com/image.jpg</string>
-    <string name="stock_count_label">Stock count</string>
-    <string name="spec_key_hint">e.g. Screen Size, RAM, CPU</string>
-    <string name="spec_value_hint">e.g. 6.67 Inches, 8 GB</string>
     <string name="min_one_image_error">Please add at least 1 image</string>
     <string name="upload_image_error">Upload image error</string>
     <string name="update_product_error">Update product error</string>
+    <string name="total_orders_label">Total Orders</string>
 </resources>

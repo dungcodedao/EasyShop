@@ -193,7 +193,7 @@ fun AnalyticsScreen(
                         .toObject(com.example.easyshop.model.ProductModel::class.java)
                     productCache[id] = p; p
                 }
-                val price = product?.actualPrice?.toDoubleOrNull() ?: 0.0
+                val price = com.example.easyshop.AppUtil.parsePrice(product?.actualPrice ?: "0")
                 val imageUrl = product?.images?.firstOrNull()
                 val title = product?.title
                 val cur = productStats[id] ?: ProductStat(id, 0, 0.0, imageUrl, title)
@@ -528,10 +528,9 @@ fun AnalyticsScreen(
                                 val doc = firestore.collection("data").document("stock").collection("products")
                                     .document(id).get().await()
                                 productNames[id] = doc.getString("title") ?: id
-                                // Xử lý giá: xóa \"đ\", xóa dấu phẩy và chuyển sang Double
+                                // Sử dụng parsePrice tập trung trong AppUtil để tránh lỗi định dạng
                                 val priceRaw = doc.get("actualPrice")?.toString() ?: "0"
-                                val priceCleaned = priceRaw.replace("đ", "").replace(",", "").trim()
-                                productPrices[id] = priceCleaned.toDoubleOrNull() ?: 0.0
+                                productPrices[id] = com.example.easyshop.AppUtil.parsePrice(priceRaw)
                             }
                             
                             com.example.easyshop.AppUtil.exportOrdersToCSV(context, orders, productNames, productPrices)
@@ -723,7 +722,7 @@ fun PreviewReportDialog(
                                         }
                                     }
                                     Text(
-                                        com.example.easyshop.AppUtil.formatDate(order.date).substringBefore(\" \"),
+                                        com.example.easyshop.AppUtil.formatDate(order.date).substringBefore(" "),
                                         modifier = Modifier.width(85.dp),
                                         style = MaterialTheme.typography.bodySmall
                                     )
@@ -797,6 +796,63 @@ fun PreviewReportDialog(
     }
 }
 
+
+// ── Hero Revenue Card ────────────────────────────────────────────────────────
+@Composable
+fun HeroRevenueCard(
+    totalRevenue: Double,
+    totalOrders: Int,
+    currencyFmt: NumberFormat
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(BlueCard, PurpleAccent)
+                    )
+                )
+                .padding(24.dp)
+        ) {
+            Column {
+                Text(
+                    stringResource(R.string.total_revenue_label),
+                    color = Color.White.copy(alpha = 0.8f),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    currencyFmt.format(totalRevenue),
+                    color = Color.White,
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                
+                Spacer(Modifier.height(16.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    HeroStatItem(
+                        label = stringResource(R.string.total_orders_label),
+                        value = totalOrders.toString(),
+                        icon = Icons.Default.ShoppingBag
+                    )
+                    HeroStatItem(
+                        label = stringResource(R.string.delivered_status),
+                        value = totalOrders.toString(), // Hoặc một chỉ số khác nếu muốn
+                        icon = Icons.Default.CheckCircle
+                    )
+                }
+            }
+        }
+    }
+}
 
 // ── Hero Stat Item ────────────────────────────────────────────────────────────
 @Composable
@@ -911,7 +967,7 @@ fun PremiumBarChart(data: List<Pair<String, Double>>, currencyFmt: NumberFormat)
                     val animFraction by animateFloatAsState(
                         targetValue = fraction,
                         animationSpec = tween(900),
-                        label = \"bar_$date\"
+                        label = "bar_$date"
                     )
                     val isMaxBar = value == data.maxOfOrNull { it.second } && value > 0
 
@@ -1001,9 +1057,9 @@ fun PremiumBarChart(data: List<Pair<String, Double>>, currencyFmt: NumberFormat)
 // ── Premium Order Distribution ────────────────────────────────────────────────
 private fun compactCurrency(value: Double): String {
     return when {
-        value >= 1_000_000_000 -> \"${(value / 1_000_000_000).toInt()}B\"
-        value >= 1_000_000 -> \"${(value / 1_000_000).toInt()}M\"
-        value >= 1_000 -> \"${(value / 1_000).toInt()}K\"
+        value >= 1_000_000_000 -> "${(value / 1_000_000_000).toInt()}B"
+        value >= 1_000_000 -> "${(value / 1_000_000).toInt()}M"
+        value >= 1_000 -> "${(value / 1_000).toInt()}K"
         else -> value.toInt().toString()
     }
 }
@@ -1083,7 +1139,7 @@ fun DistributionLegend(label: String, count: Int, percent: Int, color: Color) {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = \"$percent%\",
+                text = "$percent%",
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 12.sp,
                 color = color
@@ -1135,7 +1191,7 @@ fun PremiumTopProductItem(rank: Int, stat: ProductStat, currencyFmt: NumberForma
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = \"#$rank\",
+                    text = "#$rank",
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 13.sp,
                     color = rankColor
@@ -1211,15 +1267,14 @@ fun ProductItemDetailRow(productId: String, quantity: Long) {
     val db = com.google.firebase.Firebase.firestore
     
     LaunchedEffect(productId) {
-        db.collection(\"data\")
-            .document(\"stock\").collection(\"products\")
-            .document(productId).get()
-            .addOnSuccessListener { doc ->
-                productName = doc.getString(\"title\") ?: unnamedText
-            }
-            .addOnFailureListener {
-                productName = errorNameText
-            }
+        try {
+            val doc = db.collection("data")
+                .document("stock").collection("products")
+                .document(productId).get().await()
+            productName = doc.getString("title") ?: unnamedText
+        } catch (e: Exception) {
+            productName = errorNameText
+        }
     }
     
     Row(
@@ -1246,7 +1301,7 @@ fun ProductItemDetailRow(productId: String, quantity: Long) {
             )
         }
         Text(
-            text = \"x$quantity\",
+            text = "x$quantity",
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
