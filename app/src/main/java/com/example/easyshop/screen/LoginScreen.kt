@@ -95,11 +95,12 @@ fun LoginScreen(
         modifier = modifier
             .fillMaxSize()
             .safeDrawingPadding()
+            .background(MaterialTheme.colorScheme.background)
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
                         primaryIndigo.copy(alpha = 0.08f),
-                        MaterialTheme.colorScheme.background
+                        Color.Transparent
                     )
                 )
             )
@@ -234,7 +235,7 @@ fun LoginScreen(
                         if (success) {
                             val destination = if (role == "admin") "admin-dashboard" else "home"
                             navController.navigate(destination) {
-                                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                popUpTo(0) { inclusive = true }
                                 launchSingleTop = true
                             }
                         } else {
@@ -302,7 +303,7 @@ fun LoginScreen(
                                     if (success) {
                                         val destination = if (role == "admin") "admin-dashboard" else "home"
                                         navController.navigate(destination) {
-                                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                            popUpTo(0) { inclusive = true }
                                             launchSingleTop = true
                                         }
                                     } else {

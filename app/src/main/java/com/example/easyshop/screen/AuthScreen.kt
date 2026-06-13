@@ -2,6 +2,7 @@ package com.example.easyshop.screen
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -42,10 +43,11 @@ fun AuthScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top
     ) {
         Spacer(Modifier.height(48.dp))
 
@@ -123,7 +125,12 @@ fun AuthScreen(
         // Guest Mode Link
         Text(
             text = stringResource(R.string.auth_guest),
-            modifier = Modifier.clickableOnce { navController.navigate("home") },
+            modifier = Modifier.clickableOnce {
+                navController.navigate("home") {
+                    popUpTo(0) { inclusive = true }
+                    launchSingleTop = true
+                }
+            },
             color = primaryIndigo.copy(alpha = 0.8f),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold

@@ -1,5 +1,7 @@
 package com.example.easyshop
 
+import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -10,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavType
@@ -68,6 +71,29 @@ fun AppNavigation(modifier: Modifier = Modifier) {
         .collectAsState(initial = com.example.easyshop.util.ConnectivityObserver.Status.Available)
 
     val startDestination = "splash"
+
+    // 🛡️ Global back-press protection for both Admin and User main roots
+    // This BackHandler lives at AppNavigation level (always STARTED lifecycle),
+    // so it catches back presses even during rapid screen transition animations.
+    val currentEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentEntry?.destination?.route
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    BackHandler(
+        enabled = currentRoute == "admin-dashboard" || currentRoute == "home"
+    ) {
+        showExitDialog = true
+    }
+
+    if (showExitDialog) {
+        com.example.easyshop.screen.ExitConfirmationDialog(
+            onConfirm = {
+                showExitDialog = false
+                (context as? Activity)?.finish()
+            },
+            onDismiss = { showExitDialog = false }
+        )
+    }
 
     com.example.easyshop.components.ResponsiveContainer {
         Box(modifier = Modifier.fillMaxSize()) {

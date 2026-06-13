@@ -49,38 +49,115 @@ Các chức năng nhập hàng, duyệt đơn, gửi thông báo và thống kê
 
 - **[Hình 4.5: Giao diện Admin App]**
 
-## 4.3. Mã nguồn
+## 4.3. Mã nguồn then chốt
 
-### 4.3.1. Xử lý dữ liệu Firebase
+Trong phần này, luận văn trình bày các đoạn mã nguồn cốt lõi thực thi các chức năng nghiệp vụ chính của hệ thống EasyShop.
 
-Hệ thống sử dụng **Cloud Firestore** để lưu trữ dữ liệu thời gian thực.
+### 4.3.1. Chức năng Đăng nhập (`AuthViewModel.kt`)
+Hệ thống sử dụng Firebase Authentication kết hợp với Firestore để quản lý phiên đăng nhập và phân quyền người dùng.
 
-- *Vị trí:* `ManageCategoriesScreen.kt` (Dòng 47 - 58).
-- *Nội dung:* Hàm `loadCategories()` sử dụng bộ lắng nghe bất đồng bộ để đồng bộ danh mục sản phẩm từ máy chủ.
+```kotlin
+fun login(email: String, password: String, callback: (Boolean, String?, String?) -> Unit) {
+    auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+        if (task.isSuccessful) {
+            val userId = auth.currentUser?.uid ?: ""
+            firestore.collection("users").document(userId).get()
+                .addOnSuccessListener { document ->
+                    val user = document.toObject(UserModel::class.java)
+                    val role = user?.role ?: "user"
+                    callback(true, null, role)
+                }
+        } else {
+            callback(false, task.exception?.message, null)
+        }
+    }
+}
+```
 
-### 4.3.2. Kỹ thuật RAG (Retrieval-Augmented Generation)
+### 4.3.2. Chức năng Đăng ký (`AuthViewModel.kt`)
+Khi đăng ký, hệ thống hỗ trợ cấp quyền Admin tự động thông qua mã bảo mật (`adminCode`).
 
-Để AI tư vấn chính xác, ứng dụng triển khai kỹ thuật **RAG**:
+```kotlin
+fun signup(email: String, name: String, password: String, adminCode: String) {
+    auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+        if (task.isSuccessful) {
+            // Tự động gán quyền Admin nếu nhập đúng mã bí mật của Shop
+            val userRole = if (adminCode == AppConfig.ADMIN_SECRET_CODE) "admin" else "user"
+            val userModel = UserModel(uid = auth.uid, name = name, role = userRole)
+            
+            firestore.collection("users").document(auth.uid).set(userModel)
+        }
+    }
+}
+```
 
-- *Vị trí:* `AiRepository.kt` (Dòng 177 - 192).
-- *Nội dung:* Hàm `fetchAllProducts()` trích xuất ngữ cảnh từ Firestore để bổ trợ cho câu lệnh Prompt gửi lên Gemini.
+### 4.3.3. Hiển thị sản phẩm (`HomeViewModel.kt`)
+Dữ liệu sản phẩm và danh mục được tải đồng bộ từ Firestore để hiển thị lên giao diện người dùng.
 
-### 4.3.3. Logic nghiệp vụ Quản trị & FCM
+```kotlin
+private suspend fun initData() {
+    try {
+        // Tải danh mục và sản phẩm song song để tối ưu tốc độ
+        val categoriesDeferred = async { firestore.collection("categories").get().await() }
+        val productsDeferred = async { firestore.collection("products").get().await() }
+        
+        _categories.value = categoriesDeferred.await().toObjects(CategoryModel::class.java)
+        _products.value = productsDeferred.await().toObjects(ProductModel::class.java)
+    } catch (e: Exception) {
+        _screenState.value = ScreenState.ERROR
+    }
+}
+```
 
-- *Vị trí:* `OrdersManagementScreen.kt` (Dòng 145 - 180).
-- *Nội dung:* Quy trình cập nhật trạng thái đơn hàng và tự động gửi thông báo qua tệp `FcmSender.kt`.
+### 4.3.4. Tìm kiếm sản phẩm (`SeacherView.kt`)
+Tính năng tìm kiếm được tối ưu hóa bằng `LaunchedEffect` để lọc dữ liệu ngay khi người dùng nhập liệu (Real-time Filtering).
 
-### 4.3.4. Thuật toán Thống kê & Phân tích
+```kotlin
+LaunchedEffect(searchQuery, allProducts) {
+    filteredProducts = if (searchQuery.isBlank()) {
+        allProducts
+    } else {
+        allProducts.filter { product ->
+            val title = product.title.lowercase()
+            title.contains(searchQuery.lowercase())
+        }
+    }
+}
+```
 
-- *Vị trí:* `AdminDashboardScreen.kt` (Dòng 130 - 165).
-- *Nội dung:* Sử dụng các hàm `filter` và `sumOf` của Kotlin để tính toán dữ liệu tài chính trong thời gian thực.
+### 4.3.5. Quy trình Thanh toán (`CheckoutViewModel.kt`)
+Hệ thống sử dụng Giao dịch Firestore (`runTransaction`) để đảm bảo việc thanh toán và trừ kho diễn ra đồng thời, tránh lỗi lệch tồn kho.
 
-### 4.3.5. Kỹ thuật Vẽ Giao diện nâng cao
+```kotlin
+fun placeOrder(paymentMethod: String) {
+    db.runTransaction { transaction ->
+        // 1. Trừ số lượng trong kho hàng
+        user.cartItems.forEach { (pid, qty) ->
+            val prodRef = db.collection("products").document(pid)
+            val stock = transaction.get(prodRef).getLong("stockCount") ?: 0
+            transaction.update(prodRef, "stockCount", stock - qty)
+        }
+        // 2. Tạo bản ghi đơn hàng mới
+        transaction.set(db.collection("orders").document(orderId), order)
+        // 3. Xóa giỏ hàng của người dùng
+        transaction.update(db.collection("users").document(uid), "cartItems", emptyMap())
+    }
+}
+```
 
-Sử dụng **Jetpack Compose** và Material Design 3.
+### 4.3.6. Trợ lý AI Tư vấn (RAG Logic)
+Đây là tính năng cốt lõi của đề tài, kết hợp dữ liệu thực tế từ Shop với mô hình Gemini AI.
 
-- *Vị trí:* `Color.kt` (Dòng 25 - 35).
-- *Nội dung:* Thiết kế UI hiện đại với Gradients và hiệu ứng Shimmer khi tải dữ liệu.
+```kotlin
+suspend fun sendMessageStream(userMessage: String) = flow {
+    val products = fetchAllProducts() // Lấy ngữ cảnh sản phẩm
+    val prompt = buildComplexInstruction(userMessage, products) // Tạo Prompt
+    
+    generativeModel.generateContentStream(prompt).collect { response ->
+        emit(response.text)
+    }
+}
+```
 
 ## 4.4. Triển khai thực nghiệm
 

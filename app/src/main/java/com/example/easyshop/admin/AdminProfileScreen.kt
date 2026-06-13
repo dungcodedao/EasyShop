@@ -327,12 +327,16 @@ fun AdminProfileScreen(navController: NavController) {
                                 .clickable {
                                     if (tag == currentAdminLang) return@clickable
                                     currentAdminLang = tag
+                                    showLanguageDialog = false
                                     val activity = (context as? Activity)
                                     LanguageManager.setAdminLang(context, tag)
-                                    // Restart activity mượt mà với hiệu ứng fade
-                                    activity?.let { act ->
-                                        act.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-                                        act.recreate()
+                                    // Trên Android 13+ (API 33+), setApplicationLocales tự động recreate activity.
+                                    // Với các phiên bản cũ hơn, ta tự gọi recreate kèm fade transition.
+                                    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
+                                        activity?.let { act ->
+                                            act.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+                                            act.recreate()
+                                        }
                                     }
                                 }
                                 .background(

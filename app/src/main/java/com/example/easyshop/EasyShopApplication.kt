@@ -24,6 +24,7 @@ class EasyShopApplication : Application(), ImageLoaderFactory {
     }
 
     private var notifListener: ListenerRegistration? = null
+    private var broadcastListener: ListenerRegistration? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -54,8 +55,8 @@ class EasyShopApplication : Application(), ImageLoaderFactory {
     }
 
     /**
-     * Lắng nghe collection "notifications" của user hiện tại.
-     * Khi có document mới với isRead = false → bắn system notification.
+     * Lắng nghe collection "notifications" của user hiện tại và broadcast.
+     * Khi có document mới với isRead = false hoặc broadcast mới → bắn banner và system notification.
      *
      * Dùng Set để track những ID đã hiện thông báo, tránh spam khi
      * Firestore gửi lại snapshot cũ mỗi lần mở app.
@@ -67,6 +68,7 @@ class EasyShopApplication : Application(), ImageLoaderFactory {
         shownNotifIds.clear()
 
         val db = FirebaseFirestore.getInstance()
+        val startTime = com.google.firebase.Timestamp.now()
 
         // --- Listener cho USER ---
         notifListener = db.collection("notifications")
@@ -76,18 +78,46 @@ class EasyShopApplication : Application(), ImageLoaderFactory {
             .addSnapshotListener { snapshot, _ ->
                 snapshot?.documentChanges?.forEach { change ->
                     val docId = change.document.id
-                    // Chỉ hiện với document THÊM MỚI chưa từng show
+                    // Chỉ hiện với document THÊM MỚI chưa từng show và mới được tạo
                     if (change.type == com.google.firebase.firestore.DocumentChange.Type.ADDED
                         && docId !in shownNotifIds
                     ) {
-                        shownNotifIds.add(docId)
-                        val title = change.document.getString("title") ?: "EasyShop"
-                        val body  = change.document.getString("body")  ?: ""
-                        val type  = change.document.getString("type")  ?: "SYSTEM"
-                        // 1️⃣ Banner trượt xuống trong app (kiểu Shopee/MoMo)
-                        NotifBannerController.show(title, body, type)
-                        // 2️⃣ System notification ngoài màn hình (khi app ở nền)
-                        NotificationHelper.show(this, title, body, type)
+                        val createdAt = change.document.getTimestamp("createdAt")
+                        if (createdAt != null && createdAt > startTime) {
+                            shownNotifIds.add(docId)
+                            val title = change.document.getString("title") ?: "EasyShop"
+                            val body  = change.document.getString("body")  ?: ""
+                            val type  = change.document.getString("type")  ?: "SYSTEM"
+                            // 1️⃣ Banner trượt xuống trong app (kiểu Shopee/MoMo)
+                            NotifBannerController.show(title, body, type)
+                            // 2️⃣ System notification ngoài màn hình (khi app ở nền)
+                            NotificationHelper.show(this, title, body, type)
+                        }
+                    }
+                }
+            }
+
+        // --- Listener cho BROADCAST ---
+        broadcastListener = db.collection("notifications")
+            .whereEqualTo("userId", "broadcast")
+            .addSnapshotListener { snapshot, _ ->
+                snapshot?.documentChanges?.forEach { change ->
+                    val docId = change.document.id
+                    // Chỉ hiện với document THÊM MỚI chưa từng show và mới được tạo
+                    if (change.type == com.google.firebase.firestore.DocumentChange.Type.ADDED
+                        && docId !in shownNotifIds
+                    ) {
+                        val createdAt = change.document.getTimestamp("createdAt")
+                        if (createdAt != null && createdAt > startTime) {
+                            shownNotifIds.add(docId)
+                            val title = change.document.getString("title") ?: "Khuyến mãi mới"
+                            val body  = change.document.getString("body")  ?: ""
+                            val type  = change.document.getString("type")  ?: "PROMO"
+                            // 1️⃣ Banner trượt xuống trong app
+                            NotifBannerController.show(title, body, type)
+                            // 2️⃣ System notification ngoài màn hình
+                            NotificationHelper.show(this, title, body, type)
+                        }
                     }
                 }
             }
@@ -96,6 +126,8 @@ class EasyShopApplication : Application(), ImageLoaderFactory {
     private fun stopNotificationListener() {
         notifListener?.remove()
         notifListener = null
+        broadcastListener?.remove()
+        broadcastListener = null
     }
 
     // ── Coil ImageLoader (cấu hình cache toàn cục) ──────────────────────────

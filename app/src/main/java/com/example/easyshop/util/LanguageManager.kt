@@ -17,10 +17,11 @@ import java.util.Locale
  */
 object LanguageManager {
 
-    private const val PREFS_NAME     = "easyshop_language_prefs"
-    private const val KEY_USER_LANG  = "user_lang"
-    private const val KEY_ADMIN_LANG = "admin_lang"
-    private const val KEY_CURRENT    = "current_lang"   // ngôn ngữ đang thực sự áp dụng
+    private const val PREFS_NAME        = "easyshop_language_prefs"
+    private const val KEY_USER_LANG     = "user_lang"
+    private const val KEY_ADMIN_LANG    = "admin_lang"
+    private const val KEY_CURRENT       = "current_lang"   // ngôn ngữ đang thực sự áp dụng
+    private const val KEY_LANG_CHANGED  = "key_lang_changed"
 
     const val LANG_VI = "vi"
     const val LANG_EN = "en"
@@ -44,20 +45,28 @@ object LanguageManager {
 
     /** Lưu ngôn ngữ User, đánh dấu là current, notify AppCompat (API 33+). */
     fun setUserLang(context: Context, langTag: String) {
-        prefs(context).edit()
-            .putString(KEY_USER_LANG, langTag)
-            .putString(KEY_CURRENT, langTag)
-            .apply()
-        notifyAppCompat(langTag)
+        val current = getCurrentLang(context)
+        if (current != langTag) {
+            setLanguageChangedFlag(context, true)
+            prefs(context).edit()
+                .putString(KEY_USER_LANG, langTag)
+                .putString(KEY_CURRENT, langTag)
+                .apply()
+            notifyAppCompat(langTag)
+        }
     }
 
     /** Lưu ngôn ngữ Admin, đánh dấu là current, notify AppCompat (API 33+). */
     fun setAdminLang(context: Context, langTag: String) {
-        prefs(context).edit()
-            .putString(KEY_ADMIN_LANG, langTag)
-            .putString(KEY_CURRENT, langTag)
-            .apply()
-        notifyAppCompat(langTag)
+        val current = getCurrentLang(context)
+        if (current != langTag) {
+            setLanguageChangedFlag(context, true)
+            prefs(context).edit()
+                .putString(KEY_ADMIN_LANG, langTag)
+                .putString(KEY_CURRENT, langTag)
+                .apply()
+            notifyAppCompat(langTag)
+        }
     }
 
     // ── Getters ────────────────────────────────────────────────────────────────
@@ -76,15 +85,23 @@ object LanguageManager {
     /** Áp dụng locale User khi User section khởi động (dùng ở màn home). */
     fun applyUserLocale(context: Context) {
         val lang = getUserLang(context)
-        prefs(context).edit().putString(KEY_CURRENT, lang).apply()
-        notifyAppCompat(lang)
+        val current = getCurrentLang(context)
+        if (lang != current) {
+            setLanguageChangedFlag(context, true)
+            prefs(context).edit().putString(KEY_CURRENT, lang).apply()
+            notifyAppCompat(lang)
+        }
     }
 
     /** Áp dụng locale Admin khi Admin section khởi động. */
     fun applyAdminLocale(context: Context) {
         val lang = getAdminLang(context)
-        prefs(context).edit().putString(KEY_CURRENT, lang).apply()
-        notifyAppCompat(lang)
+        val current = getCurrentLang(context)
+        if (lang != current) {
+            setLanguageChangedFlag(context, true)
+            prefs(context).edit().putString(KEY_CURRENT, lang).apply()
+            notifyAppCompat(lang)
+        }
     }
 
     // ── Display ────────────────────────────────────────────────────────────────
@@ -92,6 +109,21 @@ object LanguageManager {
     fun displayName(langTag: String): String = when (langTag) {
         LANG_EN -> "English"
         else    -> "Tiếng Việt"
+    }
+
+    // ── Flag helpers ──────────────────────────────────────────────────────────
+
+    fun setLanguageChangedFlag(context: Context, changed: Boolean) {
+        prefs(context).edit().putBoolean(KEY_LANG_CHANGED, changed).apply()
+    }
+
+    fun getAndClearLanguageChangedFlag(context: Context): Boolean {
+        val p = prefs(context)
+        val changed = p.getBoolean(KEY_LANG_CHANGED, false)
+        if (changed) {
+            p.edit().putBoolean(KEY_LANG_CHANGED, false).apply()
+        }
+        return changed
     }
 
     // ── Private ────────────────────────────────────────────────────────────────

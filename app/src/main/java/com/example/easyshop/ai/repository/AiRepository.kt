@@ -155,14 +155,12 @@ class AiRepository(
         }.exceptionOrNull()
 
         if (aiResponse.isBlank()) {
-            val errMsg = geminiError?.message ?: ""
-            val isQuota = errMsg.contains("bận") || errMsg.contains("429") || errMsg.contains("503") ||
-                         errMsg.contains("RESOURCE_EXHAUSTED") || errMsg.contains("UNAVAILABLE")
-
-            if (isQuota && beeknoeeApiKey.isNotBlank()) {
+            if (beeknoeeApiKey.isNotBlank()) {
                 try {
+                    Log.d("AI_CHAT", "Falling back to Beeknoee API")
                     aiResponse = requestBeeknoeeReply(systemInstruction, history, userMessage)
                 } catch (be: Exception) {
+                    Log.e("AI_CHAT", "Beeknoee API fallback failed: ${be.message}", be)
                     throw Exception(context?.getString(R.string.ai_busy_msg) ?: "Cửa hàng đang bận, bạn vui lòng thử lại sau vài giây nhé!")
                 }
             } else {
@@ -337,23 +335,20 @@ class AiRepository(
     private suspend fun requestGeminiWithFallback(sys: String, history: List<ChatMessage>, user: String, context: android.content.Context?): String {
         val models = listOf(geminiModel, "gemini-2.0-flash", "gemini-1.5-flash").distinct()
         var lastErr: Exception? = null
-        var allQuotaExhausted = true
 
         for (m in models) {
             try {
+                Log.d("AI_CHAT", "Trying Gemini model: $m")
                 return callGeminiApi(m, sys, history, user)
             } catch (e: Exception) {
+                Log.w("AI_CHAT", "Gemini model $m failed: ${e.message}", e)
                 lastErr = e
-                val errMsg = e.message ?: ""
-                val isQuotaError = errMsg.contains("429") || errMsg.contains("quota") || errMsg.contains("RESOURCE_EXHAUSTED")
-                if (isQuotaError) continue else {
-                    allQuotaExhausted = false
-                    throw e
-                }
             }
         }
 
-        if (allQuotaExhausted) {
+        val errMsg = lastErr?.message ?: ""
+        val isQuotaError = errMsg.contains("429") || errMsg.contains("quota") || errMsg.contains("RESOURCE_EXHAUSTED")
+        if (isQuotaError) {
             throw Exception(context?.getString(R.string.ai_busy_msg) ?: "Cửa hàng đang bận, bạn vui lòng thử lại sau vài giây nhé!")
         }
         throw lastErr ?: Exception(context?.getString(R.string.ai_not_connected) ?: "Không thể kết nối AI lúc này.")
@@ -383,13 +378,12 @@ class AiRepository(
         }.exceptionOrNull()
 
         if (aiResponse.isBlank()) {
-            val errMsg = visionError?.message ?: ""
-            val isQuota = errMsg.contains("429") || errMsg.contains("503") || errMsg.contains("RESOURCE_EXHAUSTED")
-
-            if (isQuota && beeknoeeApiKey.isNotBlank()) {
+            if (beeknoeeApiKey.isNotBlank()) {
                 try {
+                    Log.d("AI_CHAT", "Falling back to Beeknoee Vision API")
                     aiResponse = requestBeeknoeeReply(visionInstruction, history, userMessage, base64Image)
                 } catch (be: Exception) {
+                    Log.e("AI_CHAT", "Beeknoee Vision API fallback failed: ${be.message}", be)
                     aiResponse = context?.getString(R.string.ai_generic_error) ?: "Lỗi kết nối AI."
                 }
             } else {
@@ -407,23 +401,20 @@ class AiRepository(
     private suspend fun requestGeminiVisionWithFallback(sys: String, history: List<ChatMessage>, user: String, base64Image: String, context: android.content.Context?): String {
         val models = listOf(geminiModel, "gemini-2.0-flash", "gemini-1.5-flash").distinct()
         var lastErr: Exception? = null
-        var allQuotaExhausted = true
 
         for (m in models) {
             try {
+                Log.d("AI_CHAT", "Trying Gemini Vision model: $m")
                 return callGeminiApi(m, sys, history, user, base64Image)
             } catch (e: Exception) {
+                Log.w("AI_CHAT", "Gemini Vision model $m failed: ${e.message}", e)
                 lastErr = e
-                val errMsg = e.message ?: ""
-                val isQuotaError = errMsg.contains("429") || errMsg.contains("quota") || errMsg.contains("RESOURCE_EXHAUSTED")
-                if (isQuotaError) continue else {
-                    allQuotaExhausted = false
-                    throw e
-                }
             }
         }
 
-        if (allQuotaExhausted) {
+        val errMsg = lastErr?.message ?: ""
+        val isQuotaError = errMsg.contains("429") || errMsg.contains("quota") || errMsg.contains("RESOURCE_EXHAUSTED")
+        if (isQuotaError) {
             throw Exception(context?.getString(R.string.ai_busy_msg) ?: "Cửa hàng đang bận, bạn vui lòng thử lại sau vài giây nhé!")
         }
         throw lastErr ?: Exception(context?.getString(R.string.ai_not_connected) ?: "Không thể kết nối AI lúc này.")

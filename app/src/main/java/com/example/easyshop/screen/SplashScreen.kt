@@ -121,16 +121,19 @@ fun SplashScreen(navController: NavController, viewModel: OnboardingViewModel = 
         if (role != null) {
             val destination = if (role == "admin") "admin-dashboard" else "home"
             navController.navigate(destination) {
-                popUpTo("splash") { inclusive = true }
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
             }
         } else {
             if (com.example.easyshop.AppUtil.isOnboardingCompleted(context)) {
                 navController.navigate("auth") {
-                    popUpTo("splash") { inclusive = true }
+                    popUpTo(0) { inclusive = true }
+                    launchSingleTop = true
                 }
             } else {
                 navController.navigate("onboarding") {
-                    popUpTo("splash") { inclusive = true }
+                    popUpTo(0) { inclusive = true }
+                    launchSingleTop = true
                 }
             }
         }

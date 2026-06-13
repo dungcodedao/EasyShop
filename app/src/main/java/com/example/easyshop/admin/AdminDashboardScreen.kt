@@ -81,20 +81,6 @@ fun AdminDashboardScreen(
     var unreadNotifCount by remember { mutableIntStateOf(0) }
     var unreadChatCount by remember { mutableIntStateOf(0) }
 
-    var showExitDialog by remember { mutableStateOf(false) }
-    val context = androidx.compose.ui.platform.LocalContext.current
-
-    androidx.activity.compose.BackHandler {
-        showExitDialog = true
-    }
-
-    if (showExitDialog) {
-        com.example.easyshop.screen.ExitConfirmationDialog(
-            onConfirm = { (context as? android.app.Activity)?.finish() },
-            onDismiss = { showExitDialog = false }
-        )
-    }
-
     val firestore = Firebase.firestore
     val currentUser = FirebaseAuth.getInstance().currentUser
 

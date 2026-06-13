@@ -61,11 +61,12 @@ fun SignupScreen(
         modifier = modifier
             .fillMaxSize()
             .safeDrawingPadding()
+            .background(MaterialTheme.colorScheme.background)
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
                         primaryIndigo.copy(alpha = 0.08f),
-                        MaterialTheme.colorScheme.background
+                        Color.Transparent
                     )
                 )
             )
@@ -242,7 +243,10 @@ fun SignupScreen(
                         isLoading = false
                         if (success) {
                             val destination = if (role == "admin") "admin-dashboard" else "home"
-                            navController.navigate(destination) { popUpTo("auth") { inclusive = true } }
+                            navController.navigate(destination) {
+                                popUpTo(0) { inclusive = true }
+                                launchSingleTop = true
+                            }
                         } else {
                             AppUtil.showToast(context, errorMessage ?: signUpErrorMsg)
                         }

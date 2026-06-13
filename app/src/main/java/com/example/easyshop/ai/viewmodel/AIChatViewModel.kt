@@ -72,6 +72,7 @@ class AIChatViewModel : ViewModel() {
                     _typingMessage.value = accumulatedText
                 }
             } catch (e: Exception) {
+                Log.e("AI_CHAT", "Error sending AI message", e)
                 _error.value = toFriendlyError(e, context) 
             } finally {
                 _typingMessage.value = null
@@ -95,6 +96,7 @@ class AIChatViewModel : ViewModel() {
                     _typingMessage.value = accumulatedText
                 }
             } catch (e: Exception) {
+                Log.e("AI_CHAT", "Error sending AI image message", e)
                 _error.value = toFriendlyError(e, context)
             } finally {
                 _typingMessage.value = null
